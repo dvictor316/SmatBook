@@ -37,11 +37,13 @@ class ProductBulkImportTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('products.xlsx', $response->streamedContent());
         $spreadsheet = IOFactory::load($file->getRealPath());
         $sheet = $spreadsheet->getSheetByName('Products');
-        $this->assertSame('Product Name', $sheet->getCell('A1')->getValue());
-        $this->assertSame('C2:C10001', $sheet->getCell('C2')->getDataValidation()->getSqref());
+        $this->assertSame('Packaging / measurements', $sheet->getCell('C1')->getValue());
+        $this->assertSame('Opening stock quantity', $sheet->getCell('G1')->getValue());
+        $this->assertSame('Product Name', $sheet->getCell('A2')->getValue());
+        $this->assertSame('C3:C10002', $sheet->getCell('C3')->getDataValidation()->getSqref());
         $this->assertNotNull($spreadsheet->getSheetByName('How to use'));
-        $this->assertNull($sheet->getCell('A2')->getValue());
-        $sheet->fromArray($rows, null, 'A2');
+        $this->assertNull($sheet->getCell('A3')->getValue());
+        $sheet->fromArray($rows, null, 'A3');
         $spreadsheet->setActiveSheetIndex(1);
         (new Xlsx($spreadsheet))->save($file->getRealPath());
         $spreadsheet->disconnectWorksheets();
@@ -57,13 +59,13 @@ class ProductBulkImportTest extends TestCase
             ->assertSee('10 cartons')
             ->assertSee('405 pcs');
         $file = $this->workbook([
-            ['Sachets', 'Food', 'pcs', 2, 10, 12, null, 3, 4, 250, 180],
-            ['Noodles', 'Food', 'pcs', 10, null, null, 40, null, 5, 250, 180, null, null, 'NOODLES-1', '001234567890'],
-            ['Rice', 'Food', 'kg', 2, null, null, 25.5, null, 1.5, 1500, 1200],
-            ['Tissue', 'Household', 'roll', 5, 12, null, null, 2, null, 500, 400],
-            ['Sealed boxes', 'Food', 'carton', 10, null, null, null, null, null, 5000, 4000],
-            ['Extra rolls', 'Food', 'pcs', null, null, 12, null, 3, 4, 250, 180],
-            ['Measured rolls', 'Food', 'kg', 2, 3, 1.5, null, 1, 0.5, 1500, 1200],
+            ['Sachets', 'Food', 'pcs', 10, 12, null, 2, 3, 4, 250, 180],
+            ['Noodles', 'Food', 'pcs', null, null, 40, 10, null, 5, 250, 180, null, null, 'NOODLES-1', '001234567890'],
+            ['Rice', 'Food', 'kg', null, null, 25.5, 2, null, 1.5, 1500, 1200],
+            ['Tissue', 'Household', 'roll', 12, null, null, 5, 2, null, 500, 400],
+            ['Sealed boxes', 'Food', 'carton', null, null, null, 10, null, null, 5000, 4000],
+            ['Extra rolls', 'Food', 'pcs', null, 12, null, null, 3, 4, 250, 180],
+            ['Measured rolls', 'Food', 'kg', 3, 1.5, null, 2, 1, 0.5, 1500, 1200],
         ]);
 
         $this->post(route('inventory.Products.import'), ['import_file' => $file])
@@ -109,24 +111,24 @@ class ProductBulkImportTest extends TestCase
     {
         $this->workspace();
         $file = $this->workbook([
-            ['Missing size', '', 'pcs', 3, '', '', '', '', 0, 10, 5],
+            ['Missing size', '', 'pcs', '', '', '', 3, '', 0, 10, 5],
             ['Bad quantity', '', 'kg', '', '', '', '', '', 'oops', 10, 5],
-            ['Counted cartons', '', 'carton', 2, '', '', 12, '', 0, 10, 5],
-            ['Small carton', '', 'kg', 2, '', '', 0.5, '', 0, 10, 5],
-            ['Missing roll size', '', 'pcs', 2, 10, '', '', 3, 4, 10, 5],
-            ['Conflicting sizes', '', 'pcs', 2, 10, 12, 40, 0, 0, 10, 5],
-            ['Fractional rolls', '', 'pcs', 2, 10, 12, '', 1.5, 0, 10, 5],
-            ['Duplicated rolls', '', 'roll', 2, 10, '', '', 2, 1, 10, 5],
+            ['Counted cartons', '', 'carton', '', '', 12, 2, '', 0, 10, 5],
+            ['Small carton', '', 'kg', '', '', 0.5, 2, '', 0, 10, 5],
+            ['Missing roll size', '', 'pcs', 10, '', '', 2, 3, 4, 10, 5],
+            ['Conflicting sizes', '', 'pcs', 10, 12, 40, 2, 0, 0, 10, 5],
+            ['Fractional rolls', '', 'pcs', 10, 12, '', 2, 1.5, 0, 10, 5],
+            ['Duplicated rolls', '', 'roll', 10, '', '', 2, 2, 1, 10, 5],
             ['Valid', '', 'litre', '', '', '', '', '', 1.5, 10, 5],
         ]);
 
         $this->post(route('inventory.Products.import'), ['import_file' => $file])
             ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'))
-            ->assertSessionHas('warning', fn ($message) => str_contains($message, 'Row 2:')
-                && str_contains($message, 'Row 3:') && str_contains($message, 'Row 4:')
-                && str_contains($message, 'Row 5:') && str_contains($message, 'Row 6:')
-                && str_contains($message, 'Row 7:') && str_contains($message, 'Row 8:')
-                && str_contains($message, 'Row 9:'));
+            ->assertSessionHas('warning', fn ($message) => str_contains($message, 'Row 3:')
+                && str_contains($message, 'Row 4:') && str_contains($message, 'Row 5:')
+                && str_contains($message, 'Row 6:') && str_contains($message, 'Row 7:')
+                && str_contains($message, 'Row 8:') && str_contains($message, 'Row 9:')
+                && str_contains($message, 'Row 10:'));
         $this->assertDatabaseMissing('products', ['name' => 'Missing size']);
         $this->assertDatabaseMissing('products', ['name' => 'Bad quantity']);
         $this->assertDatabaseMissing('products', ['name' => 'Counted cartons']);
@@ -143,7 +145,7 @@ class ProductBulkImportTest extends TestCase
 
         $incomplete = $this->workbook([['Incomplete', '', 'kg', 2, 10, 12]]);
         $spreadsheet = IOFactory::load($incomplete->getRealPath());
-        $spreadsheet->getSheetByName('Products')->setCellValue('F1', '');
+        $spreadsheet->getSheetByName('Products')->setCellValue('E2', '');
         (new Xlsx($spreadsheet))->save($incomplete->getRealPath());
         $spreadsheet->disconnectWorksheets();
         $this->post(route('inventory.Products.import'), ['import_file' => $incomplete])
@@ -155,7 +157,7 @@ class ProductBulkImportTest extends TestCase
     {
         $company = $this->workspace();
         $file = $this->workbook([
-            ['Imported sachets', 'Food', 'pcs', 2, 10, 12, null, 3, 4, 250, 180],
+            ['Imported sachets', 'Food', 'pcs', 10, 12, null, 2, 3, 4, 250, 180],
         ]);
         $this->post(route('inventory.Products.import'), ['import_file' => $file, 'branch_id' => 'hq'])
             ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'));
@@ -210,6 +212,23 @@ class ProductBulkImportTest extends TestCase
         $this->assertDatabaseHas('products', ['name' => 'Old cartons', 'stock' => 10]);
     }
 
+    public function test_previous_roll_workbook_remains_compatible(): void
+    {
+        $this->workspace();
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getActiveSheet()->fromArray([
+            ['Product Name', 'Category', 'Stock Unit', 'Number of Cartons', 'Rolls per Carton', 'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Extra Rolls', 'Extra Pieces / Stock Units', 'Selling Price', 'Cost Price'],
+            ['Earlier sachets', 'Food', 'pcs', 2, 10, 12, null, 3, 4, 250, 180],
+        ]);
+        $file = UploadedFile::fake()->create('earlier-products.xlsx');
+        (new Xlsx($spreadsheet))->save($file->getRealPath());
+        $spreadsheet->disconnectWorksheets();
+
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'));
+        $this->assertDatabaseHas('products', ['name' => 'Earlier sachets', 'stock' => 280, 'units_per_carton' => 120, 'units_per_roll' => 12]);
+    }
+
     public function test_legacy_csv_still_imports_without_changing_its_stock_rules(): void
     {
         $this->workspace();
@@ -228,7 +247,7 @@ class ProductBulkImportTest extends TestCase
     {
         $this->workspace();
         $file = $this->workbook([
-            ['Failed item', 'Rollback category', 'pcs', 2, '', '', 40, '', 1, 10, 5],
+            ['Failed item', 'Rollback category', 'pcs', '', '', 40, 2, '', 1, 10, 5],
             ['Good item', 'Food', 'pcs', '', '', '', '', '', 3, 10, 5],
         ]);
         DB::statement("CREATE TRIGGER fail_carton_unit BEFORE INSERT ON product_units
@@ -236,7 +255,7 @@ class ProductBulkImportTest extends TestCase
 
         $this->post(route('inventory.Products.import'), ['import_file' => $file])
             ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'))
-            ->assertSessionHas('warning', fn ($message) => str_contains($message, 'Row 2:'));
+            ->assertSessionHas('warning', fn ($message) => str_contains($message, 'Row 3:'));
         $this->assertDatabaseMissing('products', ['name' => 'Failed item']);
         $this->assertDatabaseMissing('categories', ['name' => 'Rollback category']);
         $this->assertDatabaseHas('products', ['name' => 'Good item', 'stock' => 3]);

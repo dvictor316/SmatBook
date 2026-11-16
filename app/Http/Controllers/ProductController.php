@@ -4788,24 +4788,36 @@ public function inventory(Request $request)
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet()->setTitle('Products');
         $sheet->fromArray([[
-            'Product Name', 'Category', 'Stock Unit', 'Number of Cartons', 'Rolls per Carton',
-            'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Extra Rolls', 'Extra Pieces / Stock Units',
+            'Product Name', 'Category', 'Stock Unit', 'Rolls per Carton',
+            'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Number of Cartons', 'Extra Rolls', 'Extra Pieces / Stock Units',
             'Selling Price', 'Cost Price', 'Wholesale Price', 'Special Price',
             'SKU', 'Barcode', 'Description',
-        ]]);
-        $sheet->freezePane('A2');
-        $sheet->getStyle('A1:P1')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-        $sheet->getStyle('A1:P1')->getFill()->setFillType('solid')->getStartColor()->setRGB('15304F');
-        $sheet->setAutoFilter('A1:P1');
+        ]], null, 'A2');
+        foreach ([
+            'A1:B1' => ['Product details', '15304F'],
+            'C1:F1' => ['Packaging / measurements', '245879'],
+            'G1:I1' => ['Opening stock quantity', '26704F'],
+            'J1:M1' => ['Prices per stock unit', '805C25'],
+            'N1:P1' => ['Optional details', '5C547A'],
+        ] as $range => [$title, $color]) {
+            $sheet->mergeCells($range);
+            $sheet->setCellValue(explode(':', $range)[0], $title);
+            $sheet->getStyle($range)->getFill()->setFillType('solid')->getStartColor()->setRGB($color);
+        }
+        $sheet->getStyle('A1:P2')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A1:P1')->getAlignment()->setHorizontal('center');
+        $sheet->getStyle('A2:P2')->getFill()->setFillType('solid')->getStartColor()->setRGB('15304F');
+        $sheet->freezePane('A3');
+        $sheet->setAutoFilter('A2:P2');
         foreach (range('A', 'P') as $column) {
-            $sheet->getColumnDimension($column)->setWidth(in_array($column, ['A', 'F', 'G', 'I', 'P'], true) ? 28 : 20);
+            $sheet->getColumnDimension($column)->setWidth(in_array($column, ['A', 'E', 'F', 'I', 'P'], true) ? 28 : 20);
         }
         $textStyle = new Style();
         $textStyle->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
         $spreadsheet->addCellXf($textStyle);
         $sheet->getColumnDimension('N')->setXfIndex($textStyle->getIndex());
         $sheet->getColumnDimension('O')->setXfIndex($textStyle->getIndex());
-        $validation = $sheet->getCell('C2')->getDataValidation();
+        $validation = $sheet->getCell('C3')->getDataValidation();
         $validation->setType(DataValidation::TYPE_LIST);
         $validation->setFormula1('"pcs,kg,litre,roll,carton,pack,bag,bottle,sachet,g,metre"');
         $validation->setShowDropDown(true);
@@ -4813,15 +4825,15 @@ public function inventory(Request $request)
         $validation->setPromptTitle('Stock unit');
         $validation->setPrompt('Choose a unit or type another unit.');
         $validation->setShowErrorMessage(false);
-        $validation->setSqref('C2:C10001');
+        $validation->setSqref('C3:C10002');
 
         $guide = $spreadsheet->createSheet()->setTitle('How to use');
         $guide->fromArray([
             ['How to fill in the Products sheet'],
-            ['1. Enter one product per row. Product Name is required; the other fields are optional.'],
+            ['1. Enter one product per row, starting below the column headings. Product Name is required; the other fields are optional.'],
             ['2. Stock Unit is how the app counts and prices the product: choose pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons.'],
-            ['3. For cartons containing rolls, enter Number of Cartons, Rolls per Carton and Pcs / Units per Roll.'],
-            ['4. Extra Rolls are whole rolls outside the cartons. Extra Pieces / Stock Units are individual pieces, kg, litres, etc. outside the cartons and rolls.'],
+            ['3. Packaging / measurements describes what fits inside one carton or roll. It is not the quantity you have.'],
+            ['4. Opening stock quantity is what you currently have for the new product in the selected branch: Number of Cartons, Extra Rolls and Extra Pieces / Stock Units.'],
             ['5. For cartons without rolls, use Units per Carton (no rolls) instead. Leave the roll columns empty.'],
             ['6. If counting whole rolls, choose roll as the Stock Unit; use Rolls per Carton and Extra Rolls, and leave Pcs / Units per Roll empty.'],
             ['7. If counting only cartons, choose carton as the Stock Unit and enter Number of Cartons.'],
@@ -4829,12 +4841,12 @@ public function inventory(Request $request)
             ['9. Leave SKU blank to generate it automatically. Format barcodes as text to preserve leading zeroes.'],
             ['10. Save the workbook and upload it. This template creates new products and skips duplicates.'],
             [],
-            ['Product Name', 'Category', 'Stock Unit', 'Number of Cartons', 'Rolls per Carton', 'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Extra Rolls', 'Extra Pieces / Stock Units', 'Selling Price', 'Cost Price'],
-            ['Sachets', 'Food', 'pcs', 2, 10, 12, '', 3, 4, 250, 180],
-            ['Noodles', 'Food', 'pcs', 10, '', '', 40, '', 5, 250, 180],
-            ['Rice', 'Food', 'kg', 2, '', '', 25, '', 1.5, 1500, 1200],
-            ['Tissue', 'Household', 'roll', 5, 12, '', '', 2, '', 500, 400],
-            ['Sealed boxes', 'Food', 'carton', 10, '', '', '', '', '', 5000, 4000],
+            ['Product Name', 'Category', 'Stock Unit', 'Rolls per Carton', 'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Number of Cartons', 'Extra Rolls', 'Extra Pieces / Stock Units', 'Selling Price', 'Cost Price'],
+            ['Sachets', 'Food', 'pcs', 10, 12, '', 2, 3, 4, 250, 180],
+            ['Noodles', 'Food', 'pcs', '', '', 40, 10, '', 5, 250, 180],
+            ['Rice', 'Food', 'kg', '', '', 25, 2, '', 1.5, 1500, 1200],
+            ['Tissue', 'Household', 'roll', 12, '', '', 5, 2, '', 500, 400],
+            ['Sealed boxes', 'Food', 'carton', '', '', '', 10, '', '', 5000, 4000],
             [],
             ['Sachets: (2 x 10 x 12) + (3 x 12) + 4 = 280 pcs. Noodles: (10 x 40) + 5 = 405 pcs.'],
             ['Examples are for guidance only; enter your own products on the Products sheet.'],

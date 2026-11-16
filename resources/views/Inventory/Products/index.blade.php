@@ -1327,6 +1327,8 @@
                         <h6><i class="fas fa-sliders text-primary me-2"></i>Optional Columns</h6>
                         <ul class="import-guide-list">
                             <li><strong>Stock Unit</strong> is how the app counts and prices the product: choose pcs for individual pieces, kg for kilograms, or roll or carton if you count only whole rolls or cartons.</li>
+                            <li><strong>Packaging / measurements</strong> describes what fits inside one carton or roll; it is not the quantity in stock.</li>
+                            <li><strong>Opening stock quantity</strong> is the number of cartons, extra rolls and extra pieces you currently have in the selected branch.</li>
                             <li>Enter the number of cartons. For cartons containing rolls, enter rolls per carton and pieces per roll.</li>
                             <li>Enter any extra rolls and individual pieces outside the cartons. For kg, litres or other units, enter the extra amount in Extra Pieces / Stock Units.</li>
                             <li>If the stock unit is roll, enter Rolls per Carton and Extra Rolls; leave Pcs / Units per Roll blank.</li>
@@ -1341,12 +1343,18 @@
                         <table class="table table-sm import-example-table">
                             <thead>
                                 <tr>
+                                    <th scope="colgroup">Product</th>
+                                    <th scope="colgroup" colspan="4">Packaging / measurements</th>
+                                    <th scope="colgroup" colspan="3">Opening stock quantity</th>
+                                    <th scope="colgroup">Total</th>
+                                </tr>
+                                <tr>
                                     <th>Product Name</th>
                                     <th>Stock Unit</th>
-                                    <th>Number of Cartons</th>
                                     <th>Rolls per Carton</th>
                                     <th>Pcs / Units per Roll</th>
                                     <th>Units per Carton (no rolls)</th>
+                                    <th>Number of Cartons</th>
                                     <th>Extra Rolls</th>
                                     <th>Extra Pieces / Stock Units</th>
                                     <th>Total stock</th>
@@ -1356,10 +1364,10 @@
                                 <tr>
                                     <td>Sachets</td>
                                     <td>pcs</td>
-                                    <td>2</td>
                                     <td>10</td>
                                     <td>12</td>
                                     <td>—</td>
+                                    <td>2</td>
                                     <td>3</td>
                                     <td>4</td>
                                     <td>280 pcs</td>
@@ -1367,10 +1375,10 @@
                                 <tr>
                                     <td>Noodles</td>
                                     <td>pcs</td>
-                                    <td>10</td>
                                     <td>—</td>
                                     <td>—</td>
                                     <td>40</td>
+                                    <td>10</td>
                                     <td>—</td>
                                     <td>5</td>
                                     <td>405 pcs</td>
@@ -1378,10 +1386,10 @@
                                 <tr>
                                     <td>Rice</td>
                                     <td>kg</td>
-                                    <td>2</td>
                                     <td>—</td>
                                     <td>—</td>
                                     <td>25</td>
+                                    <td>2</td>
                                     <td>—</td>
                                     <td>1.5</td>
                                     <td>51.5 kg</td>
@@ -1389,10 +1397,10 @@
                                 <tr>
                                     <td>Sealed boxes</td>
                                     <td>carton</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td>—</td>
                                     <td>10</td>
-                                    <td>—</td>
-                                    <td>—</td>
-                                    <td>—</td>
                                     <td>—</td>
                                     <td>—</td>
                                     <td>10 cartons</td>
@@ -1431,7 +1439,7 @@
                         <ul class="mb-0 ps-3">
                             <li>Download the Excel template and enter one product per row.</li>
                             <li>Choose how the product is counted: pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons.</li>
-                            <li>Enter the number of cartons, the packaging size and any extra rolls or pieces outside the cartons.</li>
+                            <li>In Packaging / measurements, describe what is inside one carton or roll. In Opening stock quantity, enter the cartons and extra rolls or pieces you have.</li>
                             <li>Prices are for one stock unit: for pcs, enter the price of one piece, not one carton. Product Name is required.</li>
                             <li>The workbook creates new products and opening stock in the selected branch, using the same packaging conversions as the product form.</li>
                             <li>Leave SKU blank to generate one automatically.</li>

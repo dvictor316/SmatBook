@@ -120,6 +120,8 @@ class ProductMeasurementSetupTest extends TestCase
             ->assertDontSee('name="variant_prices_enabled"', false)
             ->assertSee('set separately')
             ->assertSee('not calculated from the price per kg')
+            ->assertSee('Packaging / measurements')
+            ->assertSee('Opening stock quantity')
             ->assertSee('Number of Cartons')
             ->assertSee('Extra Rolls (outside cartons)')
             ->assertSee('value="pieces_carton"', false);

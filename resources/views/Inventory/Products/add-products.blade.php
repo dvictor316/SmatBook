@@ -467,8 +467,8 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
                             <div class="product-form-sheet product-opening-stock-sheet" id="product-opening-stock-sheet">
                                 <div class="product-form-card-head">
                                     <div>
-                                        <h6>Opening stock & conversions</h6>
-                                        <p class="product-form-muted mb-0">Enter packaging only where it applies.</p>
+                                        <h6>Packaging / measurements</h6>
+                                        <p class="product-form-muted mb-0">Describe what fits inside one carton or roll. These are not stock quantities.</p>
                                     </div>
                                 </div>
                                 <div class="product-packaging-fields">
@@ -534,8 +534,8 @@ body:not(.login-body):not(.landing-page-body) #add-product-page > .content.conta
 
                         {{-- Section 3: Opening Stock --}}
                                 <div class="measurement-divider"></div>
-                                <h6>Opening Stock</h6>
-                                <p class="product-form-muted">Leave at 0 if stock will be added later.</p>
+                                <h6>Opening stock quantity</h6>
+                                <p class="product-form-muted">Enter what you currently have in the selected branch. Leave at 0 if stock will be added later.</p>
                                 <div class="row g-3 opening-stock-fields">
                                     <div class="col-md-4 opening-carton-field">
                                         <label class="form-label">Number of Cartons</label>
