@@ -153,6 +153,43 @@ class ProductBulkImportTest extends TestCase
         $this->assertDatabaseMissing('products', ['name' => 'Incomplete']);
     }
 
+    public function test_c_in_simple_templates_counts_whole_cartons(): void
+    {
+        $company = $this->workspace();
+        $file = $this->workbook([
+            ['Lowercase carton', '', 'c', '', '', '', 10, '', '', 5000, 4000],
+            ['Uppercase carton', '', ' C ', '', '', '', 3, '', '', 5000, 4000],
+            ['Invalid carton', '', 'c', '', '', 12, 2, '', '', 5000, 4000],
+        ]);
+
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 2'))
+            ->assertSessionHas('warning', fn ($message) => str_contains($message, 'Row 5:'));
+        foreach (['Lowercase carton' => 10, 'Uppercase carton' => 3] as $name => $stock) {
+            $product = Product::withoutGlobalScopes()->where('company_id', $company->id)->where('name', $name)->firstOrFail();
+            $this->assertSame('ctn', $product->stockUnitSymbol());
+            $this->assertEquals($stock, $product->stock);
+            $this->assertDatabaseHas('product_branch_stocks', [
+                'company_id' => $company->id, 'product_id' => $product->id, 'branch_id' => 'hq', 'quantity' => $stock,
+            ]);
+        }
+        $this->assertDatabaseMissing('products', ['name' => 'Invalid carton']);
+
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getActiveSheet()->fromArray([
+            ['Product Name', 'Category', 'Stock Unit', 'Units per Carton', 'Cartons in Stock', 'Loose Stock'],
+            ['Previous template carton', '', 'c', '', '', 4],
+        ]);
+        $previousFile = UploadedFile::fake()->create('previous-products.xlsx');
+        (new Xlsx($spreadsheet))->save($previousFile->getRealPath());
+        $spreadsheet->disconnectWorksheets();
+        $this->post(route('inventory.Products.import'), ['import_file' => $previousFile])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'));
+        $previous = Product::withoutGlobalScopes()->where('company_id', $company->id)->where('name', 'Previous template carton')->firstOrFail();
+        $this->assertSame('ctn', $previous->stockUnitSymbol());
+        $this->assertEquals(4, $previous->stock);
+    }
+
     public function test_imported_packaging_matches_a_product_added_in_the_app(): void
     {
         $company = $this->workspace();

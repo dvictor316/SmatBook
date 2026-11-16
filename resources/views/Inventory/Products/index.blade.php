@@ -1464,7 +1464,7 @@
                         <strong>Simple steps:</strong>
                         <ul class="mb-0 ps-3">
                             <li>Download the Excel template and enter one product per row.</li>
-                            <li>Choose how the product is counted: pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons.</li>
+                            <li>Choose how the product is counted: pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons. You can also enter c for carton.</li>
                             <li>In Packaging / measurements, describe what is inside one carton or roll. In Opening stock quantity, enter the cartons and extra rolls or pieces you have.</li>
                             <li>Prices are for one stock unit: for pcs, enter the price of one piece, not one carton. Product Name is required.</li>
                             <li>The workbook creates new products and opening stock in the selected branch, using the same packaging conversions as the product form.</li>

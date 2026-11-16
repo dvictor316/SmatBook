@@ -4831,7 +4831,7 @@ public function inventory(Request $request)
         $guide->fromArray([
             ['How to fill in the Products sheet'],
             ['1. Enter one product per row, starting below the column headings. Product Name is required; the other fields are optional.'],
-            ['2. Stock Unit is how the app counts and prices the product: choose pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons.'],
+            ['2. Stock Unit is how the app counts and prices the product: choose pcs for individual pieces, kg for kilograms, or roll or carton for whole rolls or cartons. You may also enter c for carton.'],
             ['3. Packaging / measurements describes what fits inside one carton or roll. It is not the quantity you have.'],
             ['4. Opening stock quantity is what you currently have for the new product in the selected branch: Number of Cartons, Extra Rolls and Extra Pieces / Stock Units.'],
             ['5. For cartons without rolls, use Units per Carton (no rolls) instead. Leave the roll columns empty.'],
@@ -4975,6 +4975,10 @@ public function inventory(Request $request)
                     $rowData = [];
                     foreach ($header as $index => $column) {
                         $rowData[$column] = trim((string) ($row[$index] ?? ''));
+                    }
+
+                    if ($simpleTemplate && Str::lower($rowData['unit'] ?? '') === 'c') {
+                        $rowData['unit'] = 'carton';
                     }
 
                     if ($simpleTemplate && collect($rowData)->every(fn ($value) => $value === '')) {
