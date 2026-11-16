@@ -185,7 +185,7 @@ body[data-store-theme] .store-nav {
     }
 
     html.store-nav-enhanced .store-nav .brand {
-        order: 0;
+        order: 1;
         flex: 1 1 0;
         min-width: 0;
         max-width: none;
@@ -201,8 +201,8 @@ body[data-store-theme] .store-nav {
         position: relative;
         display: block;
         flex: 0 0 44px;
-        order: 1;
-        margin-left: auto;
+        order: 0;
+        margin-left: 0;
     }
 
     html.store-nav-enhanced .store-menu-toggle {
@@ -232,7 +232,8 @@ body[data-store-theme] .store-nav {
     html.store-nav-enhanced .store-nav #store-navigation {
         position: absolute;
         top: calc(100% + 6px);
-        right: 0;
+        left: 0;
+        right: auto;
         z-index: 25;
         display: none;
         width: min(260px, calc(100vw - 24px));

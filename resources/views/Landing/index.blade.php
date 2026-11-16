@@ -200,6 +200,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 }
 
 @media (max-width: 1023.98px) {
+    nav.sb-nav .container { justify-content: flex-start; gap: 8px; }
     #mujiNav {
         position: fixed;
         top: var(--nav-h);
@@ -2121,7 +2122,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 @media (max-width: 480px) {
     :root { --nav-h: 60px; --announce-h: 32px; }
     nav.sb-nav .container {
-        justify-content: space-between;
+        justify-content: flex-start;
         padding-left: 14px;
         padding-right: 14px;
     }
@@ -2138,7 +2139,7 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
         flex: 0 0 auto;
         width: 52px;
         height: 52px;
-        margin-left: 10px;
+        margin-left: 0;
     }
     .benefit-grid { grid-template-columns: 1fr; }
     .ticker-label { font-size: 0 !important; width: 34px; }
@@ -2450,13 +2451,13 @@ nav.sb-nav .container { height: var(--nav-h); display: flex; align-items: center
 
 <nav class="navbar navbar-expand-xl fixed-top sb-nav" id="mainNav">
     <div class="container">
+        <button class="navbar-toggler border-0" type="button" data-public-menu-toggle data-menu-open-class="show" aria-label="Open navigation" aria-controls="mujiNav" aria-expanded="false" style="color:var(--navy);">
+            <span class="tog-bar"></span><span class="tog-bar"></span><span class="tog-bar"></span>
+        </button>
         <a class="sb-brand navbar-brand" href="#home">
             <img src="{{ asset('assets/img/logos.png') }}" alt="SmartProbook" class="sb-brand-logo">
             <span class="spb-nav-wordmark">SmartPro<span class="book">book</span></span>
         </a>
-        <button class="navbar-toggler border-0" type="button" data-public-menu-toggle data-menu-open-class="show" aria-label="Open navigation" aria-controls="mujiNav" aria-expanded="false" style="color:var(--navy);">
-            <span class="tog-bar"></span><span class="tog-bar"></span><span class="tog-bar"></span>
-        </button>
         <div class="collapse navbar-collapse" id="mujiNav">
             <ul class="navbar-nav ms-auto align-items-center gap-1">
                 <li class="nav-item"><a class="sb-nav-link {{ request()->routeIs('landing.index') ? 'active' : '' }}" href="{{ route('landing.index') }}#home">Home</a></li>

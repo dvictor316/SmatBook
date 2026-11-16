@@ -997,7 +997,7 @@
 
             .hamburger { 
                 display: flex; 
-                order: 1;
+                order: 0;
                 width: 44px;
                 height: 44px;
                 align-items: center;
@@ -1012,7 +1012,7 @@
             }
 
             .logo-container {
-                order: 0;
+                order: 1;
                 margin-right: auto;
             }
 
@@ -1326,16 +1326,16 @@
 @unless($hideLandingChrome)
 <nav class="landing-navigation">
     <div class="nav-container">
-        <a href="{{ url('/') }}" class="logo-container">
-            <img src="{{ asset('assets/img/logos.png') }}" class="brand-img" alt="SmartProbook"> 
-            <span class="logo-text">SmartPro<span>book</span></span>
-        </a>
-
         <button class="hamburger" id="navTrigger" type="button" data-public-menu-toggle aria-label="Toggle navigation" aria-controls="mainMenu" aria-expanded="false">
             <span></span>
             <span></span>
             <span></span>
         </button>
+
+        <a href="{{ url('/') }}" class="logo-container">
+            <img src="{{ asset('assets/img/logos.png') }}" class="brand-img" alt="SmartProbook">
+            <span class="logo-text">SmartPro<span>book</span></span>
+        </a>
 
         <ul class="nav-links" id="mainMenu">
             <li><a href="{{ url('/') }}" class="{{ Route::is('landing.index') ? 'active' : '' }}">Home</a></li>

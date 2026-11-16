@@ -1122,11 +1122,11 @@
             --header-item-gap: 10px;
             --header-action-gap: 6px;
         }
-        .header-logo    { width: auto; margin-right: 0; max-width: 196px; order: 0; }
+        .header-logo    { width: auto; margin-right: 0; max-width: 196px; order: 1; }
         .header-toggle,
         #toggle_btn.header-toggle,
         #toggle_btn     { display: none !important; }
-        #mobile_btn     { display: inline-flex !important; order: 1; }
+        #mobile_btn     { display: inline-flex !important; order: 0; }
         .dm-hamburger { display: none !important; }
         .header-search-container { display: none; }
         .mobile-search-btn       { display: flex; }
@@ -1339,7 +1339,7 @@
             overflow: visible;
         }
         .header-logo {
-            order: 0;
+            order: 1;
             justify-content: flex-start;
             gap: 0;
             min-width: 0;
@@ -1358,7 +1358,7 @@
             pointer-events: none;
         }
         #mobile_btn {
-            order: 1;
+            order: 0;
             top: 0;
         }
 
@@ -1606,7 +1606,7 @@
             position: relative !important;
             top: 0 !important;
             left: auto !important;
-            order: 1;
+            order: 0;
             flex: 0 0 44px;
             width: 44px;
             height: 44px;
@@ -1615,7 +1615,7 @@
         .header-logo {
             position: static;
             display: flex;
-            order: 0;
+            order: 1;
             flex: 0 0 auto;
             align-items: center;
             gap: 5px;

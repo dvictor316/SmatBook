@@ -96,10 +96,12 @@ const publicDir = path.resolve(__dirname, '../../public');
      if (width < 768) {
       const brandRect = await page.locator('.store-nav .brand').boundingBox();
       const toggleRect = await toggle.boundingBox();
-      assert(brandRect.x + brandRect.width <= toggleRect.x + 1, `${name} ${width}: brand is not left of menu`);
+      assert(toggleRect.x + toggleRect.width <= brandRect.x + 1, `${name} ${width}: menu is not left of brand`);
       await toggle.tap();
       assert.equal(await toggle.getAttribute('aria-expanded'), 'true', `${name} ${width}: menu did not open`);
       assert(await page.locator('#store-navigation').isVisible(), `${name} ${width}: menu invisible`);
+      const menuRect = await page.locator('#store-navigation').boundingBox();
+      assert(menuRect.x >= -1 && menuRect.x + menuRect.width <= width + 1, `${name} ${width}: menu offscreen`);
       if (name === 'store-gallery') {
        assert(await page.locator('.store-search input').isVisible(), `${name} ${width}: search is missing`);
        assert(await page.locator('#store-navigation a[href="#store-cart"]').isVisible(), `${name} ${width}: cart link is missing`);
@@ -115,7 +117,7 @@ const publicDir = path.resolve(__dirname, '../../public');
       const brand=page.locator(['dashboard','manager','dashboard-storage'].includes(name)?'.header-logo':name==='home'?'.sb-brand':'.logo-container').first();
       const brandRect=await brand.boundingBox();
       const toggleRect=await toggle.boundingBox();
-      assert(brandRect.x + brandRect.width <= toggleRect.x + 1,`${name} ${width}: brand is not left of menu`);
+      assert(toggleRect.x + toggleRect.width <= brandRect.x + 1,`${name} ${width}: menu is not left of brand`);
       await toggle.tap();
       await page.waitForTimeout(360);
       assert.equal(await toggle.getAttribute('aria-expanded'),'true',`${name} ${width}: tap did not open`);
