@@ -7578,13 +7578,11 @@ $(document).ready(function() {
                     : '';
                 html += `
                     <tr>
-                        <td class="ps-3">
+                        <td class="ps-3 cart-item-info">
                             <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
                             <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'}${item.qty === 1 ? '' : 's'} × ${fmt.format(item.price)}</small>
-                            ${unitPicker}
-                            <small style="display:block; color: var(--text-tertiary); font-size: 0.7rem;">${item.priceLevelLabel || 'Retail / Default'} pricing</small>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center cart-item-quantity">
                             <input
                                 type="number"
                                 min="1"
@@ -7596,9 +7594,10 @@ $(document).ready(function() {
                                 onblur="updateCartQty(${i}, this.value)"
                                 onkeydown="if (event.key === 'Enter') { event.preventDefault(); updateCartQty(${i}, this.value); this.blur(); }"
                             >
+                            ${unitPicker}
                         </td>
-                        <td class="text-end fw-bold tabular-nums" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
-                        <td class="text-center">
+                        <td class="text-end fw-bold tabular-nums cart-item-total" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
+                        <td class="text-center cart-item-actions">
                             <div class="cart-actions">
                                 <button class="btn btn-sm btn-cart-edit" onclick="editCartItem(${i})" title="Load item back into editor">
                                     <i class="fas fa-pen"></i>
@@ -9899,16 +9898,16 @@ window.POS_ENABLE_FALLBACK = function () {
                 : '';
             html += `
                 <tr>
-                    <td class="ps-3">
+                    <td class="ps-3 cart-item-info">
                         <div class="fw-bold" style="color: var(--text-primary);">${escapeHtml(item.name)}</div>
                         <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${escapeHtml(item.unitLabel || 'unit')} × ${fmt.format(item.price)}</small>
+                    </td>
+                    <td class="text-center cart-item-quantity">
+                        <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
                         ${unitPicker}
                     </td>
-                    <td class="text-center">
-                        <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
-                    </td>
-                    <td class="text-end fw-bold tabular-nums" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
-                    <td class="text-center">
+                    <td class="text-end fw-bold tabular-nums cart-item-total" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
+                    <td class="text-center cart-item-actions">
                         <button class="btn btn-sm btn-remove" data-remove="${i}"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>
