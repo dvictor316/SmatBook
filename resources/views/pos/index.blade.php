@@ -7016,6 +7016,7 @@ $(document).ready(function() {
 
     $(document).on('click', '.product-card', function() {
         applyProductSelection($(this));
+        $('#add-btn').trigger('click');
     });
 
     $('#product-search').on('change select2:select', function() {
@@ -7522,7 +7523,12 @@ $(document).ready(function() {
             priceLevelLabel: selectedPriceLevel.label,
             unitType: unitMeta.type,
             unitLabel: unitMeta.type === 'unit' ? unitMeta.baseUnit : unitMeta.type,
+            unitMultiplier: unitMeta.multiplier,
             stockUnits: unitMeta.multiplier * qty,
+            stockAvailable: parseFloat(opt.data('stock')) || 0,
+            baseUnitPrice: selectedPriceLevel.value,
+            unitPriceLevel: selectedPriceLevel.key,
+            unitOptions: readUnitOptions(opt),
             price: parseFloat($('#unit-price-input').val()),
             discount: res.discType === 'fixed' ? 0 : (parseFloat($('#discount').val()) || 0),
             discountType: res.discType,
@@ -7560,11 +7566,20 @@ $(document).ready(function() {
                 totTax += item.taxVal;
                 totGrand += item.total;
 
+                const choices = Array.isArray(item.unitOptions) ? item.unitOptions : [];
+                const unitPicker = choices.length > 1
+                    ? `<select class="cart-unit-select form-select form-select-sm" data-index="${i}" aria-label="Unit for ${$('<div>').text(item.name).html()}">${choices.map((unit) => {
+                        const name = String(unit.name || unit.symbol || item.unitType || 'unit').toLowerCase();
+                        const label = $('<option>').text(String(unit.symbol || unit.name || name)).html();
+                        return `<option value="${$('<div>').text(name).html()}" ${name === String(item.unitType || 'unit').toLowerCase() ? 'selected' : ''}>${label}</option>`;
+                    }).join('')}</select>`
+                    : '';
                 html += `
                     <tr>
                         <td class="ps-3">
                             <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
                             <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'}${item.qty === 1 ? '' : 's'} × ${fmt.format(item.price)}</small>
+                            ${unitPicker}
                             <small style="display:block; color: var(--text-tertiary); font-size: 0.7rem;">${item.priceLevelLabel || 'Retail / Default'} pricing</small>
                         </td>
                         <td class="text-center">
@@ -7633,6 +7648,31 @@ $(document).ready(function() {
         calculateCartLine(cart[i]);
         renderCart();
     };
+
+    $('#cart-body').on('change', '.cart-unit-select', function () {
+        const index = parseInt(this.dataset.index || '-1', 10);
+        const item = cart[index];
+        if (!item) return;
+        const option = (item.unitOptions || []).find((unit) => String(unit.name || unit.symbol || '').toLowerCase() === this.value);
+        if (!option) return;
+        const factor = Math.max(parseFloat(option.conversion_factor || '1') || 1, 1);
+        const qty = Math.max(1, parseFloat(item.qty || '1') || 1);
+        if (item.stockAvailable > 0 && qty * factor > item.stockAvailable + 0.0001) {
+            showAlert({ icon: 'warning', title: 'Low Stock', text: `Only ${Math.floor(item.stockAvailable / factor)} ${option.name || 'units'} available for ${item.name}.` });
+            this.value = String(item.unitType || 'unit').toLowerCase();
+            return;
+        }
+        item.unitType = String(option.name || option.symbol || this.value).toLowerCase();
+        item.unitLabel = String(option.symbol || option.name || item.unitType);
+        item.unitMultiplier = factor;
+        item.stockUnits = qty * factor;
+        const tierPrice = item.priceLevel === 'wholesale' ? option.wholesale_price : option.selling_price;
+        item.price = tierPrice !== undefined && tierPrice !== null && tierPrice !== ''
+            ? (parseFloat(tierPrice) || 0)
+            : Math.max(0, parseFloat(item.baseUnitPrice || '0') || 0) * factor;
+        calculateCartLine(item);
+        renderCart();
+    });
 
     window.editCartItem = function(i) {
         const item = cart[i];
@@ -7853,6 +7893,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const hdrSelected = document.getElementById('hdr-selected-product');
     const qtyLabel = document.getElementById('qty-label');
     const unitHelperCopy = document.getElementById('unit-helper-copy');
+    let suppressEditorOpen = false;
 
     function maybeShowExpiryAlert(payload) {
         const expiry = String(payload?.expiry || '').trim();
@@ -8968,6 +9009,7 @@ window.POS_ENABLE_FALLBACK = function () {
             }
         }
         configuredUnits = Array.isArray(configuredUnits) ? configuredUnits : [];
+        const selectedConfiguredUnit = configuredUnits.find((unit) => String(unit.name || unit.symbol || '').toLowerCase() === type);
         const cartonOption = configuredUnits.find((unit) => String(unit.name || '').toLowerCase() === 'carton');
         const cartonUnits = Math.max(parseFloat(cartonOption?.conversion_factor || 0) || 0, 0) || (rollsPerCarton > 0
             ? (unitsPerRoll > 0 ? (rollsPerCarton * unitsPerRoll) : rollsPerCarton)
@@ -8976,7 +9018,10 @@ window.POS_ENABLE_FALLBACK = function () {
         let multiplier = 1;
         let unitLabel = baseUnit;
 
-        if (type === 'carton' && cartonUnits > 0) {
+        if (selectedConfiguredUnit) {
+            multiplier = Math.max(parseFloat(selectedConfiguredUnit.conversion_factor || '1') || 1, 1);
+            unitLabel = String(selectedConfiguredUnit.symbol || selectedConfiguredUnit.name || type);
+        } else if (type === 'carton' && cartonUnits > 0) {
             multiplier = cartonUnits;
             unitLabel = 'carton';
         } else if (type === 'roll' && unitsPerRoll > 0) {
@@ -9222,7 +9267,7 @@ window.POS_ENABLE_FALLBACK = function () {
         });
 
         updateItemTotal();
-        window.PosWorkspace?.openEditor();
+        if (!suppressEditorOpen) window.PosWorkspace?.openEditor();
     }
 
     const boundProductCards = new WeakSet();
@@ -9231,13 +9276,16 @@ window.POS_ENABLE_FALLBACK = function () {
         productCards.forEach((card) => {
             if (boundProductCards.has(card)) return;
             boundProductCards.add(card);
-            card.addEventListener('click', function () {
+            card.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                suppressEditorOpen = true;
                 applyVanillaSelection(card);
+                suppressEditorOpen = false;
+                addBtn?.click();
             });
             card.addEventListener('dblclick', function (event) {
                 event.preventDefault();
-                applyVanillaSelection(card);
-                window.setTimeout(() => addBtn?.click(), 0);
             });
         });
     }
@@ -9838,11 +9886,20 @@ window.POS_ENABLE_FALLBACK = function () {
             totTax += item.taxVal;
             totGrand += item.total;
 
+            const unitChoices = Array.isArray(item.unitOptions) ? item.unitOptions : [];
+            const unitPicker = unitChoices.length > 1
+                ? `<select class="cart-unit-select" data-index="${i}" aria-label="Unit for ${escapeHtml(item.name)}">${unitChoices.map((unit) => {
+                    const name = String(unit.name || unit.symbol || item.unitType || 'unit').toLowerCase();
+                    const label = String(unit.symbol || unit.name || name);
+                    return `<option value="${escapeHtml(name)}" ${name === String(item.unitType || 'unit').toLowerCase() ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+                }).join('')}</select>`
+                : '';
             html += `
                 <tr>
                     <td class="ps-3">
                         <div class="fw-bold" style="color: var(--text-primary);">${escapeHtml(item.name)}</div>
                         <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${escapeHtml(item.unitLabel || 'unit')} × ${fmt.format(item.price)}</small>
+                        ${unitPicker}
                     </td>
                     <td class="text-center">
                         <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
@@ -9996,6 +10053,31 @@ window.POS_ENABLE_FALLBACK = function () {
 
         cartBody.addEventListener('change', function (e) {
             const target = e.target;
+            if (target?.classList.contains('cart-unit-select')) {
+                const index = parseInt(target.dataset.index || '-1', 10);
+                const item = cart[index];
+                if (!item) return;
+                const option = (item.unitOptions || []).find((unit) => String(unit.name || unit.symbol || '').toLowerCase() === target.value);
+                if (!option) return;
+                const multiplier = Math.max(parseFloat(option.conversion_factor || '1') || 1, 1);
+                const qty = Math.max(1, parseFloat(item.qty || '1') || 1);
+                const stockAvailable = Math.max(0, parseFloat(item.stockAvailable || '0') || 0);
+                if (stockAvailable > 0 && qty * multiplier > stockAvailable + 0.0001) {
+                    alertFallback(`Only ${Math.floor(stockAvailable / multiplier)} ${option.name || 'units'} available for ${item.name}.`);
+                    target.value = String(item.unitType || 'unit').toLowerCase();
+                    return;
+                }
+                item.unitType = String(option.name || option.symbol || target.value).toLowerCase();
+                item.unitLabel = String(option.symbol || option.name || item.unitType);
+                item.unitMultiplier = multiplier;
+                const tierPrice = item.unitPriceLevel === 'wholesale' ? option.wholesale_price : option.selling_price;
+                item.price = tierPrice !== undefined && tierPrice !== null && tierPrice !== ''
+                    ? (parseFloat(tierPrice) || 0)
+                    : (Math.max(0, parseFloat(item.baseUnitPrice || '0') || 0) * multiplier);
+                calculateCartItem(item);
+                renderCart();
+                return;
+            }
             commitCartQtyInput(target);
         });
         cartBody.addEventListener('focusout', function (e) {
@@ -10063,6 +10145,11 @@ window.POS_ENABLE_FALLBACK = function () {
                 unitMultiplier: unitMeta.multiplier,
                 stockAvailable: unitMeta.stock,
                 baseUnit: unitMeta.baseUnit,
+                baseUnitPrice: priceMeta.value,
+                unitOptions: (() => {
+                    try { return JSON.parse(data.units || '[]'); } catch (_) { return []; }
+                })(),
+                unitPriceLevel: priceMeta.key,
                 priceLevel: priceMeta.key,
                 priceLevelLabel: priceMeta.label,
                 priceListId: priceListInput?.value || '',
