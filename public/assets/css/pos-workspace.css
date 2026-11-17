@@ -210,3 +210,49 @@ body.pos-terminal-workspace .pos-customer-add-btn:is(:hover, :focus-visible) * {
 .pos-add-customer-form p { color: #64748b; font-size: 13px; }
 .pos-add-customer-form label { display: block; margin: 13px 0 6px; font-size: 13px; font-weight: 600; color: #172b4d; }
 .pos-add-customer-form input { min-height: 43px; width: 100%; }
+
+/* Use the header menu control for the POS action rail on phones. */
+@media (max-width: 1024px) {
+    body.pos-terminal-workspace #pos-sell-screen { grid-template-columns: minmax(0, 1fr) !important; }
+    body.pos-terminal-workspace #pos-action-rail {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        z-index: 1060 !important;
+        width: min(290px, 84vw) !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        padding: 12px !important;
+        overflow-y: auto !important;
+        background: linear-gradient(180deg, #eef4ff 0%, #fff 100%) !important;
+        box-shadow: 18px 0 42px rgba(6, 26, 68, .22) !important;
+        transform: translateX(-110%) !important;
+        transition: transform .25s ease !important;
+    }
+    body.pos-terminal-workspace.pos-rail-open #pos-action-rail { transform: translateX(0) !important; }
+    body.pos-terminal-workspace .pos-rail-backdrop,
+    body.pos-terminal-workspace.pos-rail-open .pos-rail-backdrop { display: none !important; }
+    body.pos-terminal-workspace.pos-rail-open #pos-rail-backdrop {
+        display: block !important;
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 1050 !important;
+        background: rgba(6, 26, 68, .38) !important;
+    }
+    body.pos-terminal-workspace.pos-item-editor-active #pos-action-rail,
+    body.pos-terminal-workspace.pos-item-editor-active #pos-rail-backdrop { display: none !important; }
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-areas: 'header' 'shelf' 'receipt' !important;
+        min-width: 0 !important;
+    }
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage > .row.g-4 > .pos-item-editor {
+        inset: 0 !important;
+        z-index: 1070 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    }
+    body.pos-terminal-workspace.pos-rail-open { overflow: hidden !important; }
+}
