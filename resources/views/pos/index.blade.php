@@ -174,8 +174,8 @@
     -webkit-font-smoothing: antialiased;
 }
 
-.pos-full-page-wrapper { 
-    margin-left: 0; 
+.pos-full-page-wrapper {
+    margin-left: 0;
     width: 100vw;
     max-width: 100vw;
     margin-inline: 0;
@@ -187,20 +187,20 @@
         radial-gradient(900px 300px at 94% 4%, rgba(215, 169, 40, 0.13) 0%, rgba(215, 169, 40, 0) 58%),
         linear-gradient(180deg, #f6f9ff 0%, #eef4ff 54%, #f8fbff 100%);
     background-size: 34px 34px, 34px 34px, auto, auto, auto;
-    min-height: 100vh; 
+    min-height: 100vh;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-top: 0;
 }
 
-@media(max-width: 991.98px) { 
-    .pos-full-page-wrapper { 
-        margin-left: 0 !important; 
+@media(max-width: 991.98px) {
+    .pos-full-page-wrapper {
+        margin-left: 0 !important;
         margin-inline: 0;
         width: 100%;
         max-width: 100%;
-        padding: 12px; 
-        margin-top: 0; 
-    } 
+        padding: 12px;
+        margin-top: 0;
+    }
 }
 
 .header-util-bar {
@@ -308,7 +308,7 @@
 
 .pos-header-bar {
     background: #ffffff;
-    min-height: 78px; 
+    min-height: 78px;
     padding: 12px clamp(18px, 2vw, 34px);
     border-radius: 18px;
     border: 1px solid rgba(37, 99, 235, 0.20);
@@ -331,7 +331,7 @@
     background: linear-gradient(90deg, var(--primary-700) 0%, var(--primary-600) 82%, var(--spb-gold) 100%);
 }
 
-.pos-header-title { 
+.pos-header-title {
     color: var(--text-primary);
     font-weight: 700;
     font-size: 1rem;
@@ -411,8 +411,8 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Search Bar - FIXED ICON POSITIONING */
-.search-wrapper { 
-    position: relative; 
+.search-wrapper {
+    position: relative;
     flex: 1 1 auto;
     min-width: 360px;
     max-width: 860px;
@@ -436,7 +436,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     font-size: 0.875rem;
 }
 
-.search-input { 
+.search-input {
     height: 46px;
     border: 1.5px solid rgba(96, 165, 250, 0.20);
     border-radius: var(--radius-md);
@@ -455,7 +455,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     height: 46px !important;
 }
 
-.search-input:focus { 
+.search-input:focus {
     border-color: var(--primary-600);
     outline: none;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
@@ -536,9 +536,9 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Card Panels */
-.sticky-panel { 
-    position: sticky; 
-    top: 84px; 
+.sticky-panel {
+    position: sticky;
+    top: 84px;
 }
 
 .pos-shell {
@@ -720,7 +720,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     }
 }
 
-.pos-card { 
+.pos-card {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     background: #ffffff;
@@ -1145,11 +1145,11 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Unit Type Grid */
-.unit-grid { 
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 10px; 
-    margin-bottom: 18px; 
+.unit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
 .unit-btn {
@@ -1227,18 +1227,18 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Subtotal Display */
-.subtotal-box { 
+.subtotal-box {
     background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
     border: 2px solid var(--primary-600);
     border-left: 4px solid var(--primary-600);
-    border-radius: var(--radius-md); 
+    border-radius: var(--radius-md);
     padding: 16px;
     text-align: center;
     margin-top: 14px;
     box-shadow: var(--shadow-sm);
 }
 
-.subtotal-label { 
+.subtotal-label {
     font-size: 0.625rem;
     color: var(--text-secondary);
     font-weight: 700;
@@ -1247,7 +1247,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     margin-bottom: 4px;
 }
 
-.subtotal-amount { 
+.subtotal-amount {
     font-size: 1.375rem;
     font-weight: 800;
     background: linear-gradient(135deg, var(--primary-600) 0%, var(--indigo-600) 100%);
@@ -1259,11 +1259,11 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Cart Table */
-.cart-wrapper { 
+.cart-wrapper {
     position: relative;
     min-height: 360px;
-    max-height: 480px; 
-    overflow-y: auto; 
+    max-height: 480px;
+    overflow-y: auto;
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
     margin-bottom: 18px;
@@ -1543,7 +1543,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Grand Total */
-.grand-total { 
+.grand-total {
     font-size: 1.5rem;
     font-weight: 900;
     background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-600) 86%, var(--spb-gold) 100%);
@@ -1555,7 +1555,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Buttons */
-.btn-add-cart { 
+.btn-add-cart {
     background: linear-gradient(135deg, var(--primary-600) 0%, var(--indigo-600) 100%);
     color: #ffffff;
     --spb-btn-hover-color: #ffffff;
@@ -1569,7 +1569,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     letter-spacing: 0.3px;
 }
 
-.btn-add-cart:hover { 
+.btn-add-cart:hover {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     transform: translateY(-2px);
@@ -1582,7 +1582,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     -webkit-text-fill-color: #ffffff !important;
 }
 
-.btn-process { 
+.btn-process {
     background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-600) 100%);
     color: #ffffff;
     --spb-btn-hover-color: #ffffff;
@@ -1596,7 +1596,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     letter-spacing: 0.3px;
 }
 
-.btn-process:hover { 
+.btn-process:hover {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     transform: translateY(-2px);
@@ -1615,7 +1615,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     transform: none;
 }
 
-.btn-remove { 
+.btn-remove {
     color: var(--danger-500);
     background: transparent;
     border: 1.5px solid transparent;
@@ -1624,7 +1624,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
     transition: var(--transition);
 }
 
-.btn-remove:hover { 
+.btn-remove:hover {
     background: #fef2f2;
     border-color: var(--danger-500);
     color: var(--danger-600) !important;
@@ -1632,7 +1632,7 @@ body.pos-terminal-workspace.mini-sidebar #toggle_btn .bar-icon:nth-child(3) {
 }
 
 /* Labels */
-label { 
+label {
     font-size: 0.6875rem;
     font-weight: 700;
     color: var(--text-secondary);
@@ -5640,6 +5640,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
 
 </style>
 
+<link rel="stylesheet" href="{{ asset('assets/css/pos-workspace.css') }}?v={{ filemtime(public_path('assets/css/pos-workspace.css')) }}">
+<script src="{{ asset('js/pos-product-search.js') }}?v={{ filemtime(public_path('js/pos-product-search.js')) }}"></script>
 <div class="pos-full-page-wrapper">
     @php
         $rawPlan = strtolower(
@@ -5659,7 +5661,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
         };
     @endphp
 
-    <div class="pos-shell">
+    <div class="pos-shell" id="pos-sell-screen">
         <div class="pos-rail-backdrop" id="pos-rail-backdrop" aria-hidden="true"></div>
         <aside class="pos-action-rail" id="pos-action-rail" aria-label="POS quick actions">
             <div class="pos-rail-panel">
@@ -5799,7 +5801,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
             <div class="header-util-note">Use <span class="accent">search</span> to quickly find products not visible on shelf.</div>
         </div>
 
-        
+
         <div class="pos-header-bar">
                 <div class="d-flex align-items-center gap-3">
                     <h5 class="pos-header-title">SALES <span class="gradient-text">TERMINAL</span></h5>
@@ -5817,8 +5819,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <div class="search-icon-wrapper">
                         <i class="fas fa-search search-icon"></i>
                     </div>
-                    <input type="text" id="quick-search" class="form-control search-input" placeholder="Search product by name, SKU or category...">
-                    <span class="search-kbd">Ctrl + K</span>
+                    <input type="text" id="quick-search" class="form-control search-input" placeholder="Search by product name, barcode or SKU…" autocomplete="off" aria-label="Search products">
+                    <button type="button" class="pos-search-reset" id="pos-search-reset">Clear</button>
                 </div>
 
                 <div class="d-flex align-items-center gap-2">
@@ -5830,13 +5832,17 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         <img src="{{ $profileImagePath ?? asset('assets/img/profiles/avatar-07.jpg') }}" alt="{{ auth()->user()->name ?? 'User' }}" onerror="this.onerror=null;this.src='{{ $defaultAvatar ?? asset('assets/img/profiles/avatar-07.jpg') }}';">
                     </div>
                 </div>
-            </div>        
-        </div>        
+            </div>
+        </div>
     </div>
 
     <div class="card pos-card pos-product-shelf-card p-4 mb-4">
         <div class="product-toolbar">
-            <span class="toolbar-title">Product Shelf</span>
+            <span class="toolbar-title">Products</span>
+            <div class="pos-view-switch" aria-label="Product display">
+                <button type="button" id="pos-grid-view" aria-pressed="true"><i class="fas fa-th-large"></i> Grid</button>
+                <button type="button" id="pos-list-view" aria-pressed="false"><i class="fas fa-list"></i> List</button>
+            </div>
             <span class="small text-muted" id="product-count">{{ ($products ?? collect())->count() }} item(s)</span>
         </div>
 
@@ -5926,7 +5932,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 data-measurement="{{ $measurementLabel }}"
                 data-min-stock="{{ $minStockLevel }}"
                 data-img="{{ $p->image_url }}"
-                data-out-of-stock="{{ $isOutOfStock ? '1' : '0' }}"
+                data-out-of-stock="{{ $isOutOfStock ? '1' : '0' }}" tabindex="0" role="button" aria-label="Select {{ $posProductName }}"
                 data-expiry="{{ $p->earliest_expiry ?? '' }}"
                 @if($isOutOfStock) aria-disabled="true" style="opacity:.55; filter:grayscale(.15);" @endif>
                 <div class="product-card-img">
@@ -5943,13 +5949,19 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 </div>
                 <div class="product-card-name">{{ $posProductName }}</div>
                 <div class="product-card-measure">{{ $measurementLabel }}</div>
+                <div class="pos-product-meta">
+                    <span class="pos-stock-badge {{ $isOutOfStock ? 'is-empty' : '' }}">{{ \App\Support\CompactNumber::format($availableStock, 2) }} in stock</span>
+                    <strong>₦{{ number_format($retailPrice, 2) }}</strong>
+                </div>
             </div>
             @endforeach
         </div>
+        <div id="pos-no-products" class="pos-no-products" hidden role="status">No matching products. Try a name, SKU or full barcode.</div>
     </div>
 
     <div class="row g-4">
-        <div class="col-xl-4">
+        <div class="col-xl-4 pos-item-editor" id="pos-item-editor" hidden role="dialog" aria-modal="true" aria-labelledby="pos-item-editor-title">
+            <div class="pos-editor-heading"><h2 id="pos-item-editor-title">Add product</h2><button type="button" id="pos-editor-close" aria-label="Close product editor">✕</button></div>
             <div class="controls-card">
                 <div class="scanner-section mb-2">
                     <label class="scanner-label"><i class="fas fa-barcode me-1"></i> Barcode Scanner</label>
@@ -6020,15 +6032,15 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     @endphp
                     <option value="{{ $p->id }}"
                         @if($salesUnitSelectionConfigured && $unitOptions->isEmpty()) disabled @endif
-                        data-sku="{{ $p->sku }}" 
-                        data-barcode="{{ $p->barcode }}" 
+                        data-sku="{{ $p->sku }}"
+                        data-barcode="{{ $p->barcode }}"
                         data-barcodes="{{ $barcodeList }}"
-                        data-name="{{ $p->name }}" 
-                        data-price="{{ $retailPrice }}" 
+                        data-name="{{ $p->name }}"
+                        data-price="{{ $retailPrice }}"
                         data-retail="{{ $retailPrice }}"
                         data-wholesale="{{ $wholesalePrice }}"
                         data-special="{{ $specialPrice }}"
-                        data-stock="{{ (float) ($p->available_stock ?? $p->stock) }}" 
+                        data-stock="{{ (float) ($p->available_stock ?? $p->stock) }}"
                         data-upc="{{ $rollsPerCarton }}"
                         data-upr="{{ $unitsPerRoll }}"
                         data-base-unit="{{ $baseUnitName }}"
@@ -6178,8 +6190,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
             </div>
         </div>
 
-        <div class="col-xl-8">
+        <div class="col-xl-8 pos-cart-column">
             <div class="card pos-card p-4">
+                <div class="pos-cart-heading"><h2>Current order</h2><button type="button" id="pos-cart-clear">Clear all</button></div>
                 <div class="pos-receipt-toolbar">
                     <div class="pos-customer-compact">
                         <span class="receipt-toolbar-label">Customer</span>
@@ -6210,8 +6223,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                                     <circle cx="17" cy="18" r="1.6" fill="currentColor"/>
                                 </svg>
                             </div>
-                            <div class="cart-empty-title">Cart Empty</div>
-                            <p class="cart-empty-copy">Select products from the catalog and they will appear here in a smooth scrollable cart.</p>
+                            <div class="cart-empty-title">Your cart is empty</div>
+                            <p class="cart-empty-copy">Select a product to start your order.</p>
                         </div>
                     </div>
                     <table class="table cart-table mb-0">
@@ -6227,7 +6240,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     </table>
                 </div>
 
-                
+
                 <div class="summary-panel">
                     <div class="summary-row">
                         <span class="summary-label" style="color: var(--text-secondary);">Subtotal</span>
@@ -6247,7 +6260,50 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         <div class="grand-total" id="grand-total">₦0.00</div>
                     </div>
 
-                    
+
+                    <div class="pos-cart-actions">
+                        <button type="button" id="pos-start-checkout" class="btn btn-process w-100" @disabled(!$posCanSell)>Checkout <span data-pos-copy="hdr-cart-count">0</span> item(s) <span data-pos-copy="grand-total">₦0.00</span> <i class="fas fa-arrow-right ms-2"></i></button>
+                        @if($posCanSuspendSales)
+                        <button type="button" id="pos-pend-order" class="btn pos-pend-order"><i class="fas fa-pause me-2"></i>Suspend order</button>
+                        @endif
+                    </div>
+                </div>
+
+
+                <div class="pos-secondary-actions">
+                    <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
+                        <i class="fas fa-chart-line me-1"></i> Sales Register
+                    </a>
+                    <a href="{{ ($posSalesLogUrl ?? url('/pos/sales')) . '?reprint=1' }}" class="btn pos-secondary-action">
+                        <i class="fas fa-list me-1"></i> Receipt Lookup
+                    </a>
+                    <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
+                        <i class="fas fa-plus me-1"></i> New Sale
+                    </button>
+                </div>
+                <div id="pos-idle-illustration" class="pos-idle-illustration" aria-hidden="true">
+                    <img
+                        src="{{ asset('assets/img/pos/checkout-seller.webp') }}"
+                        alt=""
+                        width="1400"
+                        height="636"
+                        loading="lazy"
+                        decoding="async">
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+
+<section id="pos-checkout-screen" class="pos-checkout-screen" hidden aria-labelledby="pos-checkout-title">
+    <header class="pos-checkout-header">
+        <div><span class="pos-step-label">COMPLETE YOUR ORDER</span><h1 id="pos-checkout-title" tabindex="-1">Charge customer</h1></div>
+        <button type="button" id="pos-back-to-sale" class="btn"><i class="fas fa-arrow-left me-2"></i>Back to products</button>
+    </header>
+    <div class="pos-checkout-layout">
+        <div class="pos-checkout-payment">
+            <h2>Select payment method</h2>
                     <div class="pos-payment-methods">
                         <div class="pos-payment-tabs" aria-label="Payment method">
                             <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash"><span>Cash</span></button>
@@ -6267,6 +6323,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         </div>
                     @endif
 
+                    <div id="pos-checkout-customer"><h2>Customer information</h2><div id="pos-checkout-customer-slot"></div></div>
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="small fw-bold text-uppercase" style="color: var(--primary-600); letter-spacing: 0.08em;">Amount</div>
@@ -6328,14 +6385,22 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
 	                        </div>
 	                    </div>
 
-                    
+
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <span class="summary-label" style="color: var(--text-secondary);">Change</span>
                         <span id="change-amount" class="fw-bold tabular-nums" style="font-size: 1.125rem; color: var(--success-500);">₦0.00</span>
                     </div>
-                </div>
-
-                
+        </div>
+        <aside class="pos-checkout-order">
+            <div class="pos-checkout-notice"><i class="fas fa-shield-alt me-2"></i>Review the order and enter the amount received before charging.</div>
+            <h2>Order summary <span class="pos-order-count"><span data-pos-copy="hdr-cart-count">0</span> items</span></h2>
+            <div id="pos-checkout-items"></div>
+            <div class="pos-checkout-totals">
+                <div><span>Subtotal</span><strong data-pos-copy="sum-subtotal">₦0.00</strong></div>
+                <div><span>Discount</span><strong data-pos-copy="sum-discount">₦0.00</strong></div>
+                <div><span>Tax</span><strong data-pos-copy="sum-tax">₦0.00</strong></div>
+                <div class="pos-checkout-total"><span>Total</span><strong data-pos-copy="grand-total">₦0.00</strong></div>
+            </div>
                 <div class="pos-receipt-format">
                     <label for="receipt-format"><i class="fas fa-print me-1"></i> Receipt Format</label>
                     <select id="receipt-format" class="form-select" aria-label="Receipt format">
@@ -6349,32 +6414,12 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <span id="btn-text"><i class="fas fa-check-circle me-2"></i> PROCESS SALE</span>
                     <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>
                 </button>
-                <div class="pos-secondary-actions">
-                    <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
-                        <i class="fas fa-chart-line me-1"></i> Sales Register
-                    </a>
-                    <a href="{{ ($posSalesLogUrl ?? url('/pos/sales')) . '?reprint=1' }}" class="btn pos-secondary-action">
-                        <i class="fas fa-list me-1"></i> Receipt Lookup
-                    </a>
-                    <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
-                        <i class="fas fa-plus me-1"></i> New Sale
-                    </button>
-                </div>
-                <div id="pos-idle-illustration" class="pos-idle-illustration" aria-hidden="true">
-                    <img
-                        src="{{ asset('assets/img/pos/checkout-seller.webp') }}"
-                        alt=""
-                        width="1400"
-                        height="636"
-                        loading="lazy"
-                        decoding="async">
-                </div>
-            </div>
-        </div>
+
+        </aside>
     </div>
-        </div>
-    </div>
+</section>
 </div>
+<div class="pos-editor-backdrop" id="pos-editor-backdrop" hidden></div>
 
 @if($posCanSuspendSales)
 <div class="modal fade" id="pos-suspense-modal" tabindex="-1" aria-labelledby="pos-suspense-modal-title" aria-hidden="true">
@@ -6659,34 +6704,11 @@ $(document).ready(function() {
         const card = $(`.product-card[data-id="${lastSelectedProductId}"]`);
         if (!card.length) return;
         $('.product-card').removeClass('last-picked');
-        card.show().addClass('last-picked').prependTo('#product-grid');
+        card.addClass('last-picked');
     }
 
     function filterProductCards() {
-        const keyword = ($('#quick-search').val() || '').toLowerCase().trim();
-        const activeCategory = $('.category-pill.active').data('category') || 'all';
-        let visibleCount = 0;
-
-        $('.product-card').each(function() {
-            const card = $(this);
-            const name = card.data('search-name') || (card.data('name') || '').toString().toLowerCase();
-            const sku = String(card.data('sku') || '').toLowerCase();
-            const barcode = String(card.data('barcode') || '').toLowerCase();
-            const barcodes = String(card.data('barcodes') || '').toLowerCase();
-            const category = String(card.data('category') || '').toLowerCase();
-
-            const matchesKeyword = !keyword || name.includes(keyword) || sku.includes(keyword) || barcode.includes(keyword) || barcodes.includes(keyword) || category.includes(keyword);
-            const matchesCategory = activeCategory === 'all' || category === activeCategory;
-            const show = matchesKeyword && matchesCategory;
-
-            card.toggle(show);
-            if (show) visibleCount += 1;
-        });
-
-        keepLastSelectedVisible();
-        visibleCount = $('.product-card:visible').length;
-        $('#product-count').text(`${visibleCount} item(s)`);
-        $('#hdr-shelf-count').text(visibleCount);
+        window.PosProductSearch.filterShelf(document.querySelectorAll('.product-card'), $('#quick-search').val(), $('.category-pill.active').data('category') || 'all');
     }
 
     function readUnitOptions(selectedOption) {
@@ -7023,6 +7045,8 @@ $(document).ready(function() {
                     id  : String($o.val()),
                     name: String($o.data('name') || $o.text() || '').trim(),
                     sku : String($o.data('sku')  || '').trim(),
+                    barcode: String($o.attr('data-barcode') || ''),
+                    barcodes: String($o.attr('data-barcodes') || ''),
                     category: String($o.data('category-name') || '').trim(),
                     measurement: String($o.data('measurement') || '').trim(),
                     stock: String($o.data('stock') || '').trim(),
@@ -7074,14 +7098,7 @@ $(document).ready(function() {
         }
 
         function filter(kw) {
-            const k = (kw || '').toLowerCase().trim();
-            if (!k) return cache;
-            return cache.filter(function (item) {
-                return item.name.toLowerCase().includes(k)
-                    || item.sku.toLowerCase().includes(k)
-                    || item.category.toLowerCase().includes(k)
-                    || item.measurement.toLowerCase().includes(k);
-            });
+            return window.PosProductSearch.rank(cache, kw);
         }
 
         function positionPortal() {
@@ -7616,7 +7633,7 @@ $(document).ready(function() {
         applyProductSelection(option);
         $('#quantity').val(item.qty);
         $('#discount-type').val(item.discountType || 'percent');
-        $('#discount').val(item.discountValue ?? item.discount || 0);
+        $('#discount').val(item.discountValue ?? item.discount ?? 0);
         $('#discount-helper').text($('#discount-type').val() === 'fixed' ? 'Fixed amount off item subtotal' : 'Percent of item subtotal');
         $('#discount').attr('max', $('#discount-type').val() === 'fixed' ? '' : '100');
         $('#tax').val(item.tax || 0);
@@ -7898,6 +7915,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const paymentTabs = document.querySelectorAll('.pos-pay-tab[data-payment-method]');
     const idleIllustration = document.getElementById('pos-idle-illustration');
     const depositAccount = document.getElementById('deposit-account');
+    const configuredCashDepositAccountId = depositAccount?.value || '';
     const transferAmount = document.getElementById('transfer-amount');
     const transferAccount = document.getElementById('transfer-account');
     const cardAmount = document.getElementById('card-amount');
@@ -8381,7 +8399,7 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
-        document.querySelector('.summary-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.PosWorkspace?.openCheckout();
         updateChange();
         window.setTimeout(() => {
             if (!isStarterPos && depositAccount && !depositAccount.value) {
@@ -9164,6 +9182,7 @@ window.POS_ENABLE_FALLBACK = function () {
         });
 
         updateItemTotal();
+        window.PosWorkspace?.openEditor();
     }
 
     const boundProductCards = new WeakSet();
@@ -9452,7 +9471,7 @@ window.POS_ENABLE_FALLBACK = function () {
         paymentTabs.forEach((button) => {
             button.classList.toggle('active', button.textContent.trim() === 'Cash');
         });
-        if (depositAccount) depositAccount.value = '';
+        if (depositAccount) depositAccount.value = configuredCashDepositAccountId;
         if (amountPaid) amountPaid.value = '0.00';
         if (transferAmount) transferAmount.value = '0.00';
         if (transferAccount) transferAccount.value = '';
@@ -9463,6 +9482,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (productSelect) productSelect.value = '';
 	        syncProductSearchDropdown('');
         if (quickSearch) quickSearch.value = '';
+        window.PosWorkspace?.showProducts();
         if (barcodeInput) barcodeInput.value = '';
 
         if (qtyInput) qtyInput.value = '1';
@@ -10008,6 +10028,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 return;
             }
             renderCart();
+            window.PosWorkspace?.closeEditor();
             if (productSelect) productSelect.value = '';
 	            syncProductSearchDropdown('');
             currentProductId = '';
@@ -10032,25 +10053,7 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function filterProductCards() {
-        const keyword = (quickSearch?.value || '').toLowerCase().trim();
-        const activeCategory = document.querySelector('.category-pill.active')?.dataset.category || 'all';
-        let visible = 0;
-
-        productCards.forEach((card) => {
-            const name = (card.dataset.searchName || card.dataset.name || '').toLowerCase();
-            const sku = (card.dataset.sku || '').toLowerCase();
-            const barcode = (card.dataset.barcode || '').toLowerCase();
-            const barcodes = (card.dataset.barcodes || '').toLowerCase();
-            const category = (card.dataset.category || '').toLowerCase();
-            const matchesKeyword = !keyword || name.includes(keyword) || sku.includes(keyword) || barcode.includes(keyword) || barcodes.includes(keyword) || category.includes(keyword);
-            const matchesCategory = activeCategory === 'all' || category === activeCategory;
-            const show = matchesKeyword && matchesCategory;
-            card.style.display = show ? '' : 'none';
-            if (show) visible += 1;
-        });
-
-        if (hdrShelfCount) hdrShelfCount.textContent = String(visible);
-        if (productCount) productCount.textContent = `${visible} item(s)`;
+        window.PosProductSearch.filterShelf(productCards, quickSearch?.value, document.querySelector('.category-pill.active')?.dataset.category || 'all');
     }
 
     categoryPills.forEach((pill) => {
@@ -10337,6 +10340,8 @@ window.POS_ENABLE_FALLBACK = function () {
                         id  : String(o.value),
                         name: String(o.dataset.name || o.text || '').trim(),
                         sku : String(o.dataset.sku  || '').trim(),
+                        barcode: String(o.dataset.barcode || ''),
+                        barcodes: String(o.dataset.barcodes || ''),
                         category: String(o.dataset.categoryName || '').trim(),
                         measurement: String(o.dataset.measurement || '').trim(),
                         stock: String(o.dataset.stock || '').trim(),
@@ -10393,14 +10398,7 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
         function filterItems(kw) {
-            const k = (kw || '').toLowerCase().trim();
-            if (!k) return cache;
-            return cache.filter(function(item) {
-                return item.name.toLowerCase().includes(k)
-                    || item.sku.toLowerCase().includes(k)
-                    || item.category.toLowerCase().includes(k)
-                    || item.measurement.toLowerCase().includes(k);
-            });
+            return window.PosProductSearch.rank(cache, kw);
         }
 
         function reposition() {
@@ -10654,4 +10652,5 @@ document.addEventListener('DOMContentLoaded', function () {
     window.POS_ENABLE_FALLBACK();
 });
 </script>
+<script src="{{ asset('js/pos-workspace.js') }}?v={{ filemtime(public_path('js/pos-workspace.js')) }}"></script>
 @endsection
