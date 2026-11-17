@@ -77,7 +77,8 @@
         overflow-wrap: anywhere;
     }
 
-    @media (max-width: 1199.98px) {
+    /* Keep desktop and tablet-landscape content offset while the sidebar is docked. */
+    @media (max-width: 1023.98px) {
         .page-wrapper,
         .sb-shell,
         #main-content-wrapper,
