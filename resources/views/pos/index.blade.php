@@ -7016,6 +7016,7 @@ $(document).ready(function() {
 
     $(document).on('click', '.product-card', function() {
         applyProductSelection($(this));
+        window.PosWorkspace?.closeEditor();
         $('#add-btn').trigger('click');
     });
 
@@ -7549,7 +7550,8 @@ $(document).ready(function() {
         $('#discount-helper').text('Percent of item subtotal');
         $('#discount').attr('max', '100');
         $('#price-tier').val($('#price-list-select').val() ? 'list' : 'retail');
-        $('#barcode-input').val('').focus();
+        $('#barcode-input').val('');
+        $('#quick-search').trigger('focus');
 
         showAlert({ icon: 'success', title: 'Added', timer: 1000, toast: true, position: 'top-end', showConfirmButton: false });
     });
@@ -9282,6 +9284,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 suppressEditorOpen = true;
                 applyVanillaSelection(card);
                 suppressEditorOpen = false;
+                window.PosWorkspace?.closeEditor();
                 addBtn?.click();
             });
             card.addEventListener('dblclick', function (event) {
