@@ -35,8 +35,8 @@
             line.className = 'pos-checkout-line';
             const name = document.createElement('span');
             const amount = document.createElement('strong');
-            name.textContent = row.cells[0]?.textContent.trim();
-            amount.textContent = row.cells[2]?.textContent.trim();
+            name.textContent = row.querySelector('.cart-item-name')?.textContent.trim() || row.cells[0]?.textContent.trim();
+            amount.textContent = row.querySelector('.cart-line-total')?.textContent.trim() || row.cells[2]?.textContent.trim();
             line.append(name, amount);
             items.append(line);
         });

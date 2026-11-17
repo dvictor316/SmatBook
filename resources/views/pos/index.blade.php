@@ -7530,6 +7530,7 @@ $(document).ready(function() {
             baseUnitPrice: selectedPriceLevel.value,
             unitPriceLevel: selectedPriceLevel.key,
             unitOptions: readUnitOptions(opt),
+            imageUrl: opt.data('img') || '',
             price: parseFloat($('#unit-price-input').val()),
             discount: res.discType === 'fixed' ? 0 : (parseFloat($('#discount').val()) || 0),
             discountType: res.discType,
@@ -7576,33 +7577,34 @@ $(document).ready(function() {
                         return `<option value="${$('<div>').text(name).html()}" ${name === String(item.unitType || 'unit').toLowerCase() ? 'selected' : ''}>${label}</option>`;
                     }).join('')}</select>`
                     : '';
+                const cartThumbnail = item.imageUrl
+                    ? (() => { const image = document.createElement('img'); image.src = String(item.imageUrl); image.alt = ''; image.loading = 'lazy'; return image.outerHTML; })()
+                    : '<span class="cart-item-image-fallback"><i class="fas fa-box"></i></span>';
+                const discountLabel = Number(item.discountValue ?? item.discount ?? 0) > 0
+                    ? `Discount ${item.discountValue ?? item.discount}${item.discountType === 'fixed' ? ' ₦' : '%'}`
+                    : 'Discount';
                 html += `
                     <tr>
-                        <td class="ps-3 cart-item-info">
-                            <div class="fw-bold" style="color: var(--text-primary);">${item.name}</div>
-                            <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${item.unitLabel || 'unit'}${item.qty === 1 ? '' : 's'} × ${fmt.format(item.price)}</small>
-                        </td>
-                        <td class="text-center cart-item-quantity">
-                            <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}"
-                                class="cart-qty-input"
-                                inputmode="numeric"
-                                onchange="updateCartQty(${i}, this.value)"
-                                onblur="updateCartQty(${i}, this.value)"
-                                onkeydown="if (event.key === 'Enter') { event.preventDefault(); updateCartQty(${i}, this.value); this.blur(); }"
-                            >
-                            ${unitPicker}
-                        </td>
-                        <td class="text-end fw-bold tabular-nums cart-item-total" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
-                        <td class="text-center cart-item-actions">
-                            <div class="cart-actions">
-                                <button class="btn btn-sm btn-cart-edit" onclick="editCartItem(${i})" title="Load item back into editor">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <button class="btn btn-sm btn-remove" onclick="removeItem(${i})"><i class="fas fa-trash-alt"></i></button>
+                        <td class="cart-line-cell" colspan="4">
+                            <div class="cart-line-card">
+                                <div class="cart-item-main">
+                                    <div class="cart-item-image">${cartThumbnail}</div>
+                                    <div class="cart-item-copy">
+                                        <div class="cart-item-name">${$('<div>').text(item.name).html()}</div>
+                                        <small>Retail: ${fmt.format(item.price)}</small>
+                                    </div>
+                                </div>
+                                <div class="cart-item-tools">
+                                    <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                    <div class="cart-quantity-controls">
+                                        <button type="button" class="cart-qty-step" data-index="${i}" data-step="-1" aria-label="Decrease quantity">−</button>
+                                        <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric" onchange="updateCartQty(${i}, this.value)" onblur="updateCartQty(${i}, this.value)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); updateCartQty(${i}, this.value); this.blur(); }">
+                                        <button type="button" class="cart-qty-step" data-index="${i}" data-step="1" aria-label="Increase quantity">+</button>
+                                        <button type="button" class="btn-remove cart-remove-button" onclick="removeItem(${i})" aria-label="Remove ${$('<div>').text(item.name).html()} from cart"><i class="fas fa-trash-alt"></i></button>
+                                    </div>
+                                </div>
+                                ${unitPicker ? `<div class="cart-item-unit-row">${unitPicker}</div>` : ''}
+                                <span class="cart-line-total visually-hidden">${fmt.format(item.total)}</span>
                             </div>
                         </td>
                     </tr>
@@ -7650,7 +7652,60 @@ $(document).ready(function() {
         renderCart();
     };
 
+    window.editCartDiscount = function(i) {
+        const item = cart[i];
+        if (!item) return;
+        if (!window.Swal) {
+            const value = Number(window.prompt('Discount amount', String(item.discountValue ?? item.discount ?? 0)));
+            if (!Number.isFinite(value) || value < 0) return;
+            item.discountType = item.discountType || 'percent';
+            item.discountValue = value;
+            calculateCartLine(item);
+            (window.POS_VANILLA_RENDER_CART || renderCart)();
+            return;
+        }
+        window.Swal.fire({
+            title: 'Item discount',
+            html: '<div class="cart-discount-editor"><select id="cart-discount-type" class="form-select"><option value="percent">Percent (%)</option><option value="fixed">Fixed (₦)</option></select><input id="cart-discount-value" class="form-control mt-2" type="number" min="0" step="0.01" inputmode="decimal"></div>',
+            showCancelButton: true,
+            confirmButtonText: 'Apply discount',
+            confirmButtonColor: '#0f3a8a',
+            didOpen: () => {
+                document.getElementById('cart-discount-type').value = item.discountType || 'percent';
+                document.getElementById('cart-discount-value').value = item.discountValue ?? item.discount ?? 0;
+            },
+            preConfirm: () => {
+                const type = document.getElementById('cart-discount-type').value;
+                const value = parseFloat(document.getElementById('cart-discount-value').value || '0');
+                if (!Number.isFinite(value) || value < 0 || (type === 'percent' && value > 100)) {
+                    window.Swal.showValidationMessage('Enter a valid discount amount.');
+                    return false;
+                }
+                return { type, value };
+            },
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            item.discountType = result.value.type;
+            item.discountValue = result.value.value;
+            calculateCartLine(item);
+            (window.POS_VANILLA_RENDER_CART || renderCart)();
+        });
+    };
+
+    $('#cart-body').on('click', '.cart-qty-step', function () {
+        if (window.POS_VANILLA_BOUND) return;
+        const index = parseInt(this.dataset.index || '-1', 10);
+        const item = cart[index];
+        if (!item) return;
+        window.updateCartQty(index, (parseFloat(item.qty) || 1) + (parseInt(this.dataset.step || '0', 10) || 0));
+    });
+    $('#cart-body').on('click', '.cart-discount-toggle', function () {
+        if (window.POS_VANILLA_BOUND) return;
+        window.editCartDiscount(parseInt(this.dataset.index || '-1', 10));
+    });
+
     $('#cart-body').on('change', '.cart-unit-select', function () {
+        if (window.POS_VANILLA_BOUND) return;
         const index = parseInt(this.dataset.index || '-1', 10);
         const item = cart[index];
         if (!item) return;
@@ -9896,19 +9951,36 @@ window.POS_ENABLE_FALLBACK = function () {
                     return `<option value="${escapeHtml(name)}" ${name === String(item.unitType || 'unit').toLowerCase() ? 'selected' : ''}>${escapeHtml(label)}</option>`;
                 }).join('')}</select>`
                 : '';
+            const cartThumbnail = item.imageUrl
+                ? `<img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy">`
+                : '<span class="cart-item-image-fallback"><i class="fas fa-box"></i></span>';
+            const discountValue = Number(item.discountValue ?? item.discount ?? 0);
+            const discountLabel = discountValue > 0
+                ? `Discount ${escapeHtml(discountValue)}${item.discountType === 'fixed' ? ' ₦' : '%'}`
+                : 'Discount';
             html += `
                 <tr>
-                    <td class="ps-3 cart-item-info">
-                        <div class="fw-bold" style="color: var(--text-primary);">${escapeHtml(item.name)}</div>
-                        <small style="color: var(--text-secondary); font-size: 0.75rem;">${item.qty} ${escapeHtml(item.unitLabel || 'unit')} × ${fmt.format(item.price)}</small>
-                    </td>
-                    <td class="text-center cart-item-quantity">
-                        <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
-                        ${unitPicker}
-                    </td>
-                    <td class="text-end fw-bold tabular-nums cart-item-total" style="color: var(--text-primary);">${fmt.format(item.total)}</td>
-                    <td class="text-center cart-item-actions">
-                        <button class="btn btn-sm btn-remove" data-remove="${i}"><i class="fas fa-trash-alt"></i></button>
+                    <td class="cart-line-cell" colspan="4">
+                        <div class="cart-line-card">
+                            <div class="cart-item-main">
+                                <div class="cart-item-image">${cartThumbnail}</div>
+                                <div class="cart-item-copy">
+                                    <div class="cart-item-name">${escapeHtml(item.name)}</div>
+                                    <small>Retail: ${fmt.format(item.price)}</small>
+                                </div>
+                            </div>
+                            <div class="cart-item-tools">
+                                <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                <div class="cart-quantity-controls">
+                                    <button type="button" class="cart-qty-step" data-index="${i}" data-step="-1" aria-label="Decrease quantity">−</button>
+                                    <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
+                                    <button type="button" class="cart-qty-step" data-index="${i}" data-step="1" aria-label="Increase quantity">+</button>
+                                    <button type="button" class="btn-remove cart-remove-button" data-remove="${i}" aria-label="Remove ${escapeHtml(item.name)} from cart"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                            ${unitPicker ? `<div class="cart-item-unit-row">${unitPicker}</div>` : ''}
+                            <span class="cart-line-total visually-hidden">${fmt.format(item.total)}</span>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -9945,6 +10017,8 @@ window.POS_ENABLE_FALLBACK = function () {
 	        syncSelectedPaymentAmount(previousDue);
 	        updateChange();
 	    }
+
+    window.POS_VANILLA_RENDER_CART = renderCart;
 
     function applySalesOrderPrefill(prefill) {
         if (!prefill || !Array.isArray(prefill.items) || !prefill.items.length) {
@@ -10094,6 +10168,28 @@ window.POS_ENABLE_FALLBACK = function () {
             target.blur();
         });
         cartBody.addEventListener('click', function (e) {
+            const discountButton = e.target.closest('.cart-discount-toggle');
+            if (discountButton) {
+                window.editCartDiscount(parseInt(discountButton.dataset.index || '-1', 10));
+                return;
+            }
+            const stepButton = e.target.closest('.cart-qty-step');
+            if (stepButton) {
+                const index = parseInt(stepButton.dataset.index || '-1', 10);
+                const item = cart[index];
+                if (!item) return;
+                const qty = Math.max(1, (parseFloat(item.qty || '1') || 1) + (parseInt(stepButton.dataset.step || '0', 10) || 0));
+                const multiplier = Math.max(0.01, parseFloat(item.unitMultiplier || '1') || 1);
+                const stockAvailable = Math.max(0, parseFloat(item.stockAvailable || '0') || 0);
+                if (stockAvailable > 0 && qty * multiplier > stockAvailable + 0.0001) {
+                    alertFallback(`Only ${Math.floor(stockAvailable / multiplier)} ${item.unitLabel || 'units'} available for ${item.name}.`);
+                    return;
+                }
+                item.qty = qty;
+                calculateCartItem(item);
+                renderCart();
+                return;
+            }
             const target = e.target.closest('button[data-remove]');
             if (!target) return;
             const index = parseInt(target.getAttribute('data-remove') || '0', 10);
@@ -10153,6 +10249,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 })(),
                 unitPriceLevel: priceMeta.key,
                 priceLevel: priceMeta.key,
+                imageUrl: data.img || '',
                 priceLevelLabel: priceMeta.label,
                 priceListId: priceListInput?.value || '',
                 price,
