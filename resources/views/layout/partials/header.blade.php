@@ -1227,6 +1227,26 @@
             box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
         }
 
+        /* Keep dashboards full width while the mobile navigation stays tucked away. */
+        #sidebar:not(.mobile-open),
+        #deploymentSidebar:not(.mobile-open),
+        .deployment-sidebar:not(.mobile-open) {
+            left: min(-280px, -90vw) !important;
+        }
+        #sidebar.mobile-open,
+        #deploymentSidebar.mobile-open,
+        .deployment-sidebar.mobile-open {
+            left: 0 !important;
+        }
+        body:not(.login-body):not(.landing-page-body) .page-wrapper,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper > .content,
+        body:not(.login-body):not(.landing-page-body) .page-wrapper > .content.container-fluid {
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
         /* Prevent body scroll when sidebar open */
         body.sidebar-mobile-open {
             overflow: hidden;

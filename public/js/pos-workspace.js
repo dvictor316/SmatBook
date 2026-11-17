@@ -14,11 +14,13 @@
         returnFocus = document.activeElement;
         editor.hidden = false;
         backdrop.hidden = false;
+        document.body.classList.add('pos-item-editor-active');
         byId('pos-editor-close')?.focus();
     }
     function closeEditor() {
         editor.hidden = true;
         backdrop.hidden = true;
+        document.body.classList.remove('pos-item-editor-active');
         if (returnFocus?.isConnected) returnFocus.focus();
     }
     function syncSummary() {
@@ -56,7 +58,68 @@
         byId('pos-checkout-title').focus();
         window.scrollTo(0, 0);
     }
-    window.PosWorkspace = { openEditor, closeEditor, openCheckout, showProducts };
+    async function addCustomer() {
+        const trigger = document.querySelector('[data-pos-add-customer]');
+        if (!trigger || !window.Swal) return false;
+        const result = await window.Swal.fire({
+            title: 'Add customer',
+            html: `<form id="pos-add-customer-form" class="pos-add-customer-form">
+                <p>Add a customer and continue this sale.</p>
+                <label for="pos-new-customer-name">Customer name <span aria-hidden="true">*</span></label>
+                <input id="pos-new-customer-name" name="customer_name" class="form-control" required maxlength="191" autocomplete="name">
+                <label for="pos-new-customer-phone">Phone number</label>
+                <input id="pos-new-customer-phone" name="phone" class="form-control" type="tel" maxlength="191" autocomplete="tel">
+                <label for="pos-new-customer-email">Email address</label>
+                <input id="pos-new-customer-email" name="email" class="form-control" type="email" maxlength="191" autocomplete="email">
+            </form>`,
+            showCancelButton: true,
+            confirmButtonText: 'Save & select customer',
+            confirmButtonColor: '#0f3a8a',
+            showLoaderOnConfirm: true,
+            focusConfirm: false,
+            allowOutsideClick: () => !window.Swal.isLoading(),
+            allowEscapeKey: () => !window.Swal.isLoading(),
+            didOpen: () => {
+                byId('pos-add-customer-form').addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    window.Swal.clickConfirm();
+                });
+                byId('pos-new-customer-name').focus();
+            },
+            preConfirm: async () => {
+                const form = byId('pos-add-customer-form');
+                if (!form.reportValidity()) return false;
+                try {
+                    const response = await fetch(trigger.dataset.customerStoreUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Could not add the customer. Please try again.');
+                    if (!data.customer?.id || !data.customer?.name) throw new Error('Could not confirm the new customer. Please check the customer list before retrying.');
+                    return data.customer;
+                } catch (error) {
+                    const message = document.createElement('span');
+                    message.textContent = error.message || 'Could not add the customer. Check your connection and try again.';
+                    window.Swal.showValidationMessage(message.innerHTML);
+                    return false;
+                }
+            },
+        });
+        if (!result.isConfirmed) return false;
+        document.dispatchEvent(new CustomEvent('pos:customer-created', { detail: result.value }));
+        byId('pos-customer-created-feedback').textContent = `${result.value.name} added and selected.`;
+        return true;
+    }
+    document.querySelector('[data-pos-add-customer]')?.addEventListener('click', addCustomer);
+    window.PosWorkspace = { openEditor, closeEditor, openCheckout, showProducts, addCustomer };
     byId('pos-start-checkout')?.addEventListener('click', () => byId('rail-checkout-btn')?.click());
     byId('pos-back-to-sale').addEventListener('click', () => {
         showProducts();
