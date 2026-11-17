@@ -7595,7 +7595,7 @@ $(document).ready(function() {
                                     </div>
                                 </div>
                                 <div class="cart-item-tools">
-                                    <button type="button" class="cart-discount-toggle" data-index="${i}" onclick="return window.editCartDiscount(${i}, event);">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                    <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
                                     <div class="cart-quantity-controls">
                                         <button type="button" class="cart-qty-step" data-index="${i}" data-step="-1" aria-label="Decrease quantity">−</button>
                                         <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric" onchange="updateCartQty(${i}, this.value)" onblur="updateCartQty(${i}, this.value)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); updateCartQty(${i}, this.value); this.blur(); }">
@@ -7606,7 +7606,7 @@ $(document).ready(function() {
                                 <div class="cart-discount-editor" hidden>
                                     <select class="cart-discount-type" aria-label="Discount type"><option value="percent">%</option><option value="fixed">₦</option></select>
                                     <input class="cart-discount-value" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(item.discountValue ?? item.discount ?? 0)}" aria-label="Discount amount">
-                                    <button type="button" class="cart-discount-apply" data-index="${i}" onclick="return window.applyCartDiscount(${i}, this.closest('.cart-discount-editor'), event);">Apply</button>
+                                    <button type="button" class="cart-discount-apply" data-index="${i}">Apply</button>
                                 </div>
                                 ${unitPicker ? `<div class="cart-item-unit-row">${unitPicker}</div>` : ''}
                                 <span class="cart-line-total visually-hidden">${fmt.format(item.total)}</span>
@@ -9971,7 +9971,7 @@ window.POS_ENABLE_FALLBACK = function () {
                                 </div>
                             </div>
                             <div class="cart-item-tools">
-                                <button type="button" class="cart-discount-toggle" data-index="${i}" onclick="return window.editCartDiscount(${i}, event);">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
                                 <div class="cart-quantity-controls">
                                     <button type="button" class="cart-qty-step" data-index="${i}" data-step="-1" aria-label="Decrease quantity">−</button>
                                     <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
@@ -9982,7 +9982,7 @@ window.POS_ENABLE_FALLBACK = function () {
                             <div class="cart-discount-editor" hidden>
                                 <select class="cart-discount-type" aria-label="Discount type"><option value="percent">%</option><option value="fixed">₦</option></select>
                                 <input class="cart-discount-value" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(item.discountValue ?? item.discount ?? 0)}" aria-label="Discount amount">
-                                <button type="button" class="cart-discount-apply" data-index="${i}" onclick="return window.applyCartDiscount(${i}, this.closest('.cart-discount-editor'), event);">Apply</button>
+                                <button type="button" class="cart-discount-apply" data-index="${i}">Apply</button>
                             </div>
                             ${unitPicker ? `<div class="cart-item-unit-row">${unitPicker}</div>` : ''}
                             <span class="cart-line-total visually-hidden">${fmt.format(item.total)}</span>
@@ -10176,15 +10176,34 @@ window.POS_ENABLE_FALLBACK = function () {
         cartBody.addEventListener('click', function (e) {
             const discountButton = e.target.closest('.cart-discount-toggle');
             if (discountButton) {
-                window.editCartDiscount(parseInt(discountButton.dataset.index || '-1', 10));
+                const index = parseInt(discountButton.dataset.index || '-1', 10);
+                const item = cart[index];
+                const editor = discountButton.closest('.cart-line-card')?.querySelector('.cart-discount-editor');
+                if (!item || !editor) return;
+                editor.hidden = !editor.hidden;
+                if (!editor.hidden) {
+                    editor.querySelector('.cart-discount-type').value = item.discountType || 'percent';
+                    editor.querySelector('.cart-discount-value').value = item.discountValue ?? item.discount ?? 0;
+                    editor.querySelector('.cart-discount-value').focus();
+                }
                 return;
             }
             const applyDiscountButton = e.target.closest('.cart-discount-apply');
             if (applyDiscountButton) {
-                window.applyCartDiscount(
-                    parseInt(applyDiscountButton.dataset.index || '-1', 10),
-                    applyDiscountButton.closest('.cart-discount-editor')
-                );
+                const index = parseInt(applyDiscountButton.dataset.index || '-1', 10);
+                const item = cart[index];
+                const editor = applyDiscountButton.closest('.cart-discount-editor');
+                if (!item || !editor) return;
+                const type = editor.querySelector('.cart-discount-type')?.value || 'percent';
+                const value = parseFloat(editor.querySelector('.cart-discount-value')?.value || '0');
+                if (!Number.isFinite(value) || value < 0 || (type === 'percent' && value > 100)) {
+                    alertFallback('Enter a valid discount amount. Percentage discounts must be between 0 and 100.');
+                    return;
+                }
+                item.discountType = type;
+                item.discountValue = value;
+                calculateCartItem(item);
+                renderCart();
                 return;
             }
             const stepButton = e.target.closest('.cart-qty-step');
