@@ -412,8 +412,9 @@
         });
         $scope.find('.product-select').not('.select2-hidden-accessible').select2({
             width: '100%',
-            placeholder: 'Search product',
-            allowClear: true
+            placeholder: 'Type an item name or code to search',
+            allowClear: true,
+            minimumResultsForSearch: 0
         });
     }
 

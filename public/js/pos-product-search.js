@@ -20,9 +20,19 @@
         return name.startsWith(key) ? 700 : tokens.every((token) => name.split(' ').some((word) => word.startsWith(token))) ? 600 : 400;
     }
     function rank(items, query) {
-        return Array.from(items).map((item, index) => ({ item, index, score: score(item, query) }))
+        const recent = getRecent();
+        return Array.from(items).map((item, index) => ({ item, index, recent: recent.indexOf(String(item.id)), score: score(item, query) }))
             .filter((entry) => entry.score > 0)
-            .sort((a, b) => b.score - a.score || a.index - b.index).map((entry) => entry.item);
+            .sort((a, b) => b.score - a.score || (a.score === 1 && b.score === 1 ? (a.recent < 0 ? Infinity : a.recent) - (b.recent < 0 ? Infinity : b.recent) : 0) || a.index - b.index).map((entry) => entry.item);
+    }
+    function getRecent() {
+        try { return JSON.parse(root.localStorage.getItem('smartprobook.pos.product-history') || '[]').map(String); }
+        catch (_) { return []; }
+    }
+    function remember(id) {
+        if (!id) return;
+        try { root.localStorage.setItem('smartprobook.pos.product-history', JSON.stringify([String(id), ...getRecent().filter((value) => value !== String(id))].slice(0, 20))); }
+        catch (_) { /* Search remains usable when storage is unavailable. */ }
     }
     function filterShelf(cards, query, category) {
         const entries = Array.from(cards).map((card) => ({ card, score: score(card.dataset, query) }));
@@ -44,6 +54,6 @@
         }
         return visible;
     }
-    root.PosProductSearch = { normalize, score, rank, filterShelf };
+    root.PosProductSearch = { normalize, score, rank, filterShelf, remember };
     if (typeof module !== 'undefined') module.exports = root.PosProductSearch;
 })(typeof window !== 'undefined' ? window : globalThis);

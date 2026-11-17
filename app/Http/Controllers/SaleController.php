@@ -1491,7 +1491,7 @@ public function storePosSuspendedSale(Request $request)
         $tax = (float) ($item['tax'] ?? 0);
         $subtotal = $price * $qty;
         $discount = $discountType === 'fixed'
-            ? min($discountValue, $subtotal)
+            ? min($discountValue * $qty, $subtotal)
             : $subtotal * ($discountValue / 100);
         $taxAmount = max(0, $subtotal - $discount) * ($tax / 100);
 
@@ -1739,7 +1739,7 @@ public function store(Request $request)
 
     $validator = Validator::make($request->all(), [
         'customer_id'    => 'nullable|integer',
-        'payment_method' => 'required|string|in:Cash,cash,Split,split,ChargeToRoom,charge_to_room,charge-room',
+        'payment_method' => 'required|string|in:Cash,cash,Split,split,Credit,credit,ChargeToRoom,charge_to_room,charge-room',
         'total'          => 'required|numeric|min:0',
 	        'paid'           => 'required|numeric|min:0',
 	        'wallet_amount'  => 'nullable|numeric|min:0',
@@ -1771,6 +1771,9 @@ public function store(Request $request)
         }
 
         $customerId = (int) ($request->input('customer_id') ?? 0);
+        if (in_array(strtolower((string) $request->input('payment_method')), ['credit'], true) && $customerId <= 0) {
+            $validator->errors()->add('customer_id', 'Select a customer before recording a credit sale.');
+        }
         if ($customerId > 0 && !$this->scopedCustomers()->whereKey($customerId)->exists()) {
             $validator->errors()->add('customer_id', 'The selected customer does not belong to this tenant/branch.');
         }
@@ -1846,7 +1849,12 @@ public function store(Request $request)
 	        $availableWalletAmount = round(max(0, (float) $this->scopedCustomers()->whereKey($customerIdForWallet)->value('wallet_balance')), 2);
 	    }
         $walletAmount = min($requestedWalletAmount, $availableWalletAmount, $totalAmount);
-        $isChargeToRoom = in_array($paymentMethod, ['chargetoroom', 'charge_to_room', 'charge-room'], true);
+    $isChargeToRoom = in_array($paymentMethod, ['chargetoroom', 'charge_to_room', 'charge-room'], true);
+    $isCreditSale = $paymentMethod === 'credit';
+        if ($isCreditSale) {
+            $walletAmount = 0.0;
+            $paidAmount = 0.0;
+        }
         $recordedPaymentMethod = $paymentMethod;
         if ($paymentMethod === 'split') {
             $usedChannels = array_keys(array_filter(
@@ -1858,7 +1866,7 @@ public function store(Request $request)
             }
         }
 
-    if (!in_array($paymentMethod, ['cash', 'split', 'chargetoroom', 'charge_to_room', 'charge-room'], true)) {
+    if (!in_array($paymentMethod, ['cash', 'split', 'credit', 'chargetoroom', 'charge_to_room', 'charge-room'], true)) {
         return response()->json(['success' => false, 'message' => 'POS accepts cash, split, or charge-to-room sales only. Use Invoices for credit sales.'], 422);
     }
 
@@ -1871,7 +1879,7 @@ public function store(Request $request)
 	            return response()->json(['success' => false, 'message' => 'POS split sales must be fully paid. Use Invoices for credit sales.'], 422);
 	        }
 	        $paidAmount = $splitPaid;
-        } elseif (!$isChargeToRoom) {
+        } elseif (!$isChargeToRoom && !$isCreditSale) {
 	        if (($paidAmount + $walletAmount) < $totalAmount) {
 	            return response()->json(['success' => false, 'message' => 'POS cash sales must be fully paid. Use Invoices for credit sales.'], 422);
 	        }
@@ -1904,7 +1912,7 @@ public function store(Request $request)
         $orderNumber = $this->generateSaleOrderNo();
         
         $totalAmount = (float) $request->total;
-        $amountPaid = $isChargeToRoom
+        $amountPaid = ($isChargeToRoom || $isCreditSale)
             ? 0.0
             : ($paymentMethod === 'split'
                 ? round(((float) $splitDetails['cash']) + ((float) $splitDetails['transfer']) + ((float) $splitDetails['card']), 2)
@@ -1913,7 +1921,7 @@ public function store(Request $request)
         $actualPaymentKept = $amountPaid - $changeAmount;
         $balance = $totalAmount > $actualPaymentKept ? $totalAmount - $actualPaymentKept : 0;
 
-        $paymentStatus = $isChargeToRoom
+        $paymentStatus = ($isChargeToRoom || $isCreditSale)
             ? 'unpaid'
             : (($balance <= 0) ? 'paid' : (($actualPaymentKept > 0) ? 'partial' : 'unpaid'));
 
@@ -2088,7 +2096,7 @@ $sale = Sale::create([
 
             $itemSubtotal   = $unitPrice * $qty;
             if ($discountType === 'fixed') {
-                $itemDiscAmount = min($discountValue, $itemSubtotal);
+                $itemDiscAmount = min($discountValue * $qty, $itemSubtotal);
                 $discPercent = $itemSubtotal > 0 ? ($itemDiscAmount / $itemSubtotal) * 100 : 0;
             } else {
                 $discPercent = (float) ($itemData['discount'] ?? $discountValue);
@@ -2155,13 +2163,13 @@ $sale = Sale::create([
 
         // --- 4. UPDATE TOTALS & LOG PAYMENT ---
         $calculatedTotal = max(0, ($runningSubtotal - $runningDiscount) + $runningTax);
-        if (!$isChargeToRoom && ($amountPaid + $walletAmount) < $calculatedTotal) {
+        if (!$isChargeToRoom && !$isCreditSale && ($amountPaid + $walletAmount) < $calculatedTotal) {
             throw new \RuntimeException('Payment is below the final POS total. Refresh the item price and try again.');
         }
         $finalChange = $amountPaid > $calculatedTotal ? $amountPaid - $calculatedTotal : 0;
         $finalPaid = max(0, $amountPaid - $finalChange);
         $finalBalance = max(0, $calculatedTotal - $finalPaid);
-        $finalPaymentStatus = $finalBalance <= 0 ? 'paid' : ($finalPaid > 0 ? 'partial' : 'unpaid');
+        $finalPaymentStatus = ($isChargeToRoom || $isCreditSale) ? 'unpaid' : ($finalBalance <= 0 ? 'paid' : ($finalPaid > 0 ? 'partial' : 'unpaid'));
         if ($paymentMethod === 'split') {
             $unappliedTender = max(0, round(
                 (float) $splitDetails['cash']

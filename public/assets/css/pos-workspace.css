@@ -107,6 +107,7 @@ body.pos-terminal-workspace #pos-sell-screen .pos-item-editor .pos-idle-calculat
 body.pos-terminal-workspace #pos-checkout-screen .pos-payment-tabs { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 10px !important; }
 body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab { min-height: 68px !important; padding: 12px !important; border: 1px solid #c1cde0 !important; border-radius: 6px !important; background: #fff !important; color: #172b4d !important; box-shadow: none !important; font-size: 13px !important; }
 body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab.active { background: #0f3a8a !important; color: #fff !important; border-color: #0f3a8a !important; }
+body.pos-terminal-workspace #pos-checkout-screen .pos-payment-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
 body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions { display: flex !important; gap: 8px !important; margin: 18px 0 24px !important; }
 body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn { padding: 9px !important; font-size: 11px !important; background: #fff8e3 !important; color: #765900 !important; border: 1px solid #d7a928 !important; border-radius: 5px !important; }
 .pos-checkout-payment .row { margin-top: 12px; }
@@ -130,6 +131,7 @@ body.pos-terminal-workspace #pos-checkout-screen #process-btn { background: #0f3
 @media (max-width: 1199px) { body.pos-terminal-workspace #pos-sell-screen .pos-main-stage { grid-template-columns: minmax(0,1fr) 350px !important; } body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; } body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card { padding: 14px !important; } }
 @media (max-width: 960px) { body.pos-terminal-workspace #pos-sell-screen .pos-main-stage { height: auto !important; min-height: calc(100dvh - 76px); overflow: visible !important; grid-template-columns: minmax(0,1fr) 320px !important; } body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; max-height: 70dvh !important; } .pos-checkout-screen { padding: 18px; } .pos-checkout-payment, .pos-checkout-order { padding: 20px; } }
 @media (max-width: 720px) { body.pos-terminal-workspace #pos-sell-screen { grid-template-columns: 58px minmax(0,1fr) !important; } body.pos-terminal-workspace #pos-sell-screen .pos-action-rail { width: 58px !important; height: calc(100dvh - 66px) !important; position: sticky !important; top: 66px !important; padding: 8px 3px !important; } body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn > span { font-size: 9px !important; } body.pos-terminal-workspace #pos-sell-screen .pos-main-stage { grid-template-columns: minmax(0,1fr) !important; grid-template-rows: auto auto auto !important; grid-template-areas: 'header' 'shelf' 'receipt' !important; } body.pos-terminal-workspace #pos-sell-screen .pos-header-bar .clock-badge { display: none !important; } body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid { max-height: 55dvh !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; flex: auto !important; } body.pos-terminal-workspace #pos-sell-screen .product-card { min-height: 190px !important; } .pos-product-meta { flex-wrap: wrap; } body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card { height: auto !important; border-left: 0 !important; border-top: 1px solid #dfe5ef !important; } .pos-checkout-layout { grid-template-columns: 1fr; } .pos-checkout-header h1 { font-size: 21px; } .pos-checkout-header .btn { font-size: 11px; padding: 9px; } .pos-checkout-screen { padding: 16px 10px; } body.pos-terminal-workspace #pos-sell-screen .product-toolbar { flex-wrap: wrap; } body.pos-terminal-workspace #pos-sell-screen .product-toolbar #product-count { font-size: 10px; } }
+@media (max-width: 420px) { body.pos-terminal-workspace #pos-checkout-screen .pos-payment-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
 #pos-checkout-customer { margin: 24px 0 16px; padding-top: 18px; border-top: 1px solid #ced9eb; }
 body.pos-terminal-workspace #pos-checkout-customer .pos-receipt-toolbar { display: block !important; }
 body.pos-terminal-workspace #pos-checkout-customer .pos-customer-compact { grid-template-columns: 1fr 1fr !important; }
@@ -171,3 +173,40 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-column { min-width: 0 !im
 body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer .pos-customer-compact { width: 100% !important; max-width: none !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
 body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer #customer-select { max-width: none !important; }
 body.pos-terminal-workspace #pos-checkout-screen #pos-cash-account-wrap { color: #172b4d; }
+/* Keep primary actions blue and every label/icon gold while hovered or focused. */
+body.pos-terminal-workspace #pos-sell-screen #pos-start-checkout,
+body.pos-terminal-workspace #pos-sell-screen #add-btn,
+body.pos-terminal-workspace #pos-checkout-screen #process-btn,
+body.pos-terminal-workspace .swal2-confirm {
+    --spb-btn-hover-bg: #0f3a8a;
+    --spb-btn-hover-border: #d7a928;
+    --spb-btn-hover-color: #d7a928;
+    --bs-btn-hover-color: #d7a928;
+}
+body.pos-terminal-workspace #pos-sell-screen #pos-start-checkout:is(:hover, :focus-visible, :active),
+body.pos-terminal-workspace #pos-sell-screen #add-btn:is(:hover, :focus-visible, :active),
+body.pos-terminal-workspace #pos-checkout-screen #process-btn:is(:hover, :focus-visible, :active),
+body.pos-terminal-workspace .swal2-confirm:is(:hover, :focus-visible, :active) {
+    background: #0f3a8a !important;
+    border-color: #d7a928 !important;
+    color: #d7a928 !important;
+    -webkit-text-fill-color: #d7a928 !important;
+}
+body.pos-terminal-workspace #pos-sell-screen #pos-start-checkout:is(:hover, :focus-visible, :active) *,
+body.pos-terminal-workspace #pos-sell-screen #add-btn:is(:hover, :focus-visible, :active) *,
+body.pos-terminal-workspace #pos-checkout-screen #process-btn:is(:hover, :focus-visible, :active) *,
+body.pos-terminal-workspace .swal2-confirm:is(:hover, :focus-visible, :active) * {
+    color: #d7a928 !important;
+    -webkit-text-fill-color: #d7a928 !important;
+}
+body.pos-terminal-workspace .pos-customer-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; grid-column: 1 / -1; }
+body.pos-terminal-workspace .pos-customer-heading .receipt-toolbar-label { margin: 0; }
+body.pos-terminal-workspace .pos-customer-add-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #b6c7e2; border-radius: 5px; padding: 6px 9px; background: #fff; color: #0f3a8a; font-size: 11px; font-weight: 600; white-space: nowrap; }
+body.pos-terminal-workspace .pos-customer-add-btn:is(:hover, :focus-visible) { background: #0f3a8a; color: #d7a928; border-color: #d7a928; }
+body.pos-terminal-workspace .pos-customer-add-btn:is(:hover, :focus-visible) * { color: #d7a928 !important; -webkit-text-fill-color: #d7a928 !important; }
+.pos-customer-created-feedback { display: block; margin-top: 5px; color: #16754b; font-size: 11px; }
+.pos-customer-created-feedback:empty { display: none; }
+.pos-add-customer-form { text-align: left; }
+.pos-add-customer-form p { color: #64748b; font-size: 13px; }
+.pos-add-customer-form label { display: block; margin: 13px 0 6px; font-size: 13px; font-weight: 600; color: #172b4d; }
+.pos-add-customer-form input { min-height: 43px; width: 100%; }

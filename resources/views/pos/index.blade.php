@@ -19,7 +19,6 @@
     $posSalesLogUrl = $posSalesLogUrl ?? (\Illuminate\Support\Facades\Route::has('pos.sales') ? route('pos.sales') : url('/pos/sales'));
     $posReturnUrl = $posReturnUrl ?? (\Illuminate\Support\Facades\Route::has('pos.return.show') ? route('pos.return.show') : url('/pos/return'));
     $posHomeUrl = $posHomeUrl ?? (\Illuminate\Support\Facades\Route::has('home') ? route('home') : url('/home'));
-    $posChartAccountsUrl = $posChartAccountsUrl ?? (\Illuminate\Support\Facades\Route::has('chart-of-accounts') ? route('chart-of-accounts') : url('/settings/chart-of-accounts'));
     $posSaleStoreUrl = $posSaleStoreUrl ?? (\Illuminate\Support\Facades\Route::has('sales.store') ? route('sales.store') : url('/sales'));
     $posAddProductUrl = $posAddProductUrl ?? (\Illuminate\Support\Facades\Route::has('add-products') ? route('add-products') : url('/add-products'));
     $posInventoryUrl = $posInventoryUrl ?? (\Illuminate\Support\Facades\Route::has('product-list') ? route('product-list') : url('/product-list'));
@@ -55,6 +54,7 @@
     $posCanSuspendSales = true;
     $posCanDiscount = $posCan(['sales.sales.discount', 'sales.sales.edit', 'sales.invoices.edit']);
     $posCanManageCustomers = $posCan(['customers.customers.view', 'customers.customers.create', 'sales.sales.create']);
+    $posCanCreateCustomers = $posCan(['customers.customers.create', 'sales.sales.create']);
     $posAllowStaffPriceEdit = (bool) ($posAllowStaffPriceEdit ?? false);
     $posCanManagePriceEditSetting = (bool) ($posCanManagePriceEditSetting ?? $posIsAdmin);
     $posCanEditPrice = $posIsAdmin || $posAllowStaffPriceEdit;
@@ -6195,7 +6195,14 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 <div class="pos-cart-heading"><h2>Current order</h2><button type="button" id="pos-cart-clear">Clear all</button></div>
                 <div class="pos-receipt-toolbar">
                     <div class="pos-customer-compact">
-                        <span class="receipt-toolbar-label">Customer</span>
+                        <div class="pos-customer-heading">
+                            <span class="receipt-toolbar-label">Customer</span>
+                            @if($posCanCreateCustomers)
+                                <button type="button" id="pos-add-customer" class="pos-customer-add-btn" data-pos-add-customer data-customer-store-url="{{ route('customers.store') }}" title="Add a customer without leaving this sale">
+                                    <i class="fas fa-plus-circle" aria-hidden="true"></i> Add customer
+                                </button>
+                            @endif
+                        </div>
                         <input type="text" id="customer-search-input" class="form-control" placeholder="Search customer..." aria-label="Search customer">
                         <select id="customer-select" class="form-select">
                             <option value="">Walk-in Customer</option>
@@ -6205,6 +6212,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         </select>
                     </div>
                     <small id="customer-wallet-hint" class="receipt-wallet-hint">Select a customer to apply wallet credit automatically.</small>
+                    <small id="pos-customer-created-feedback" class="pos-customer-created-feedback" role="status" aria-live="polite"></small>
                 </div>
 
                 <div id="pos-suspense-status" class="alert alert-info py-2 px-3 mt-2 mb-0 d-none" role="status">
@@ -6309,6 +6317,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash"><span>Cash</span></button>
                             <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split"><span>Split</span></button>
                             <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-bank-shortcut"><span>POS / Bank</span></button>
+                            <button type="button" class="pos-pay-tab" data-payment-method="Credit" id="pos-pay-credit"><span>Credit</span></button>
                         </div>
                     </div>
                     @if($posCanSuspendSales)
@@ -6341,13 +6350,12 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                                         {{ $cashDepositAccount->name }}
                                     @else
                                         <strong>Cash account not configured</strong>
-                                        <span>Bank Settings accounts are for transfers. Create cash under Chart of Accounts.</span>
+                                        <span>Contact your administrator to create a cash account for this branch.</span>
                                     @endif
                                 </div>
                                 @unless($cashDepositAccount ?? null)
                                     <small class="text-danger d-block mt-1">
-                                        Cash payments need an active Asset account with subtype Cash for this branch.
-                                        <a href="{{ $posChartAccountsUrl }}" class="fw-semibold text-danger text-decoration-underline">Open Chart of Accounts</a>
+                                        Cash payments will be available after your administrator sets up the cash account.
                                     </small>
                                 @endunless
                         </div>
@@ -6366,7 +6374,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                                 </select>
                                 @if(collect($depositAccounts ?? [])->isEmpty())
                                     <small class="text-danger d-block mt-2">
-                                        No bank account is configured. Contact your administrator to add one in Chart of Accounts.
+                                        No bank account is configured. Contact your administrator to set one up.
                                     </small>
                                 @endif
                             </div>
@@ -7132,6 +7140,7 @@ $(document).ready(function() {
             const $opt = $('#product-select option[value="' + productId + '"]');
             if (!$opt.length || !$opt.val()) return;
             selId = String(productId);
+            window.PosProductSearch?.remember(selId);
             $input.val(($opt.data('name') || $opt.text() || '').trim());
             $clear.show();
             setComboHasValue(true);
@@ -7325,7 +7334,7 @@ $(document).ready(function() {
         let discType = $('#discount-type').val() || 'percent';
 
         let sub = price * qty;
-        let discVal = discType === 'fixed' ? Math.min(disc, sub) : (sub * (disc / 100));
+        let discVal = discType === 'fixed' ? Math.min(disc * qty, sub) : (sub * (disc / 100));
         let afterDisc = sub - discVal;
         let taxVal = afterDisc * (tax / 100);
         let total = afterDisc + taxVal;
@@ -7343,7 +7352,7 @@ $(document).ready(function() {
 
         const sub = price * qty;
         const discVal = discountType === 'fixed'
-            ? Math.min(discount, sub)
+            ? Math.min(discount * qty, sub)
             : (sub * (discount / 100));
         const afterDisc = sub - discVal;
         const taxVal = afterDisc * (tax / 100);
@@ -8350,6 +8359,7 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
+        filterCustomerOptions('');
         const options = Array.from(customerSelect.options || []);
         if (!window.Swal || typeof Swal.fire !== 'function') {
             customerSelect.focus();
@@ -8364,6 +8374,9 @@ window.POS_ENABLE_FALLBACK = function () {
 
         const result = await Swal.fire({
             title: 'Select Customer',
+            showDenyButton: @json((bool) $posCanCreateCustomers),
+            denyButtonText: '<i class="fas fa-plus-circle me-1" aria-hidden="true"></i> Add customer',
+            denyButtonColor: '#0f3a8a',
             html: `
                 <div class="text-start">
                     <label class="form-label fw-bold">Customer</label>
@@ -8378,6 +8391,10 @@ window.POS_ENABLE_FALLBACK = function () {
             preConfirm: () => document.getElementById('pos-customer-prompt')?.value || '',
         });
 
+        if (result.isDenied) {
+            await window.PosWorkspace?.addCustomer();
+            return;
+        }
         if (!result.isConfirmed) {
             return;
         }
@@ -8771,6 +8788,7 @@ window.POS_ENABLE_FALLBACK = function () {
         ? Array.from(customerSelect.options).map((option) => ({
             value: option.value,
             label: option.textContent || '',
+            wallet: option.dataset.wallet || '0',
         }))
         : [];
 
@@ -8794,6 +8812,7 @@ window.POS_ENABLE_FALLBACK = function () {
             const node = document.createElement('option');
             node.value = option.value;
             node.textContent = option.label;
+            node.dataset.wallet = String(option.wallet || '0');
             if (option.value === selectedValue) {
                 node.selected = true;
             }
@@ -8806,6 +8825,24 @@ window.POS_ENABLE_FALLBACK = function () {
 
         return filteredOptions;
     }
+
+    document.addEventListener('pos:customer-created', function (event) {
+        const customer = event.detail;
+        if (!customerSelect || !customer?.id || !customer?.name) return;
+        const entry = {
+            value: String(customer.id),
+            label: String(customer.name),
+            wallet: String(customer.wallet_balance || '0'),
+        };
+        const existing = customerOptionsSnapshot.find((option) => option.value === entry.value);
+        if (existing) Object.assign(existing, entry);
+        else customerOptionsSnapshot.push(entry);
+        filterCustomerOptions('');
+        customerSelect.value = entry.value;
+        if (customerSearchInput) customerSearchInput.value = entry.label;
+        customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        if (window.jQuery?.fn?.select2) window.jQuery(customerSelect).trigger('change.select2');
+    });
 
     function selectCustomerMatch(keyword, preferExact = false) {
         if (!customerSelect) {
@@ -9239,7 +9276,7 @@ window.POS_ENABLE_FALLBACK = function () {
         const discountType = discountTypeInput?.value || 'percent';
         const tax = parseFloat(taxInput?.value || '0') || 0;
         const sub = price * qty;
-        const discVal = discountType === 'fixed' ? Math.min(discount, sub) : (sub * (discount / 100));
+        const discVal = discountType === 'fixed' ? Math.min(discount * qty, sub) : (sub * (discount / 100));
         const afterDisc = sub - discVal;
         const taxVal = afterDisc * (tax / 100);
         const total = afterDisc + taxVal;
@@ -9255,7 +9292,7 @@ window.POS_ENABLE_FALLBACK = function () {
         const tax = Math.max(0, parseFloat(item.tax || '0') || 0);
         const multiplier = Math.max(0.01, parseFloat(item.unitMultiplier || '1') || 1);
         const sub = price * qty;
-        const discVal = discountType === 'fixed' ? Math.min(discountValue, sub) : (sub * (discountValue / 100));
+        const discVal = discountType === 'fixed' ? Math.min(discountValue * qty, sub) : (sub * (discountValue / 100));
         const afterDisc = Math.max(0, sub - discVal);
         const taxVal = afterDisc * (tax / 100);
 
@@ -9319,6 +9356,7 @@ window.POS_ENABLE_FALLBACK = function () {
             selectCustomerMatch(query);
         } else if (customerSelect) {
             customerSelect.value = '';
+            customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
         }
     });
 
@@ -9382,10 +9420,11 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function toggleSplitFields() {
+        const isCredit = paymentMethod?.value === 'Credit';
         const isSplit = paymentMethod?.value === 'Split';
         const isMixed = activePaymentTab === 'Split';
         const showsBankChannels = isMixed || activePaymentTab === 'pos-pay-bank-shortcut';
-        const showCash = !isSplit || activePaymentTab === 'Split';
+        const showCash = !isSplit && !isCredit || activePaymentTab === 'Split';
         const showTransfer = isSplit && showsBankChannels;
         const showCard = isSplit && showsBankChannels;
         paymentTabs.forEach((button) => {
@@ -9393,6 +9432,8 @@ window.POS_ENABLE_FALLBACK = function () {
         });
         document.getElementById('pos-cash-account-wrap')?.classList.toggle('d-none', !showCash);
         document.getElementById('pos-cash-amount-wrap')?.classList.toggle('d-none', !showCash);
+        document.getElementById('wallet-payment-wrap')?.classList.toggle('d-none', isCredit || !walletAmount || moneyValue(walletAmount) <= 0);
+        document.querySelector('.pos-checkout-notice')?.replaceChildren(document.createTextNode(isCredit ? 'This sale will be recorded as customer credit and added to the customer balance.' : 'Review the order and enter the amount received before charging.'));
         splitTransferWrap?.classList.toggle('d-none', !showTransfer);
         splitTransferAccountWrap?.classList.toggle('d-none', !showTransfer);
         splitCardWrap?.classList.toggle('d-none', !showCard);
@@ -9464,6 +9505,8 @@ window.POS_ENABLE_FALLBACK = function () {
         if (customerSearchInput) {
             customerSearchInput.value = '';
         }
+        const customerFeedback = document.getElementById('pos-customer-created-feedback');
+        if (customerFeedback) customerFeedback.textContent = '';
         filterCustomerOptions('');
 
         activePaymentTab = 'Cash';
@@ -9867,7 +9910,7 @@ window.POS_ENABLE_FALLBACK = function () {
             const discountValue = Math.max(0, parseFloat(sourceItem.discount || '0') || 0);
             const taxValue = Math.max(0, parseFloat(sourceItem.tax || '0') || 0);
             const sub = price * qty;
-            const discVal = Math.min(discountValue, sub);
+            const discVal = Math.min(discountValue * qty, sub);
             const afterDisc = Math.max(0, sub - discVal);
             const taxPercent = afterDisc > 0 ? (taxValue / afterDisc) * 100 : 0;
             const total = afterDisc + taxValue;
@@ -10115,6 +10158,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 return;
             }
         }
+
         updateChange();
     });
     [amountPaid, transferAmount, cardAmount].forEach((input) => {
@@ -10146,6 +10190,19 @@ window.POS_ENABLE_FALLBACK = function () {
                 if (transferAmount) transferAmount.value = '0.00';
                 if (cardAmount) cardAmount.value = '0.00';
             }
+            if (activePaymentTab === 'pos-pay-credit') {
+                if (!customerSelect?.value) {
+                    alertFallback('Select a customer before recording a credit sale.');
+                    paymentMethod.value = 'Cash';
+                    activePaymentTab = 'Cash';
+                    toggleSplitFields();
+                    return;
+                }
+                if (amountPaid) amountPaid.value = '0.00';
+                if (walletAmount) walletAmount.value = '0.00';
+                if (transferAmount) transferAmount.value = '0.00';
+                if (cardAmount) cardAmount.value = '0.00';
+            }
             paymentMethod.dispatchEvent(new Event('change', { bubbles: true }));
 
             if (button.id === 'pos-pay-bank-shortcut' && cardAmount) {
@@ -10157,6 +10214,8 @@ window.POS_ENABLE_FALLBACK = function () {
         });
     });
 	    customerSelect?.addEventListener('change', function () {
+            const feedback = document.getElementById('pos-customer-created-feedback');
+            if (feedback) feedback.textContent = '';
 	        const previousDue = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
 	        refreshWalletApplication();
 	        syncSelectedPaymentAmount(previousDue);
@@ -10186,14 +10245,15 @@ window.POS_ENABLE_FALLBACK = function () {
 
 	        const { total, paid, externalPaid } = updateChange();
         const walletApplied = moneyValue(walletAmount);
-	        if (paid <= 0 && walletApplied <= 0) {
+        const isCreditSale = paymentMethod?.value === 'Credit';
+        if (paid <= 0 && walletApplied <= 0 && !isCreditSale) {
 	            alertFallback('Enter payment before processing the sale.');
 	            return;
 	        }
 
         const cashValue = moneyValue(amountPaid);
-        if (cashValue > 0 && !depositAccount?.value) {
-            alertFallback('No cash account is configured for this branch. Contact your administrator to configure one in Chart of Accounts.');
+        if (!isCreditSale && cashValue > 0 && !depositAccount?.value) {
+            alertFallback('No cash account is configured for this branch. Contact your administrator to create the cash account before accepting cash payments.');
             return;
         }
 
@@ -10205,6 +10265,10 @@ window.POS_ENABLE_FALLBACK = function () {
                 return;
             }
         }
+
+        // Open the receipt tab during the user gesture so browsers do not block it
+        // after the asynchronous sale request completes.
+        const receiptWindow = window.open('about:blank', '_blank');
 
         processBtn.disabled = true;
         processBtn.classList.add('processing');
@@ -10239,7 +10303,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	                    } : {}),
                 };
 
-            if (!navigator.onLine && (walletApplied > 0 || posSourceContext?.source || paymentMethod?.value === 'ChargeToRoom')) {
+            if (!navigator.onLine && (walletApplied > 0 || posSourceContext?.source || isCreditSale || paymentMethod?.value === 'ChargeToRoom')) {
                 throw new Error('Wallet, room-charge, and converted-document sales require an internet connection.');
             }
 
@@ -10262,6 +10326,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 })() };
 
             if (submission.queued) {
+                receiptWindow?.close();
                 resetVanillaPosWorkspace();
                 alertFallback('Sale saved offline. It will synchronize automatically when internet returns.');
                 return;
@@ -10270,7 +10335,7 @@ window.POS_ENABLE_FALLBACK = function () {
             const result = submission.result;
             if (!result?.sale_id) throw new Error('Sale response did not include a receipt. Check the sales register before retrying.');
 
-            const receiptFormat = document.getElementById('receipt-format')?.value || 'standard';
+        const receiptFormat = document.getElementById('receipt-format')?.value || 'standard';
             const formatQuery = receiptFormat === 'thermal-58'
                 ? '&format=thermal&paper=58'
                 : (receiptFormat === 'thermal-80' ? '&format=thermal&paper=80' : '');
@@ -10281,11 +10346,13 @@ window.POS_ENABLE_FALLBACK = function () {
             suspenseClaimHeartbeat = null;
             updateSuspenseStatus();
             resetVanillaPosWorkspace();
-            const receiptWindow = window.open(invoiceUrl, '_blank');
-            if (!receiptWindow) {
+            if (receiptWindow) {
+                receiptWindow.location.replace(invoiceUrl);
+            } else {
                 window.location.assign(invoiceUrl);
             }
         } catch (error) {
+            receiptWindow?.close();
             alertFallback(error.message || 'Failed to process sale.');
         } finally {
             processBtn.disabled = false;
@@ -10429,6 +10496,7 @@ window.POS_ENABLE_FALLBACK = function () {
             const opt = Array.from(sel.options).find(function(o) { return String(o.value) === String(productId); });
             if (!opt || !opt.value) return;
             selId = String(productId);
+            window.PosProductSearch?.remember(selId);
             input.value = (opt.dataset.name || opt.text || '').trim();
             if (clear) clear.style.display = '';
             setComboHasValue(true);
