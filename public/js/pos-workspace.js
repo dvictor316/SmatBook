@@ -119,6 +119,16 @@
         return true;
     }
     document.querySelector('[data-pos-add-customer]')?.addEventListener('click', addCustomer);
+    document.querySelectorAll('.category-pill').forEach((pill) => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.category-pill').forEach((option) => option.classList.toggle('active', option === pill));
+            window.PosProductSearch?.filterShelf(
+                document.querySelectorAll('.product-card'),
+                byId('quick-search')?.value || '',
+                pill.dataset.category || 'all'
+            );
+        });
+    });
     window.PosWorkspace = { openEditor, closeEditor, openCheckout, showProducts, addCustomer };
     byId('pos-start-checkout')?.addEventListener('click', () => byId('rail-checkout-btn')?.click());
     byId('pos-back-to-sale').addEventListener('click', () => {

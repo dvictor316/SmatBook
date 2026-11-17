@@ -35,10 +35,12 @@
         catch (_) { /* Search remains usable when storage is unavailable. */ }
     }
     function filterShelf(cards, query, category) {
+        const activeCategory = normalize(category || 'all');
         const entries = Array.from(cards).map((card) => ({ card, score: score(card.dataset, query) }));
         let visible = 0;
         entries.sort((a, b) => b.score - a.score).forEach(({ card, score: relevance }, index) => {
-            const show = relevance > 0 && (category === 'all' || card.dataset.category === category);
+            const cardCategory = normalize(card.dataset.category || card.dataset.categoryName || 'uncategorized');
+            const show = relevance > 0 && (activeCategory === 'all' || cardCategory === activeCategory);
             card.hidden = !show;
             card.style.display = show ? '' : 'none';
             card.style.order = String(index);
