@@ -219,7 +219,7 @@ body.pos-terminal-workspace .pos-customer-add-btn:is(:hover, :focus-visible) * {
 .pos-add-customer-form input { min-height: 43px; width: 100%; }
 
 /* Use the header menu control for the POS action rail on phones. */
-@media (max-width: 1024px) {
+@media (max-width: 1199.98px) {
     body.pos-terminal-workspace #pos-sell-screen { grid-template-columns: minmax(0, 1fr) !important; }
     body.pos-terminal-workspace #pos-action-rail {
         position: fixed !important;

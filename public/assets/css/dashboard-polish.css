@@ -180,8 +180,38 @@ body.spb-dashboard :is(.btn, .agent-button, .starter-action) { border-radius: 11
 body.spb-dashboard :is(.hotel-service-card, .farm-setup) { padding: 22px; }
 body.spb-dashboard .farm-kpi { padding: 20px; }
 
+/* Dashboard views sit inside the shared shell, which already offsets the sidebar. */
+body.spb-dashboard .page-wrapper :is(.pos-content-area, .starter-dashboard, #deployment-wrapper, #main-content-wrapper) {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Some plan dashboards render directly in .main-wrapper instead of .page-wrapper. */
+body.spb-dashboard .main-wrapper #spb-page-content > :is(.pos-content-area, .starter-dashboard) {
+    margin-left: var(--sb-sidebar-w, 270px) !important;
+    width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
+    max-width: calc(100% - var(--sb-sidebar-w, 270px)) !important;
+    box-sizing: border-box !important;
+}
+body.spb-dashboard.sidebar-collapsed .main-wrapper #spb-page-content > :is(.pos-content-area, .starter-dashboard),
+body.spb-dashboard.mini-sidebar .main-wrapper #spb-page-content > :is(.pos-content-area, .starter-dashboard),
+body.spb-dashboard.sidebar-icon-only .main-wrapper #spb-page-content > :is(.pos-content-area, .starter-dashboard) {
+    margin-left: var(--sb-sidebar-collapsed, 80px) !important;
+    width: calc(100% - var(--sb-sidebar-collapsed, 80px)) !important;
+    max-width: calc(100% - var(--sb-sidebar-collapsed, 80px)) !important;
+}
+@media (max-width: 1023.98px) {
+    body.spb-dashboard .main-wrapper #spb-page-content > :is(.pos-content-area, .starter-dashboard) {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
 @media (max-width: 1199.98px) {
-    body.spb-dashboard :is(.starter-dashboard, #deployment-wrapper) {
+    body.spb-dashboard .page-wrapper :is(.starter-dashboard, #deployment-wrapper) {
         margin-left: 0 !important;
         width: 100% !important;
         max-width: 100% !important;

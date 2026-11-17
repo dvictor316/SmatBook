@@ -22,8 +22,9 @@
 
                 <div class="row">
                     <div class="col-md-12">
-                        <form id="offline-customer-form" action="{{ route('customers.store') }}" method="POST" enctype="multipart/form-data" data-index-url="{{ route('customers.index') }}">
+                        <form id="offline-customer-form" action="{{ route('customers.store') }}" method="POST" enctype="multipart/form-data" data-index-url="{{ $returnUrl ?? route('customers.index') }}">
                             @csrf
+                            <input type="hidden" name="return_to" value="{{ $returnTo ?? 'customers' }}">
 
                             <div class="form-group-item">
                                 <h5 class="form-title">Basic Details</h5>
@@ -240,9 +241,9 @@ function copyBilling() {
 <script>
 window.CUSTOMER_OFFLINE_CONFIG = {
     storeUrl: @json(route('customers.store')),
-    indexUrl: @json(route('customers.index')),
+    indexUrl: @json($returnUrl ?? route('customers.index')),
     csrfToken: @json(csrf_token()),
 };
 </script>
-<script src="{{ asset('js/customer-offline.js') }}"></script>
+<script src="{{ asset('js/customer-offline.js') }}?v={{ filemtime(public_path('js/customer-offline.js')) }}"></script>
 @endsection

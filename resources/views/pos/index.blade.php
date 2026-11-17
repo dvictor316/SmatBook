@@ -10646,7 +10646,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ].filter(Boolean);
     const posRailBackdrop = document.getElementById('pos-rail-backdrop');
     const posRail = document.getElementById('pos-action-rail');
-    const isPosDrawerMode = () => window.matchMedia('(max-width: 899.98px), (max-width: 1024px) and (orientation: portrait)').matches;
+    const isPosDrawerMode = () => window.matchMedia('(max-width: 1199.98px)').matches;
     const setMenuIconState = (button, isOpen) => {
         const icon = button?.querySelector?.('i');
         if (!icon) return;

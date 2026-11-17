@@ -71,7 +71,12 @@ class CustomerController extends Controller
     public function create()
     {
         $availableBranches = $this->getAvailableBranches();
-        return view('Customers.add-customer', compact('availableBranches'));
+        $returnTo = request()->query('return_to') === 'pos' ? 'pos' : 'customers';
+        $returnUrl = $returnTo === 'pos' && \Illuminate\Support\Facades\Route::has('sales.showPos')
+            ? route('sales.showPos')
+            : route('customers.index');
+
+        return view('Customers.add-customer', compact('availableBranches', 'returnTo', 'returnUrl'));
     }
 
     /**
@@ -108,6 +113,7 @@ class CustomerController extends Controller
             'image'         => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'client_record_id' => 'nullable|string|max:64',
             'client_recorded_at' => 'nullable|date',
+            'return_to' => 'nullable|in:pos,customers',
         ]);
 
         $this->rejectDuplicateCustomerName((string) $request->input('customer_name'));
@@ -185,7 +191,14 @@ class CustomerController extends Controller
                     'price_list_id' => $customer->price_list_id,
                     'outstanding_balance' => (float) ($customer->balance ?? 0),
                 ],
+                'return_url' => $request->input('return_to') === 'pos' && \Illuminate\Support\Facades\Route::has('sales.showPos')
+                    ? route('sales.showPos')
+                    : route('customers.index'),
             ], 201);
+        }
+
+        if ($request->input('return_to') === 'pos' && \Illuminate\Support\Facades\Route::has('sales.showPos')) {
+            return redirect()->route('sales.showPos')->with('success', 'Customer added successfully.');
         }
 
         return redirect()->route('customers.index')->with('success', 'Customer added successfully.');

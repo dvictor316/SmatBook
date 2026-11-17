@@ -148,6 +148,7 @@
             form.reset();
             await updateIndicator();
             window.alert('Customer saved offline and will synchronize automatically when internet returns.');
+            if (record.return_to === 'pos') window.location.assign(config.indexUrl);
         } catch (error) {
             window.alert(error.message || 'Customer could not be saved.');
         } finally {

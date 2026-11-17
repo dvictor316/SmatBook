@@ -65,6 +65,7 @@
             title: 'Add customer',
             html: `<form id="pos-add-customer-form" class="pos-add-customer-form">
                 <p>Add a customer and continue this sale.</p>
+                <input type="hidden" name="return_to" value="pos">
                 <label for="pos-new-customer-name">Customer name <span aria-hidden="true">*</span></label>
                 <input id="pos-new-customer-name" name="customer_name" class="form-control" required maxlength="191" autocomplete="name">
                 <label for="pos-new-customer-phone">Phone number</label>
