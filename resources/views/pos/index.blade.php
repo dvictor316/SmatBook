@@ -6314,10 +6314,12 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
             <h2>Select payment method</h2>
                     <div class="pos-payment-methods">
                         <div class="pos-payment-tabs" aria-label="Payment method">
-                            <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash"><span>Cash</span></button>
-                            <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split"><span>Split</span></button>
-                            <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-bank-shortcut"><span>POS / Bank</span></button>
+                            <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash" id="pos-pay-cash"><i class="fas fa-money-bill-wave" aria-hidden="true"></i><span>Cash</span></button>
+                            <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-card"><i class="fas fa-credit-card" aria-hidden="true"></i><span>Card / POS</span></button>
+                            <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-transfer"><i class="fas fa-building-columns" aria-hidden="true"></i><span>Transfer</span></button>
+                            <button type="button" class="pos-pay-tab" data-payment-method="Cash" id="pos-pay-wallet"><i class="fas fa-wallet" aria-hidden="true"></i><span>Store Wallet</span></button>
                             <button type="button" class="pos-pay-tab" data-payment-method="Credit" id="pos-pay-credit"><span>Credit</span></button>
+                            <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split" id="pos-pay-split"><i class="fas fa-shuffle" aria-hidden="true"></i><span>Split</span></button>
                         </div>
                     </div>
                     @if($posCanSuspendSales)
@@ -6341,6 +6343,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         <select id="payment-method" class="form-select fw-bold d-none" aria-hidden="true">
                             <option value="Cash">Cash</option>
                             <option value="Split">Split (Cash + Transfer + POS)</option>
+                            <option value="Credit">Credit</option>
                         </select>
                         <div class="col-md-6" id="pos-cash-account-wrap">
                                 <label class="fw-semibold"><span id="pos-cash-account-label">Payment Method</span></label>
@@ -9389,8 +9392,8 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function syncSplitCounterpart(changedField) {
-        const isMixedSplit = activePaymentTab === 'Split';
-        const isBankShortcut = activePaymentTab === 'pos-pay-bank-shortcut';
+        const isMixedSplit = activePaymentTab === 'pos-pay-split';
+        const isBankShortcut = activePaymentTab === 'pos-pay-card' || activePaymentTab === 'pos-pay-transfer';
         if (
             splitAutoSync
             || paymentMethod?.value !== 'Split'
@@ -9421,19 +9424,25 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function toggleSplitFields() {
         const isCredit = paymentMethod?.value === 'Credit';
+        const isWallet = activePaymentTab === 'pos-pay-wallet';
         const isSplit = paymentMethod?.value === 'Split';
-        const isMixed = activePaymentTab === 'Split';
-        const showsBankChannels = isMixed || activePaymentTab === 'pos-pay-bank-shortcut';
-        const showCash = !isSplit && !isCredit || activePaymentTab === 'Split';
-        const showTransfer = isSplit && showsBankChannels;
-        const showCard = isSplit && showsBankChannels;
+        const isMixed = activePaymentTab === 'pos-pay-split';
+        const isTransferOnly = activePaymentTab === 'pos-pay-transfer';
+        const isCardOnly = activePaymentTab === 'pos-pay-card';
+        const showsBankChannels = isMixed || isTransferOnly || isCardOnly;
+        const showCash = !isCredit && !isWallet && (!isSplit || isMixed);
+        const showTransfer = isSplit && (isMixed || isTransferOnly);
+        const showCard = isSplit && (isMixed || isCardOnly);
         paymentTabs.forEach((button) => {
             button.classList.toggle('active', (button.id || button.textContent.trim()) === activePaymentTab);
         });
         document.getElementById('pos-cash-account-wrap')?.classList.toggle('d-none', !showCash);
         document.getElementById('pos-cash-amount-wrap')?.classList.toggle('d-none', !showCash);
-        document.getElementById('wallet-payment-wrap')?.classList.toggle('d-none', isCredit || !walletAmount || moneyValue(walletAmount) <= 0);
-        document.querySelector('.pos-checkout-notice')?.replaceChildren(document.createTextNode(isCredit ? 'This sale will be recorded as customer credit and added to the customer balance.' : 'Review the order and enter the amount received before charging.'));
+        document.getElementById('wallet-payment-wrap')?.classList.toggle('d-none', isCredit || (!isWallet && (!walletAmount || moneyValue(walletAmount) <= 0)));
+        const checkoutNotice = isCredit
+            ? 'This sale will be recorded as customer credit and added to the customer balance.'
+            : (isWallet ? 'Use the selected customer’s store wallet to pay for this order.' : 'Review the order and enter the amount received before charging.');
+        document.querySelector('.pos-checkout-notice')?.replaceChildren(document.createTextNode(checkoutNotice));
         splitTransferWrap?.classList.toggle('d-none', !showTransfer);
         splitTransferAccountWrap?.classList.toggle('d-none', !showTransfer);
         splitCardWrap?.classList.toggle('d-none', !showCard);
@@ -9453,15 +9462,10 @@ window.POS_ENABLE_FALLBACK = function () {
         if (isSplit && amountPaid) {
             const total = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
 
-            if (activePaymentTab === 'pos-pay-bank-shortcut') {
+            if (activePaymentTab === 'pos-pay-card' || activePaymentTab === 'pos-pay-transfer') {
                 amountPaid.value = '0.00';
-                if (
-                    moneyValue(transferAmount) + moneyValue(cardAmount) <= 0
-                    && total > 0
-                    && cardAmount
-                ) {
-                    cardAmount.value = total.toFixed(2);
-                }
+                if (activePaymentTab === 'pos-pay-card' && cardAmount && moneyValue(cardAmount) <= 0) cardAmount.value = total.toFixed(2);
+                if (activePaymentTab === 'pos-pay-transfer' && transferAmount && moneyValue(transferAmount) <= 0) transferAmount.value = total.toFixed(2);
             } else {
                 if (transferAmount && !transferAmount.value) {
                     transferAmount.value = '0.00';
@@ -9483,13 +9487,17 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function syncSelectedPaymentAmount(previousDue) {
         const due = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
-        if (activePaymentTab === 'pos-pay-bank-shortcut') {
+        if (activePaymentTab === 'pos-pay-bank-shortcut' || activePaymentTab === 'pos-pay-card') {
             const transferPaid = moneyValue(transferAmount);
             const totalBankPaid = transferPaid + moneyValue(cardAmount);
             if (totalBankPaid <= 0 || Math.abs(totalBankPaid - previousDue) < 0.01) {
                 if (cardAmount) cardAmount.value = Math.max(0, due - transferPaid).toFixed(2);
             }
             return;
+        }
+        if (activePaymentTab === 'pos-pay-transfer' && transferAmount
+            && (moneyValue(transferAmount) <= 0 || Math.abs(moneyValue(transferAmount) - previousDue) < 0.01)) {
+            transferAmount.value = due.toFixed(2);
         }
     }
 
@@ -9509,7 +9517,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (customerFeedback) customerFeedback.textContent = '';
         filterCustomerOptions('');
 
-        activePaymentTab = 'Cash';
+        activePaymentTab = 'pos-pay-cash';
         if (paymentMethod) paymentMethod.value = 'Cash';
         paymentTabs.forEach((button) => {
             button.classList.toggle('active', button.textContent.trim() === 'Cash');
@@ -10182,7 +10190,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
             activePaymentTab = button.id || button.textContent.trim();
             paymentMethod.value = button.dataset.paymentMethod || 'Cash';
-            if (activePaymentTab === 'Cash') {
+            if (activePaymentTab === 'pos-pay-cash') {
                 const requiredPayment = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
                 if (moneyValue(amountPaid) <= 0 && amountPaid) {
                     amountPaid.value = requiredPayment.toFixed(2);
@@ -10190,11 +10198,33 @@ window.POS_ENABLE_FALLBACK = function () {
                 if (transferAmount) transferAmount.value = '0.00';
                 if (cardAmount) cardAmount.value = '0.00';
             }
+            if (activePaymentTab === 'pos-pay-wallet') {
+                if (amountPaid) amountPaid.value = '0.00';
+                if (transferAmount) transferAmount.value = '0.00';
+                if (cardAmount) cardAmount.value = '0.00';
+                refreshWalletApplication();
+            }
+            if (activePaymentTab === 'pos-pay-card') {
+                if (amountPaid) amountPaid.value = '0.00';
+                if (transferAmount) transferAmount.value = '0.00';
+                if (cardAmount) cardAmount.value = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount)).toFixed(2);
+            }
+            if (activePaymentTab === 'pos-pay-transfer') {
+                if (amountPaid) amountPaid.value = '0.00';
+                if (cardAmount) cardAmount.value = '0.00';
+                if (transferAmount) transferAmount.value = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount)).toFixed(2);
+            }
+            if (activePaymentTab === 'pos-pay-split') {
+                const requiredPayment = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
+                if (amountPaid) amountPaid.value = requiredPayment.toFixed(2);
+                if (transferAmount) transferAmount.value = '0.00';
+                if (cardAmount) cardAmount.value = '0.00';
+            }
             if (activePaymentTab === 'pos-pay-credit') {
                 if (!customerSelect?.value) {
                     alertFallback('Select a customer before recording a credit sale.');
                     paymentMethod.value = 'Cash';
-                    activePaymentTab = 'Cash';
+                    activePaymentTab = 'pos-pay-cash';
                     toggleSplitFields();
                     return;
                 }
@@ -10205,12 +10235,16 @@ window.POS_ENABLE_FALLBACK = function () {
             }
             paymentMethod.dispatchEvent(new Event('change', { bubbles: true }));
 
-            if (button.id === 'pos-pay-bank-shortcut' && cardAmount) {
+            if (button.id === 'pos-pay-card' && cardAmount) {
                 cardAmount.focus();
                 return;
             }
+            if (button.id === 'pos-pay-transfer' && transferAmount) {
+                transferAmount.focus();
+                return;
+            }
 
-            amountPaid?.focus();
+            if (button.id !== 'pos-pay-wallet' && button.id !== 'pos-pay-credit') amountPaid?.focus();
         });
     });
 	    customerSelect?.addEventListener('change', function () {
@@ -10246,6 +10280,11 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const { total, paid, externalPaid } = updateChange();
         const walletApplied = moneyValue(walletAmount);
         const isCreditSale = paymentMethod?.value === 'Credit';
+        const isWalletSale = activePaymentTab === 'pos-pay-wallet';
+        if (isWalletSale && walletApplied < total) {
+            alertFallback('The customer’s store wallet balance does not cover this order. Choose cash, transfer, card, or split payment.');
+            return;
+        }
         if (paid <= 0 && walletApplied <= 0 && !isCreditSale) {
 	            alertFallback('Enter payment before processing the sale.');
 	            return;
