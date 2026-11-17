@@ -65,6 +65,7 @@
             title: 'Add customer',
             html: `<form id="pos-add-customer-form" class="pos-add-customer-form">
                 <p>Add a customer and continue this sale.</p>
+                <input type="hidden" name="_token" value="${window.POS_OFFLINE_CONFIG?.csrfToken || ''}">
                 <input type="hidden" name="return_to" value="pos">
                 <label for="pos-new-customer-name">Customer name <span aria-hidden="true">*</span></label>
                 <input id="pos-new-customer-name" name="customer_name" class="form-control" required maxlength="191" autocomplete="name">
@@ -91,6 +92,12 @@
                 const form = byId('pos-add-customer-form');
                 if (!form.reportValidity()) return false;
                 try {
+                    const csrfToken = window.POS_OFFLINE_CONFIG?.csrfToken
+                        || form.elements.namedItem('_token')?.value
+                        || document.querySelector('meta[name="csrf-token"]')?.content
+                        || '';
+                    const payload = Object.fromEntries(new FormData(form));
+                    payload._token = csrfToken;
                     const response = await fetch(trigger.dataset.customerStoreUrl, {
                         method: 'POST',
                         credentials: 'same-origin',
@@ -98,9 +105,9 @@
                             Accept: 'application/json',
                             'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            'X-CSRF-TOKEN': csrfToken,
                         },
-                        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+                        body: JSON.stringify(payload),
                     });
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Could not add the customer. Please try again.');
