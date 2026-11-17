@@ -991,6 +991,7 @@
                     <?php echo method_field('DELETE'); ?>
                     <strong><span id="bulk-selected-count">0</span> selected</strong>
                     <span class="text-muted">Edit or remove selected stock items.</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="bulk-clear-selection">Clear selection</button>
                     <?php if (auth()->user()?->can('inventory.products.edit')) { ?>
                         <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#bulkEditProductsModal" data-bulk-edit-scope="selected">
                             <i class="fas fa-pen-to-square me-1"></i> Edit Selected
@@ -1517,7 +1518,7 @@
 
 <script>
     $(document).ready(function() {
-        var selectionStorageKey = <?php echo json_encode('inventory-product-selection:' . (auth()->id() ?? 'guest') . ':' . (auth()->user()?->company_id ?? '')); ?>;
+        var selectionStorageKey = <?php echo json_encode('inventory-product-selection:v2:' . (auth()->id() ?? 'guest') . ':' . (session('current_tenant_id') ?? auth()->user()?->company_id ?? '') . ':' . ($activeBranch['id'] ?? $activeBranch['scope'] ?? 'all')); ?>;
         var selectedProductIds = new Set();
         try {
             var storedProductIds = JSON.parse(window.sessionStorage.getItem(selectionStorageKey) || '[]');
@@ -1527,6 +1528,8 @@
                 });
             }
         } catch (storageError) {}
+        var deletedProductIds = <?php echo json_encode(array_map('strval', session('inventory_deleted_product_ids', []))); ?>;
+        deletedProductIds.forEach(function(id) { selectedProductIds.delete(id); });
         var bulkForm = $('#bulk-delete-products-form');
         var bulkEditForm = $('#bulk-edit-products-form');
         var bulkCount = $('#bulk-selected-count');
@@ -1977,16 +1980,21 @@
         syncVisibleProductChecks();
 
         var searchDebounce;
-        toolbarSearchInput.on('input', function() {
+        var searchComposing = false;
+        toolbarSearchInput.on('compositionstart', function() { searchComposing = true; clearTimeout(searchDebounce); });
+        toolbarSearchInput.on('compositionend', function() { searchComposing = false; $(this).trigger('input'); });
+        $('#inventory-toolbar-search-form').on('submit', function() { clearTimeout(searchDebounce); });
+        toolbarSearchInput.on('input', function(event) {
             var query = this.value;
             clearTimeout(searchDebounce);
+            if (searchComposing || event.originalEvent?.isComposing) return;
             searchDebounce = setTimeout(function() {
                 if (document.querySelector('[data-server-pagination]')) {
                     document.getElementById('inventory-toolbar-search-form').requestSubmit();
                 } else {
                     table.search(query).draw();
                 }
-            }, 450);
+            }, 1200);
         });
 
         $('#products-table').on('change', '.product-select-checkbox', function() {
@@ -2000,11 +2008,15 @@
             syncVisibleProductChecks();
         });
 
-        selectAllProducts.on('click', function(e) {
-            e.preventDefault();
+        $('#bulk-clear-selection').on('click', function() {
+            selectedProductIds.clear();
+            syncBulkDeleteForm();
+            syncVisibleProductChecks();
+        });
+
+        selectAllProducts.on('change', function() {
             var pageChecks = currentPageProductChecks();
-            var checkedOnPage = pageChecks.filter(':checked').length;
-            var checked = pageChecks.length > 0 && checkedOnPage < pageChecks.length;
+            var checked = this.checked;
 
             pageChecks.each(function() {
                 var id = String(this.value);

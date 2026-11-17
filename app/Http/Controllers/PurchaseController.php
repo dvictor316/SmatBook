@@ -7,6 +7,7 @@ use App\Models\Vendor;
 use App\Models\Supplier;
 use App\Models\Product;
 use App\Models\ProductBranchStock;
+use App\Models\ProductUnit;
 use App\Models\TaxCode;
 use App\Models\Bank;
 use App\Models\PurchaseItem;
@@ -103,6 +104,35 @@ private function applyBranchScope($query, string $table = 'purchases')
         $purchase = $branchQuery->find($purchaseId);
 
         return $purchase ?: $baseQuery->find($purchaseId);
+    }
+
+    private function canEditPurchaseSalesPrice(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isSuperAdmin()
+            || ($user->permissions_override === null && ($user->hasRole('administrator') || $user->hasRole('admin')))
+            || $user->hasPermissionTo('inventory.products.edit'));
+    }
+
+    /** Prices entered on bills are per stock unit, independently of the purchase pack. */
+    private function updatePurchaseSalesPrice(Product $product, array $item): void
+    {
+        if (!isset($item['sales_price']) || $item['sales_price'] === '') {
+            return;
+        }
+        $price = round((float) $item['sales_price'], 2);
+        if ((float) ($product->retail_price ?? $product->price) === $price && (float) $product->price === $price) {
+            return;
+        }
+        $product->price = $price;
+        if (Schema::hasColumn('products', 'retail_price')) {
+            $product->retail_price = $price;
+        }
+        $product->save();
+        if (Schema::hasTable('product_units')) {
+            ProductUnit::where('product_id', $product->id)->where('is_base_unit', true)
+                ->update(['selling_price' => $price]);
+        }
     }
 
     private function productUnitChoices(Product $product): array
@@ -371,6 +401,7 @@ private function applyBranchScope($query, string $table = 'purchases')
             $product->setAttribute('available_units', $unitChoices);
             $product->setAttribute('purchase_unit_label', $purchaseUnitLabel);
             $product->setAttribute('purchase_rate', (float) $purchaseRate);
+            $product->setAttribute('sales_price_unit', $product->stockUnitSymbol());
 
             return $product;
         });
@@ -440,6 +471,7 @@ private function applyBranchScope($query, string $table = 'purchases')
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|numeric|min:0.01',
             'products.*.rate' => 'required|numeric|min:0',
+            'products.*.sales_price' => 'nullable|numeric|min:0|max:999999999999.99',
             'products.*.unit' => 'nullable|string|max:80',
             'products.*.discount' => 'nullable|numeric|min:0',
             'products.*.tax_id' => 'nullable|exists:tax_codes,id',
@@ -458,6 +490,10 @@ private function applyBranchScope($query, string $table = 'purchases')
             return back()->withErrors([
                 'supplier_id' => 'Please select a supplier before saving this purchase.',
             ])->withInput();
+        }
+
+        if (collect($validated['products'])->contains(fn ($item) => isset($item['sales_price']) && $item['sales_price'] !== '')) {
+            abort_unless($this->canEditPurchaseSalesPrice(), 403, 'You do not have permission to change product sales prices.');
         }
 
         DB::beginTransaction();
@@ -562,6 +598,7 @@ private function applyBranchScope($query, string $table = 'purchases')
                     $itemPayload['branch_name'] = $purchase->branch_name ?? $activeBranch['name'];
                 }
 
+                $this->updatePurchaseSalesPrice($product, $item);
                 PurchaseItem::create($itemPayload);
                 $this->applyPurchaseStockChange($product, $stockQuantity, $activeBranch);
             }
@@ -719,6 +756,7 @@ public function show($id)
             $product->setAttribute('available_units', $unitChoices);
             $product->setAttribute('purchase_unit_label', $purchaseUnitLabel);
             $product->setAttribute('purchase_rate', (float) $purchaseRate);
+            $product->setAttribute('sales_price_unit', $product->stockUnitSymbol());
 
             return $product;
         });
@@ -782,6 +820,7 @@ public function show($id)
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|numeric|min:0.01',
             'products.*.rate' => 'required|numeric|min:0',
+            'products.*.sales_price' => 'nullable|numeric|min:0|max:999999999999.99',
             'products.*.unit' => 'nullable|string|max:80',
             'products.*.discount' => 'nullable|numeric|min:0',
             'products.*.tax_id' => 'nullable|exists:taxes,id',
@@ -795,6 +834,10 @@ public function show($id)
             'signature_name' => 'nullable|string|max:100',
             'signature_image' => 'nullable|image|max:2048',
         ]);
+
+        if (collect($validated['products'])->contains(fn ($item) => isset($item['sales_price']) && $item['sales_price'] !== '')) {
+            abort_unless($this->canEditPurchaseSalesPrice(), 403, 'You do not have permission to change product sales prices.');
+        }
 
         DB::beginTransaction();
         
@@ -881,6 +924,7 @@ public function show($id)
                     $itemPayload['branch_name'] = $purchase->branch_name ?? $activeBranch['name'];
                 }
 
+                $this->updatePurchaseSalesPrice($product, $item);
                 PurchaseItem::create($itemPayload);
                 $stockChanges[$product->id] = ($stockChanges[$product->id] ?? 0) + $stockQuantity;
             }

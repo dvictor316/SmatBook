@@ -1029,6 +1029,11 @@ class ProductController extends Controller
             'base_unit_name' => 'unit',
             'unit_measure' => 'unit',
             'stock_unit' => 'unit',
+            'buying_unit' => 'purchase_unit',
+            'purchase_uom' => 'purchase_unit',
+            'stock_units_per_purchase_unit' => 'purchase_conversion',
+            'purchase_conversion_rate' => 'purchase_conversion',
+            'conversion_rate' => 'purchase_conversion',
             'packaging' => 'unit_type',
             'packaging_type' => 'unit_type',
             'type' => 'unit_type',
@@ -3910,7 +3915,8 @@ public function inventory(Request $request)
         $product->delete();
         $this->clearDashboardMetricsCache();
 
-        return redirect()->route('product-list')->with('success', 'Product purged from ' . env('SESSION_DOMAIN'));
+        return redirect()->route('product-list')->with('success', 'Product purged from ' . env('SESSION_DOMAIN'))
+            ->with('inventory_deleted_product_ids', [(int) $id]);
     }
 
     public function bulkDestroy(Request $request)
@@ -3931,12 +3937,13 @@ public function inventory(Request $request)
         }
 
         $deleted = 0;
+        $deletedIds = [];
 
-        DB::transaction(function () use ($ids, &$deleted) {
+        DB::transaction(function () use ($ids, &$deleted, &$deletedIds) {
             Product::query()
                 ->whereIn('id', $ids)
                 ->tap(fn ($query) => $this->applyTenantScope($query, 'products'))
-                ->chunkById(100, function ($products) use (&$deleted) {
+                ->chunkById(100, function ($products) use (&$deleted, &$deletedIds) {
                     foreach ($products as $product) {
                         if ($product->image) {
                             Storage::disk('public')->delete($product->image);
@@ -3950,6 +3957,7 @@ public function inventory(Request $request)
                         }
 
                         $product->delete();
+                        $deletedIds[] = (int) $product->id;
                         $deleted++;
                     }
                 });
@@ -3959,7 +3967,8 @@ public function inventory(Request $request)
 
         return redirect()
             ->route('product-list')
-            ->with('success', "{$deleted} stock item(s) deleted successfully.");
+            ->with('success', "{$deleted} stock item(s) deleted successfully.")
+            ->with('inventory_deleted_product_ids', $deletedIds);
     }
 
     public function bulkUpdate(Request $request)
@@ -4791,7 +4800,7 @@ public function inventory(Request $request)
             'Product Name', 'Category', 'Stock Unit', 'Rolls per Carton',
             'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Number of Cartons', 'Extra Rolls', 'Extra Pieces / Stock Units',
             'Selling Price', 'Cost Price', 'Wholesale Price', 'Special Price',
-            'SKU', 'Barcode', 'Description',
+            'SKU', 'Barcode', 'Description', 'Purchase Unit', 'Stock Units per Purchase Unit',
         ];
     }
 
@@ -4806,17 +4815,18 @@ public function inventory(Request $request)
             'G1:I1' => ['Opening stock quantity', '26704F'],
             'J1:M1' => ['Prices per stock unit', '805C25'],
             'N1:P1' => ['Optional details', '5C547A'],
+            'Q1:R1' => ['Purchase unit', '245879'],
         ] as $range => [$title, $color]) {
             $sheet->mergeCells($range);
             $sheet->setCellValue(explode(':', $range)[0], $title);
             $sheet->getStyle($range)->getFill()->setFillType('solid')->getStartColor()->setRGB($color);
         }
-        $sheet->getStyle('A1:P2')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-        $sheet->getStyle('A1:P1')->getAlignment()->setHorizontal('center');
-        $sheet->getStyle('A2:P2')->getFill()->setFillType('solid')->getStartColor()->setRGB('15304F');
+        $sheet->getStyle('A1:R2')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A1:R1')->getAlignment()->setHorizontal('center');
+        $sheet->getStyle('A2:R2')->getFill()->setFillType('solid')->getStartColor()->setRGB('15304F');
         $sheet->freezePane('A3');
-        $sheet->setAutoFilter('A2:P2');
-        foreach (range('A', 'P') as $column) {
+        $sheet->setAutoFilter('A2:R2');
+        foreach (range('A', 'R') as $column) {
             $sheet->getColumnDimension($column)->setWidth(in_array($column, ['A', 'E', 'F', 'I', 'P'], true) ? 28 : 20);
         }
         $textStyle = new Style();
@@ -4833,6 +4843,12 @@ public function inventory(Request $request)
         $validation->setPrompt('Choose a unit or type another unit.');
         $validation->setShowErrorMessage(false);
         $validation->setSqref('C3:C10002');
+        $purchaseValidation = clone $validation;
+        $purchaseValidation->setPromptTitle('Purchase unit');
+        $purchaseValidation->setPrompt('How you buy this product, e.g. carton or bag.');
+        $purchaseValidation->setSqref('Q3:Q10002');
+        $sheet->getCell('Q3')->setDataValidation($purchaseValidation);
+        $sheet->getColumnDimension('R')->setWidth(32);
 
         $guide = $spreadsheet->createSheet()->setTitle('How to use');
         $guide->fromArray([
@@ -4846,24 +4862,24 @@ public function inventory(Request $request)
             ['7. If counting only cartons, choose carton as the Stock Unit and enter Number of Cartons.'],
             ['8. Prices are per Stock Unit. Carton and roll prices are calculated from their sizes and can be edited later.'],
             ['9. Leave SKU blank to generate it automatically. Format barcodes as text to preserve leading zeroes.'],
-            ['10. Save the workbook and upload it. This template creates new products and skips duplicates.'],
+            ['10. Purchase Unit is how you buy (e.g. carton or bag). Stock Units per Purchase Unit says how many stock units it contains (e.g. 25 kg in a bag). For carton or roll, the packaging size can supply this number. Leave Purchase Unit empty to use the stock unit. Save and upload; existing products are skipped.'],
             [],
-            ['Product Name', 'Category', 'Stock Unit', 'Rolls per Carton', 'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Number of Cartons', 'Extra Rolls', 'Extra Pieces / Stock Units', 'Selling Price', 'Cost Price'],
-            ['Sachets', 'Food', 'pcs', 10, 12, '', 2, 3, 4, 250, 180],
-            ['Noodles', 'Food', 'pcs', '', '', 40, 10, '', 5, 250, 180],
-            ['Rice', 'Food', 'kg', '', '', 25, 2, '', 1.5, 1500, 1200],
-            ['Tissue', 'Household', 'roll', 12, '', '', 5, 2, '', 500, 400],
-            ['Sealed boxes', 'Food', 'carton', '', '', '', 10, '', '', 5000, 4000],
+            ['Product Name', 'Category', 'Stock Unit', 'Rolls per Carton', 'Pcs / Units per Roll', 'Units per Carton (no rolls)', 'Number of Cartons', 'Extra Rolls', 'Extra Pieces / Stock Units', 'Selling Price', 'Cost Price', 'Purchase Unit', 'Stock Units per Purchase Unit'],
+            ['Sachets', 'Food', 'pcs', 10, 12, '', 2, 3, 4, 250, 180, 'carton', 120],
+            ['Noodles', 'Food', 'pcs', '', '', 40, 10, '', 5, 250, 180, 'carton', 40],
+            ['Rice', 'Food', 'kg', '', '', 25, 2, '', 1.5, 1500, 1200, 'bag', 25],
+            ['Tissue', 'Household', 'roll', 12, '', '', 5, 2, '', 500, 400, 'carton', 12],
+            ['Sealed boxes', 'Food', 'carton', '', '', '', 10, '', '', 5000, 4000, 'carton', 1],
             [],
             ['Sachets: (2 x 10 x 12) + (3 x 12) + 4 = 280 pcs. Noodles: (10 x 40) + 5 = 405 pcs.'],
             ['Examples are for guidance only; enter your own products on the Products sheet.'],
         ]);
         $guide->getColumnDimension('A')->setWidth(95);
-        foreach (range('B', 'K') as $column) {
+        foreach (range('B', 'M') as $column) {
             $guide->getColumnDimension($column)->setWidth(25);
         }
         $guide->getStyle('A1:A1')->getFont()->setBold(true)->setSize(14);
-        $guide->getStyle('A13:K13')->getFont()->setBold(true);
+        $guide->getStyle('A13:M13')->getFont()->setBold(true);
         $spreadsheet->setActiveSheetIndex(0);
 
         return response()->streamDownload(function () use ($spreadsheet) {
@@ -4912,10 +4928,13 @@ public function inventory(Request $request)
                     $templateHeaders = $this->productImportTemplateHeaders();
                     $restoredRow = array_map(fn ($value) => str_ireplace('carton', 'c', (string) $value), $row);
                     $normalize = fn ($value) => Str::lower(trim((string) $value));
-                    if (array_map($normalize, array_slice($restoredRow, 0, count($templateHeaders))) === array_map($normalize, $templateHeaders)
-                        && count(array_filter(array_slice($row, count($templateHeaders)), fn ($value) => trim((string) $value) !== '')) === 0) {
-                        $row = $restoredRow;
-                        $candidateHeader = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $row);
+                    foreach ([$templateHeaders, array_slice($templateHeaders, 0, 16)] as $expectedHeaders) {
+                        if (array_map($normalize, array_slice($restoredRow, 0, count($expectedHeaders))) === array_map($normalize, $expectedHeaders)
+                            && count(array_filter(array_slice($row, count($expectedHeaders)), fn ($value) => trim((string) $value) !== '')) === 0) {
+                            $row = $restoredRow;
+                            $candidateHeader = array_map(fn ($value) => $this->normalizeImportHeaderCell($value), $row);
+                            break;
+                        }
                     }
                 }
                 if ($this->isImportHeaderRow($candidateHeader)) {
@@ -5177,6 +5196,29 @@ public function inventory(Request $request)
                                 : (Str::lower(trim((string) $importUnitValue)) === 'roll' ? 'roll' : 'unit');
                         }
 
+                        $purchaseUnit = null;
+                        $purchaseConversion = null;
+                        $purchaseUnitValue = trim((string) ($rowData['purchase_unit'] ?? ''));
+                        $purchaseUnitCacheKey = serialize([$purchaseUnitValue, '', 'purchase']);
+                        if ($purchaseUnitValue !== '') {
+                            if (Str::lower($purchaseUnitValue) === 'c') {
+                                $purchaseUnitValue = 'carton';
+                            }
+                            $purchaseUnit = $importUnits[$purchaseUnitCacheKey]
+                                ?? $this->resolveImportUnit($purchaseUnitValue, '', true);
+                            if ($purchaseUnit['id'] !== $importUnit['id']) {
+                                $rawConversion = str_replace(',', '', (string) ($rowData['purchase_conversion'] ?? ''));
+                                $purchaseConversion = $rawConversion !== '' ? (is_numeric($rawConversion) ? (float) $rawConversion : 0) : match (Str::lower($purchaseUnit['symbol'])) {
+                                    'ctn', 'carton' => (float) $packagingValues['units_per_carton'],
+                                    'roll' => (float) $packagingValues['units_per_roll'],
+                                    default => 0,
+                                };
+                                if ($purchaseConversion < 1 || !is_finite($purchaseConversion)) {
+                                    throw new \InvalidArgumentException('Stock Units per Purchase Unit must be at least 1 for ' . $purchaseUnitValue . '.');
+                                }
+                            }
+                        }
+
                         $retailPrice = ($rowData['retail_price'] ?? '') !== '' ? $rowData['retail_price'] : ($rowData['price'] ?? '');
                         $payload = $this->sanitizeForProductColumns([
                             'name' => $rowData['name'],
@@ -5186,8 +5228,8 @@ public function inventory(Request $request)
                             'base_unit_name' => $importUnit['symbol'] ?: 'pcs',
                             'unit_id' => $importUnit['id'],
                             'base_unit_id' => $importUnit['id'],
-                            'purchase_unit_id' => null,
-                            'conversion_rate' => null,
+                            'purchase_unit_id' => $purchaseConversion !== null ? $purchaseUnit['id'] : null,
+                            'conversion_rate' => $purchaseConversion,
                             'unit_type' => $unitType,
                             'units_per_carton' => $packagingValues['units_per_carton'],
                             'units_per_roll' => $packagingValues['units_per_roll'],
@@ -5216,9 +5258,18 @@ public function inventory(Request $request)
                         );
                         if ($simpleTemplate) {
                             $this->syncProductUnitRows($product->fresh(['unit', 'baseUnit', 'purchaseUnit']));
+                            if ($purchaseConversion !== null && Schema::hasTable('product_units')) {
+                                // Template cost prices are per stock unit; bills use the full purchase pack.
+                                ProductUnit::where('product_id', $product->id)->where('unit_id', $purchaseUnit['id'])
+                                    ->where('is_purchase_unit', true)
+                                    ->update(['purchase_price' => round((float) $product->purchase_price * $purchaseConversion, 2)]);
+                            }
                             DB::commit();
                             $rowTransactionStarted = false;
                             $importCategories[$categoryName] = $category;
+                            if ($purchaseUnit !== null && $purchaseUnit['id'] !== null) {
+                                $importUnits[$purchaseUnitCacheKey] = $purchaseUnit;
+                            }
                             if ($importUnit['id'] !== null) {
                                 $importUnits[$unitCacheKey] = $importUnit;
                             }
@@ -5240,7 +5291,7 @@ public function inventory(Request $request)
                         }
                         $skipped++;
                         if ($simpleTemplate && count($rowErrors) < 10) {
-                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': could not be imported; check the product details';
+                            $rowErrors[] = 'Row ' . ($rowNumber + 1) . ': ' . ($rowException instanceof \InvalidArgumentException ? $rowException->getMessage() : 'could not be imported; check the product details');
                         }
                         Log::warning('Product import row skipped.', [
                             'row' => $rowNumber + 1,

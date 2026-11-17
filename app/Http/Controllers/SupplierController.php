@@ -287,7 +287,7 @@ class SupplierController extends Controller
         return view('Customers.suppliers-create');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $validated = $request->validate($this->supplierRules());
         unset($validated['name']);
@@ -315,6 +315,10 @@ class SupplierController extends Controller
         $nameColumn = $this->resolveNameColumn();
         $payload[$nameColumn] = $request->input('name');
         $supplier = Supplier::create($payload);
+
+        if ($request->expectsJson()) {
+            return response()->json(['supplier' => ['id' => $supplier->id, 'name' => $supplier->{$nameColumn}]], 201);
+        }
 
         return redirect()->route('suppliers.index')->with('success', 'Supplier added successfully.');
     }

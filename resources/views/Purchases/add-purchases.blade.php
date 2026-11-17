@@ -3,6 +3,9 @@
 @section('content')
 @php
     $isEditingPurchase = isset($purchase);
+    $canEditPurchaseSalesPrice = auth()->user()?->isSuperAdmin()
+        || (auth()->user()?->permissions_override === null && (auth()->user()?->hasRole('administrator') || auth()->user()?->hasRole('admin')))
+        || auth()->user()?->hasPermissionTo('inventory.products.edit');
     $purchaseDateValue = old('purchase_date', $isEditingPurchase && !empty($purchase->purchase_date)
         ? \Illuminate\Support\Carbon::parse($purchase->purchase_date)->format('Y-m-d')
         : date('Y-m-d'));
@@ -20,6 +23,7 @@
             'tax_id' => (string) ($item->tax_id ?? ''),
         ])->values()
         : collect();
+    $initialPurchaseRows = collect(old('products', $initialPurchaseRows))->values();
 @endphp
 <div class="page-wrapper">
     <div class="content container-fluid">
@@ -95,9 +99,9 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    <a class="btn btn-primary" href="{{ route('suppliers.create') }}" title="Add Supplier">
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#purchaseSupplierModal" title="Add Supplier" aria-label="Add supplier without leaving this bill">
                                         <i class="fas fa-plus-circle"></i>
-                                    </a>
+                                    </button>
                                 </div>
                                 @error('supplier_id')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -166,16 +170,17 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="productsTable" style="table-layout: fixed; width: 100%; min-width: 900px;">
+                                <table class="table table-hover mb-0" id="productsTable" style="table-layout: fixed; width: 100%; min-width: 1000px;">
                                     <colgroup>
-                                        <col style="width: 29%;">
+                                        <col style="width: 24%;">
+                                        <col style="width: 7%;">
                                         <col style="width: 8%;">
+                                        <col style="width: 10%;">
+                                        <col style="width: 13%;">
                                         <col style="width: 8%;">
-                                        <col style="width: 12%;">
-                                        <col style="width: 10%;">
-                                        <col style="width: 10%;">
+                                        <col style="width: 9%;">
                                         <col style="width: 11%;">
-                                        <col style="width: 12%;">
+                                        <col style="width: 10%;">
                                     </colgroup>
                                     <thead class="table-light">
                                         <tr>
@@ -183,6 +188,7 @@
                                             <th>Quantity *</th>
                                             <th>Unit</th>
                                             <th>Rate *</th>
+                                            <th>Sales Price <small class="d-block text-muted fw-normal">Per stock unit</small></th>
                                             <th>Discount</th>
                                             <th>Tax</th>
                                             <th>Amount</th>
@@ -353,6 +359,25 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="purchaseSupplierModal" tabindex="-1" aria-labelledby="purchaseSupplierModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form id="purchaseSupplierForm" action="{{ route('suppliers.store') }}" method="POST">
+            @csrf
+            <div class="modal-header"><h5 class="modal-title" id="purchaseSupplierModalTitle">Add supplier</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <p class="text-muted small">Your bill and its items will stay open.</p>
+                <div id="purchaseSupplierErrors" class="alert alert-danger" role="alert" hidden></div>
+                <div class="mb-3"><label for="purchaseSupplierName" class="form-label">Supplier / business name *</label><input id="purchaseSupplierName" name="name" class="form-control" required maxlength="191"></div>
+                <div class="mb-3"><label for="purchaseSupplierPhone" class="form-label">Phone</label><input id="purchaseSupplierPhone" name="phone" type="tel" class="form-control" maxlength="191"></div>
+                <div class="mb-3"><label for="purchaseSupplierEmail" class="form-label">Email</label><input id="purchaseSupplierEmail" name="email" type="email" class="form-control" maxlength="191"></div>
+                <div><label for="purchaseSupplierAddress" class="form-label">Address</label><textarea id="purchaseSupplierAddress" name="address" class="form-control" maxlength="255" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save supplier &amp; continue bill</button></div>
+        </form>
+    </div></div>
+</div>
+
 <script>
         function initializePurchaseForm() {
             const tableBody = document.getElementById('productsTableBody');
@@ -362,6 +387,41 @@
                 return;
             }
             addBtn.dataset.spbInitialized = 'true';
+
+            const supplierForm = document.getElementById('purchaseSupplierForm');
+            const supplierModal = document.getElementById('purchaseSupplierModal');
+            let supplierModalReady = false;
+            supplierModal.addEventListener('shown.bs.modal', () => { supplierModalReady = true; });
+            supplierModal.addEventListener('hidden.bs.modal', () => { supplierModalReady = false; });
+            supplierForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                if (!supplierForm.reportValidity()) return;
+                const button = supplierForm.querySelector('[type="submit"]');
+                const errors = document.getElementById('purchaseSupplierErrors');
+                button.disabled = true;
+                errors.hidden = true;
+                try {
+                    const response = await fetch(supplierForm.action, {
+                        method: 'POST', body: new FormData(supplierForm),
+                        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Could not save supplier.');
+                    if (!data.supplier?.id) throw new Error('Could not confirm the new supplier. Please try again.');
+                    const select = document.getElementById('supplier_id');
+                    select.add(new Option(data.supplier.name, data.supplier.id, true, true));
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    const closeSupplierModal = () => bootstrap.Modal.getInstance(supplierModal)?.hide();
+                    if (supplierModalReady) closeSupplierModal();
+                    else if (supplierModal.classList.contains('show')) supplierModal.addEventListener('shown.bs.modal', closeSupplierModal, { once: true });
+                    supplierForm.reset();
+                } catch (error) {
+                    errors.textContent = error.message || 'Could not save supplier. Your bill is still open.';
+                    errors.hidden = false;
+                } finally {
+                    button.disabled = false;
+                }
+            });
 
             const products = @json($products);
             const initialRows = @json($initialPurchaseRows);
@@ -464,6 +524,10 @@
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
                     <td>
+                        <input type="number" name="products[${rowIndex}][sales_price]" class="form-control sales-price-input" step="0.01" min="0" max="999999999999.99" aria-label="Sales price per stock unit" placeholder="Unchanged" @disabled(!$canEditPurchaseSalesPrice)>
+                        <small class="sales-price-unit text-muted"></small>
+                    </td>
+                    <td>
                         <input type="number" name="products[${rowIndex}][discount]" value="${escapeHtml(discount)}" class="form-control discount-input" step="0.01" min="0"
                                data-row="${rowIndex}" onchange="updateProductAmount(${rowIndex})">
                     </td>
@@ -485,11 +549,13 @@
                 productCounter += 1;
                 bindRowEvents(row);
                 initProductSearch(row.querySelector('.product-select'));
+                row.querySelector('.tax-select').value = String(initialData.tax_id ?? '');
                 if (productId) {
                     const productSelect = row.querySelector('.product-select');
                     productSelect.value = productId;
                     const product = productsById.get(productId);
                     const unitSelect = row.querySelector('.unit-select');
+                    fillSalesPrice(row, product, initialData.sales_price);
                     if (unitSelect && product) {
                         populateUnitSelect(unitSelect, product);
                         if (initialData.unit) {
@@ -513,6 +579,14 @@
                 return row;
             }
 
+            function fillSalesPrice(row, product, savedValue) {
+                const input = row.querySelector('.sales-price-input');
+                const unit = product?.sales_price_unit || product?.base_unit_name || 'unit';
+                input.dataset.originalPrice = product ? Number(product.retail_price ?? product.price ?? 0).toFixed(2) : '';
+                input.value = savedValue ?? input.dataset.originalPrice;
+                row.querySelector('.sales-price-unit').textContent = product ? `per ${unit}` : '';
+            }
+
             function bindRowEvents(row) {
                 const productSelect = row.querySelector('.product-select');
                 if (!productSelect) {
@@ -529,6 +603,7 @@
                     const price = selectedOption ? (parseFloat(selectedOption.getAttribute('data-price')) || 0) : 0;
                     const productName = selectedOption ? (selectedOption.getAttribute('data-name') || '') : '';
                     const product = productsById.get(String(productSelect.value));
+                    fillSalesPrice(row, product);
 
                     if (!nameField && productName) {
                         const hiddenName = document.createElement('input');
@@ -598,7 +673,8 @@
 
             function toggleRowInputs(row, enabled) {
                 row.querySelectorAll('select, input').forEach((field) => {
-                    field.disabled = !enabled;
+                    field.disabled = !enabled || (field.classList.contains('sales-price-input')
+                        && (!@json((bool) $canEditPurchaseSalesPrice) || field.value === '' || Number(field.value) === Number(field.dataset.originalPrice)));
                 });
             }
 
@@ -608,10 +684,7 @@
                 row.querySelector('.product-select')?.focus();
             });
 
-            if (initialRows.length > 0) {
-                initialRows.forEach((row) => createEmptyRow(row));
-            }
-            createEmptyRow();
+
             
             // Global functions for inline event handlers
             window.updateProductAmount = function(rowIndex) {
@@ -697,6 +770,12 @@
                 document.getElementById('totalAmount').textContent = window.formatCompactAmount(totalAmount);
             }
             
+            if (initialRows.length > 0) {
+                initialRows.forEach((row) => createEmptyRow(row));
+            }
+            createEmptyRow();
+            updateTotals();
+
             // Event listeners for dynamic updates
             document.getElementById('discount_type').addEventListener('change', updateTotals);
             document.getElementById('discount_value').addEventListener('input', updateTotals);

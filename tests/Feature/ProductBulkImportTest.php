@@ -395,4 +395,70 @@ class ProductBulkImportTest extends TestCase
         }
         $this->assertDatabaseHas('products', ['name' => 'Third item', 'stock' => 3]);
     }
+    public function test_purchase_units_import_with_inferred_carton_and_explicit_measured_conversions(): void
+    {
+        $company = $this->workspace();
+        $file = $this->workbook([
+            ['Purchase noodles', 'Food', 'pcs', null, null, 40, 2, null, 5, 250, 180, null, null, null, null, null, 'carton'],
+            ['Purchase rice', 'Food', 'kg', null, null, 25, 2, null, 1.5, 1500, 1200, null, null, null, null, null, 'bag', 25],
+            ['Purchase cartons', 'Food', 'carton', null, null, null, 3, null, null, 5000, 4000, null, null, null, null, null, 'ctn', 1],
+        ]);
+        $book = IOFactory::load($file->getRealPath());
+        $this->assertSame('Purchase Unit', $book->getSheetByName('Products')->getCell('Q2')->getValue());
+        $this->assertSame('Stock Units per Purchase Unit', $book->getSheetByName('Products')->getCell('R2')->getValue());
+        $book->disconnectWorksheets();
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 3'));
+        $noodles = Product::where('name', 'Purchase noodles')->firstOrFail();
+        $rice = Product::where('name', 'Purchase rice')->firstOrFail();
+        $this->assertEquals(40, $noodles->conversion_rate);
+        $this->assertSame('ctn', $noodles->purchaseUnit->symbol);
+        $this->assertEquals(85, $noodles->stock);
+        $this->assertDatabaseHas('product_units', ['product_id' => $noodles->id, 'unit_id' => $noodles->purchase_unit_id, 'is_purchase_unit' => true, 'purchase_price' => 7200]);
+        $this->assertEquals(25, $rice->conversion_rate);
+        $this->assertSame('bag', $rice->purchaseUnit->symbol);
+        $this->assertEquals(51.5, $rice->stock);
+        $this->assertDatabaseHas('product_units', ['product_id' => $rice->id, 'unit_symbol' => 'bag', 'conversion_factor' => 25, 'is_purchase_unit' => true, 'purchase_price' => 30000]);
+        $cartons = Product::where('name', 'Purchase cartons')->firstOrFail();
+        $this->assertNull($cartons->purchase_unit_id);
+        $this->assertEquals(3, $cartons->stock);
+    }
+
+    public function test_import_rejects_a_purchase_pack_without_a_valid_conversion(): void
+    {
+        $this->workspace();
+        $file = $this->workbook([
+            ['Invalid purchase pack', 'Food', 'kg', null, null, null, null, null, 10, 100, 50, null, null, null, null, null, 'bag', -5],
+            ['Fractional purchase pack', 'Food', 'kg', null, null, null, null, null, 10, 100, 50, null, null, null, null, null, 'bag', 0.5],
+            ['Valid purchase pack', 'Food', 'kg', null, null, null, null, null, 10, 100, 50, null, null, null, null, null, 'bag', 5],
+        ]);
+        $this->post(route('inventory.Products.import'), ['import_file' => $file])
+            ->assertSessionHas('success', fn ($message) => str_contains($message, 'Created: 1'));
+        $this->assertDatabaseMissing('products', ['name' => 'Invalid purchase pack']);
+        $this->assertDatabaseHas('products', ['name' => 'Valid purchase pack', 'conversion_rate' => 5]);
+    }
+
+    public function test_deleted_selection_ids_are_returned_without_including_another_business(): void
+    {
+        $company = $this->workspace();
+        $first = Product::create(['company_id' => $company->id, 'user_id' => auth()->id(), 'name' => 'Selected first', 'sku' => 'SELECT-1', 'stock' => 0, 'price' => 10, 'purchase_price' => 5]);
+        $second = Product::create(['company_id' => $company->id, 'user_id' => auth()->id(), 'name' => 'Selected second', 'sku' => 'SELECT-2', 'stock' => 0, 'price' => 10, 'purchase_price' => 5]);
+        $other = Company::create(['name' => 'Other selection company']);
+        $foreign = new Product();
+        $foreign->forceFill(['company_id' => $other->id, 'user_id' => auth()->id(), 'name' => 'Other item', 'sku' => 'SELECT-3', 'stock' => 0, 'price' => 10, 'purchase_price' => 5])->saveQuietly();
+        $this->delete(route('inventory.Products.bulk-destroy'), ['product_ids' => [$first->id, $second->id, $first->id, $foreign->id]])
+            ->assertSessionHas('inventory_deleted_product_ids', [$first->id, $second->id]);
+        $this->assertDatabaseHas('products', ['id' => $foreign->id]);
+        if (getenv('INVENTORY_PREVIEW_PATH')) {
+            for ($index = 1; $index <= 50; $index++) {
+                $sample = new Product();
+                $sample->forceFill(['company_id' => $company->id, 'user_id' => auth()->id(), 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'name' => 'Browser item ' . $index, 'sku' => 'BROWSER-' . $index, 'stock' => 0, 'price' => 10, 'purchase_price' => 5])->saveQuietly();
+            }
+        }
+        $response = $this->get(route('product-list'))->assertOk();
+        if ($preview = getenv('INVENTORY_PREVIEW_PATH')) {
+            file_put_contents($preview, $response->getContent());
+        }
+    }
+
 }

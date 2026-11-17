@@ -777,4 +777,86 @@ class PurchaseStockPostingTest extends TestCase
             'company_id' => session('current_tenant_id'), 'branch_id' => 'hq', 'quantity' => 7]);
     }
 
+    public function test_bill_sales_price_updates_stock_unit_price_and_preserves_separate_pack_prices(): void
+    {
+        [$product, $payload] = $this->workspace();
+        Company::whereKey($product->company_id)->update(['owner_id' => auth()->id()]);
+        ProductUnit::create(['company_id' => $product->company_id, 'user_id' => auth()->id(), 'product_id' => $product->id,
+            'unit_name' => 'pcs', 'unit_symbol' => 'pcs', 'conversion_factor' => 1, 'is_base_unit' => true, 'selling_price' => 150, 'status' => 'active']);
+        ProductUnit::create(['company_id' => $product->company_id, 'user_id' => auth()->id(), 'product_id' => $product->id,
+            'unit_name' => 'Carton', 'unit_symbol' => 'ctn', 'conversion_factor' => 12, 'selling_price' => 1800, 'status' => 'active']);
+        $payload['products'][0] += ['sales_price' => 175];
+        $payload['products'][0]['unit'] = 'ctn';
+        $this->post(route('purchases.store'), $payload)->assertSessionHas('success');
+        $this->assertStock($product, 29, 29);
+        $this->assertEquals(175, $product->price);
+        $this->assertEquals(175, $product->retail_price);
+        $this->assertEquals(100, $product->purchase_price);
+        $this->assertDatabaseHas('product_units', ['product_id' => $product->id, 'unit_symbol' => 'pcs', 'selling_price' => 175]);
+        $this->assertDatabaseHas('product_units', ['product_id' => $product->id, 'unit_symbol' => 'ctn', 'selling_price' => 1800]);
+        $purchase = Purchase::where('purchase_no', 'PUR-STOCK-TEST')->firstOrFail();
+        $this->assertEquals(200, $purchase->total_amount);
+        $payload['products'][0]['sales_price'] = 190;
+        $this->put(route('purchases.update', $purchase), $payload)->assertSessionHas('success');
+        $this->assertStock($product, 29, 29);
+        $this->assertEquals(190, $product->price);
+        unset($payload['products'][0]['sales_price']);
+        $payload['products'][0]['quantity'] = 3;
+        $this->put(route('purchases.update', $purchase), $payload)->assertSessionHas('success');
+        $this->assertStock($product, 41, 41);
+        $this->assertEquals(190, $product->price);
+    }
+
+    public function test_sales_price_requires_inventory_permission_and_invalid_prices_do_not_post_stock(): void
+    {
+        [$product, $payload] = $this->workspace();
+        Company::whereKey($product->company_id)->update(['owner_id' => auth()->id()]);
+        $payload['products'][0]['sales_price'] = -1;
+        $this->post(route('purchases.store'), $payload)->assertSessionHasErrors('products.0.sales_price');
+        $this->assertStock($product, 5, 5);
+        auth()->user()->update(['role' => 'employee', 'permissions_override' => []]);
+        $payload['products'][0]['sales_price'] = 175;
+        $this->post(route('purchases.store'), $payload)->assertForbidden();
+        $this->assertStock($product, 5, 5);
+        $this->assertEquals(150, $product->price);
+        auth()->user()->update(['role' => 'admin', 'permissions_override' => []]);
+        $this->post(route('purchases.store'), $payload)->assertForbidden();
+        auth()->user()->update(['role' => 'employee', 'permissions_override' => ['inventory.products.edit']]);
+        $this->post(route('purchases.store'), $payload)->assertSessionHas('success');
+        $this->assertStock($product, 7, 7);
+        $this->assertEquals(175, $product->price);
+    }
+
+    public function test_bill_page_exposes_inline_supplier_creation_and_stock_unit_sales_prices(): void
+    {
+        [$product] = $this->workspace();
+        Company::whereKey($product->company_id)->update(['owner_id' => auth()->id()]);
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag());
+        $response = $this->get(route('purchases.create'))->assertOk()
+            ->assertSee('Sales Price')->assertSee('purchaseSupplierModal')->assertSee('products[${rowIndex}][sales_price]', false);
+        if ($preview = getenv('PURCHASE_PREVIEW_PATH')) {
+            file_put_contents($preview, $response->getContent());
+        }
+        $this->postJson(route('suppliers.store'), ['name' => 'New bill supplier', 'phone' => '08012345678'])
+            ->assertCreated()->assertJsonPath('supplier.name', 'New bill supplier');
+        $this->assertDatabaseHas('suppliers', ['name' => 'New bill supplier', 'company_id' => $product->company_id, 'branch_id' => 'hq']);
+    }
+
+    public function test_failed_bill_edit_rolls_back_its_sales_price_change(): void
+    {
+        [$product, $payload] = $this->workspace();
+        Company::whereKey($product->company_id)->update(['owner_id' => auth()->id()]);
+        $payload['products'][0]['sales_price'] = 175;
+        $this->post(route('purchases.store'), $payload)->assertSessionHas('success');
+        $purchase = Purchase::where('purchase_no', 'PUR-STOCK-TEST')->firstOrFail();
+        DB::table('products')->where('id', $product->id)->update(['stock' => 0, 'stock_quantity' => 0]);
+        ProductBranchStock::where('product_id', $product->id)->update(['quantity' => 0]);
+        $payload['products'][0]['quantity'] = 1;
+        $payload['products'][0]['sales_price'] = 190;
+        $this->put(route('purchases.update', $purchase), $payload)->assertSessionHas('error');
+        $this->assertStock($product, 0, 0);
+        $this->assertEquals(175, $product->price);
+        $this->assertEquals(2, $purchase->items()->first()->qty);
+    }
+
 }
