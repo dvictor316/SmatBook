@@ -9146,6 +9146,9 @@ window.POS_ENABLE_FALLBACK = function () {
         const grid = document.querySelector('.unit-grid');
         if (!grid) return;
 
+        const addButton = document.getElementById('add-btn');
+        if (addButton) addButton.disabled = false;
+
         const selectedUnit = getSelectedUnitType();
 
         let units = data.unitOptions || data.units || [];
@@ -9168,7 +9171,6 @@ window.POS_ENABLE_FALLBACK = function () {
 
         if (salesUnitsConfigured && units.length === 0) {
             grid.innerHTML = '';
-            const addButton = document.getElementById('add-btn');
             if (addButton) addButton.disabled = true;
             const helper = document.getElementById('unit-helper-copy');
             if (helper) helper.textContent = 'This product has no units enabled for sale. Enable a unit in the product settings before adding it.';
