@@ -4,7 +4,7 @@
 <div class="page-wrapper">
     <div class="content container-fluid">
         @php
-            $autoReference = 'CRP-' . now()->format('ymdHis') . '-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
+            $autoReference = 'CRP-' . \Illuminate\Support\Str::uuid() . '-' . str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
             $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
             $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
             $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
@@ -357,5 +357,34 @@
         }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('customerReceivePaymentForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function (event) {
+        if (form.dataset.submitting === 'true') {
+            event.preventDefault();
+            return;
+        }
+
+        form.dataset.submitting = 'true';
+        const reference = form.querySelector('[name="reference"]');
+        if (reference && !reference.value.trim()) {
+            const generatedId = window.crypto && typeof window.crypto.randomUUID === 'function'
+                ? window.crypto.randomUUID()
+                : Date.now() + '-' + Math.random().toString(16).slice(2);
+            reference.value = 'CRP-' + generatedId;
+        }
+
+        const button = form.querySelector('[type="submit"]');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Saving payment…';
+        }
+    });
+});
+</script>
 
 @endsection

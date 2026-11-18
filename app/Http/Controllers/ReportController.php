@@ -2374,6 +2374,25 @@ class ReportController extends Controller
             $status = strtolower(trim((string) ($payment->status ?? '')));
 
             return ! in_array($status, $ignoredStatuses, true);
+        })->unique(function ($payment) {
+            $reference = trim((string) ($payment->reference ?? ''));
+            if ($reference === '') {
+                return 'payment:' . $payment->id;
+            }
+
+            $date = $payment->created_at
+                ? Carbon::parse($payment->created_at)->format('Y-m-d')
+                : 'undated';
+            return implode('|', [
+                'receipt:' . $reference,
+                $date,
+                (string) ($payment->customer_id ?? ''),
+                (string) ($payment->sale_id ?? 'wallet'),
+                number_format((float) ($payment->amount ?? 0), 2, '.', ''),
+                strtolower(trim((string) ($payment->method ?? ''))),
+                strtolower(trim((string) ($payment->status ?? ''))),
+                (string) ($payment->created_by ?? ''),
+            ]);
         })->values();
 
         $openingPayments = $openingSale
@@ -2475,7 +2494,11 @@ class ReportController extends Controller
                     ]);
                 });
 
-            $untrackedPaid = max(0, round((float) ($financials['paid'] ?? 0) - (float) $salePayments->sum('amount'), 2));
+            $storedSalePaid = max(
+                (float) ($sale->paid ?? 0),
+                (float) ($sale->amount_paid ?? 0)
+            );
+            $untrackedPaid = max(0, round($storedSalePaid - (float) $salePayments->sum('amount'), 2));
             if ($untrackedPaid > 0) {
                 $entries->push([
                     'date' => $sale->created_at ?: $sale->order_date,

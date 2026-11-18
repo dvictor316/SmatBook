@@ -1065,7 +1065,7 @@ class CustomerController extends Controller
             $salePayments = $paymentHistory->where('sale_id', $sale->id)
                 ->reject(fn ($payment) => in_array(strtolower(trim((string) ($payment->status ?? ''))), ['failed', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void'], true));
             $recordedPaid = (float) $salePayments->sum('amount');
-            $storedPaid = (float) ($sale->paid ?? $sale->amount_paid ?? 0);
+            $storedPaid = max((float) ($sale->paid ?? 0), (float) ($sale->amount_paid ?? 0));
             $untrackedPaid = max(0, round($storedPaid - $recordedPaid, 2));
             if ($untrackedPaid > 0) {
                 $paymentTimeline->push([
@@ -1090,15 +1090,69 @@ class CustomerController extends Controller
             }
         }
 
-        foreach ($paymentHistory as $payment) {
-            $isOpeningPayment = !empty($openingSnapshot['sale']) && (int) $payment->sale_id === (int) $openingSnapshot['sale']->id;
-            if ($isOpeningPayment) {
-                $runningOpeningBalance = max(0, $runningOpeningBalance - (float) $payment->amount);
+        $paymentBatches = $paymentHistory->groupBy(function ($payment) {
+            $reference = trim((string) ($payment->reference ?? ''));
+            if ($reference === '') {
+                return 'payment:' . $payment->id;
             }
 
-            // Older partial opening-balance receipts were incorrectly stored
-            // as Pending. They are received payments; only the remaining debt
-            // is pending, so display these receipts as Completed in the ledger.
+            $date = $payment->created_at
+                ? \Illuminate\Support\Carbon::parse($payment->created_at)->format('Y-m-d')
+                : 'undated';
+            return implode('|', [
+                'receipt:' . $reference,
+                $date,
+                strtolower(trim((string) ($payment->method ?? ''))),
+                (string) ($payment->created_by ?? ''),
+            ]);
+        });
+
+        foreach ($paymentBatches as $paymentBatch) {
+            // One received amount can be allocated across several invoices and
+            // an advance. Collapse exact repeated allocations from old retry
+            // submissions so one receipt is shown once in customer history.
+            $allocations = $paymentBatch->unique(function ($payment) {
+                return implode('|', [
+                    (string) ($payment->sale_id ?? 'wallet'),
+                    number_format((float) ($payment->amount ?? 0), 2, '.', ''),
+                    strtolower(trim((string) ($payment->method ?? ''))),
+                    strtolower(trim((string) ($payment->status ?? ''))),
+                    (string) ($payment->source ?? ''),
+                    (string) ($payment->payment_account_id ?? $payment->account_id ?? ''),
+                    (string) ($payment->created_by ?? ''),
+                ]);
+            })->values();
+            $payment = $allocations->first();
+            if (!$payment) {
+                continue;
+            }
+
+            $allocationIds = $allocations->pluck('id')->map(fn ($paymentId) => (int) $paymentId)->all();
+            $isOpeningPayment = $allocations->contains(function ($allocation) use ($openingSnapshot) {
+                return !empty($openingSnapshot['sale'])
+                    && (int) $allocation->sale_id === (int) $openingSnapshot['sale']->id;
+            });
+            $receivedAmount = round((float) $allocations->sum('amount'), 2);
+            $appliedAmount = round((float) $allocations
+                ->reject(fn ($allocation) => ($allocation->source ?? null) === 'customer_wallet_deposit' || empty($allocation->sale_id))
+                ->sum('amount'), 2);
+            $walletAmount = round(max(0, $receivedAmount - $appliedAmount), 2);
+            if ($isOpeningPayment) {
+                $runningOpeningBalance = max(0, $runningOpeningBalance - $appliedAmount);
+            }
+
+            // A batch containing both invoice allocation and wallet remainder
+            // is one receipt; state the split in its note, while the running
+            // receivable balance only deducts the applied portion.
+            $note = $allocations->pluck('note')->filter()->unique()->implode(' · ')
+                ?: ($isOpeningPayment ? 'Customer opening balance payment received.' : 'Customer payment received.');
+            if ($walletAmount > 0 && $appliedAmount > 0) {
+                $note .= ' Applied ₦' . number_format($appliedAmount, 2) . ' to balances; ₦'
+                    . number_format($walletAmount, 2) . ' credited to wallet.';
+            }
+            $accountNames = $allocations->map(fn ($allocation) => $allocation->account?->name)
+                ->filter()->unique()->values();
+            $receiptNumbers = $allocations->pluck('receipt_no')->filter()->unique()->values();
             $paymentStatus = trim((string) ($payment->status ?: 'Completed'));
             if ($isOpeningPayment && strtolower($paymentStatus) === 'pending') {
                 $paymentStatus = 'Completed';
@@ -1107,7 +1161,9 @@ class CustomerController extends Controller
             $paymentTimeline->push([
                 'date' => $payment->created_at,
                 'reference' => $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id)),
-                'payment_id' => $payment->payment_id ?: ('PAY-' . $payment->id),
+                'payment_id' => $receiptNumbers->count() > 1
+                    ? count($allocationIds) . ' allocation(s)'
+                    : ($payment->payment_id ?: ('PAY-' . $payment->id)),
                 'type' => $isOpeningPayment ? 'Opening Balance / Payment' : 'Payment',
                 'entry_icon' => $isOpeningPayment ? 'fa-wallet' : 'fa-money-bill-wave',
                 'method' => $payment->method ?: 'Unspecified',
@@ -1118,13 +1174,14 @@ class CustomerController extends Controller
                     'failed', 'cancelled' => 'danger',
                     default => 'info',
                 },
-                'account' => $payment->account?->name ?: 'Not assigned',
+                'account' => $accountNames->count() > 1 ? 'Multiple accounts' : ($accountNames->first() ?: 'Not assigned'),
                 'branch' => $payment->branch_name ?: ($payment->sale?->branch_name ?: ($activeBranch['name'] ?? 'Workspace Default')),
-                'note' => $payment->note ?: ($isOpeningPayment ? 'Opening balance payment received.' : 'Customer payment received.'),
-                'source_label' => $isOpeningPayment ? 'Opening Balance Allocation' : (($payment->sale?->invoice_no) ?: 'Direct Customer Payment'),
+                'note' => $note,
+                'source_label' => 'Customer Receipt',
                 'invoice_amount' => 0.0,
-                'payment_amount' => (float) $payment->amount,
-                'amount' => (float) $payment->amount,
+                'payment_amount' => $receivedAmount,
+                'balance_payment_amount' => $appliedAmount,
+                'amount' => $receivedAmount,
                 'running_balance' => $isOpeningPayment ? $runningOpeningBalance : null,
                 'created_by' => $payment->creator?->name ?: 'System',
             ]);
@@ -1139,7 +1196,8 @@ class CustomerController extends Controller
         $paymentTimeline = $paymentTimeline->map(function ($entry) use (&$timelineBalance) {
             $status = strtolower((string) ($entry['status'] ?? 'completed'));
             if (in_array($status, ['completed', 'paid', 'success', 'outstanding', 'partial', 'pending'], true)) {
-                $timelineBalance += (float) ($entry['invoice_amount'] ?? 0) - (float) ($entry['payment_amount'] ?? 0);
+                $timelineBalance += (float) ($entry['invoice_amount'] ?? 0)
+                    - (float) ($entry['balance_payment_amount'] ?? $entry['payment_amount'] ?? 0);
             }
             $entry['running_balance'] = round($timelineBalance, 2);
             return $entry;
@@ -1191,6 +1249,7 @@ class CustomerController extends Controller
         $referenceBase = trim((string) $request->input('reference', ''));
         $paymentDate = $this->normalizePaymentTimestamp($request->input('payment_date'));
         $resolvedAccountId = $this->resolveReceivePaymentAccountId($request->input('payment_target'));
+        $alreadyRecorded = false;
 
         try {
             DB::transaction(function () use (
@@ -1200,9 +1259,29 @@ class CustomerController extends Controller
                 $activeBranch,
                 $referenceBase,
                 $paymentDate,
-                $resolvedAccountId
+                $resolvedAccountId,
+                &$alreadyRecorded
             ) {
                 $customer = Customer::query()->lockForUpdate()->findOrFail($customer->id);
+
+                // The receipt reference doubles as an idempotency key. A
+                // browser retry/double-click must not create a second set of
+                // payment allocations for the same received amount.
+                if ($referenceBase !== '' && Schema::hasColumn('payments', 'reference')) {
+                    $existingReceiptQuery = Payment::query()
+                        ->withoutGlobalScope('tenant')
+                        ->where('customer_id', $customer->id)
+                        ->where('reference', $referenceBase);
+                    if (Schema::hasColumn('payments', 'created_by')) {
+                        $existingReceiptQuery->where('created_by', auth()->id());
+                    }
+                    $this->applyCustomerPaymentTenantScope($existingReceiptQuery, $customer);
+                    $existingReceiptAmount = (float) $existingReceiptQuery->lockForUpdate()->sum('amount');
+                    if ($existingReceiptAmount >= $receivedAmount - 0.005) {
+                        $alreadyRecorded = true;
+                        return;
+                    }
+                }
 
                 // Get outstanding sales ordered by date
                 $outstandingSalesQuery = Sale::query()
@@ -1423,6 +1502,12 @@ class CustomerController extends Controller
                 'exception' => $exception,
             ]);
             return back()->withInput()->with('error', 'Customer payment could not be saved. Please retry. If the problem continues, contact your administrator.');
+        }
+
+        if ($alreadyRecorded) {
+            return redirect()
+                ->route('customers.receive-payment', $customer->id)
+                ->with('success', 'This receipt was already recorded. No duplicate payment was added.');
         }
 
         return redirect()
