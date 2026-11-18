@@ -3,21 +3,19 @@
     'use strict';
     const normalize = (value) => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
     function score(item, query) {
-        const raw = String(query ?? '').trim().toLowerCase();
-        if (!raw) return 1;
-        const codes = [item.sku, item.barcode, ...String(item.barcodes || '').split('|')].filter(Boolean).map((code) => String(code).trim().toLowerCase());
-        if (codes.includes(raw)) return 1000;
         const key = normalize(query);
+        if (!String(query ?? '').trim()) return 1;
         if (!key) return 0;
-        const name = normalize(item.name || item.searchName);
+        const name = normalize(item.name ?? item.searchName);
         if (name === key) return 900;
-        // Numeric queries must match an identifier or a full token, avoiding accidental barcode substrings.
-        if (/^\d+$/.test(raw)) return name.split(' ').includes(raw) ? 500 : 0;
-        if (codes.some((code) => code.startsWith(raw))) return 800;
+        if (name.startsWith(key)) return 700;
+        if (name.includes(key)) return 600;
+
+        // Multi-word searches can match name words in any order, but never
+        // search SKU, barcode, category, measurement, or stock metadata.
+        const words = name.split(' ');
         const tokens = key.split(' ');
-        const words = normalize([name, item.category, item.measurement, item.sku].join(' ')).split(' ');
-        if (!tokens.every((token) => words.some((word) => word.startsWith(token)))) return 0;
-        return name.startsWith(key) ? 700 : tokens.every((token) => name.split(' ').some((word) => word.startsWith(token))) ? 600 : 400;
+        return tokens.every((token) => words.some((word) => word.startsWith(token))) ? 400 : 0;
     }
     function rank(items, query) {
         const recent = getRecent();

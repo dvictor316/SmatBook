@@ -5819,7 +5819,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <div class="search-icon-wrapper">
                         <i class="fas fa-search search-icon"></i>
                     </div>
-                    <input type="text" id="quick-search" class="form-control search-input" placeholder="Search by product name, barcode or SKU…" autocomplete="off" aria-label="Search products">
+                    <input type="text" id="quick-search" class="form-control search-input" placeholder="Search by product name…" autocomplete="off" aria-label="Search products by name">
                     <button type="button" class="pos-search-reset" id="pos-search-reset">Clear</button>
                 </div>
 
@@ -5956,7 +5956,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
             </div>
             @endforeach
         </div>
-        <div id="pos-no-products" class="pos-no-products" hidden role="status">No matching products. Try a name, SKU or full barcode.</div>
+        <div id="pos-no-products" class="pos-no-products" hidden role="status">No products match that name. Try the full name or another part of it.</div>
     </div>
 
     <div class="row g-4">
@@ -8941,7 +8941,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	    if (hasProductSelect2) {
 	        window.jQuery(productSearch).select2({
 	            width: '100%',
-	            placeholder: 'Search product by name, SKU or barcode...',
+	            placeholder: 'Search by product name...',
 	            allowClear: true,
 	            dropdownCssClass: 'pos-product-dropdown',
 	            matcher: function (params, data) {
@@ -8952,16 +8952,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
 	                const option = findOptionById(data.id);
 	                const meta = option?.dataset || {};
-	                const haystack = [
-	                    data.text,
-	                    meta.name,
-	                    meta.sku,
-	                    meta.barcode,
-	                    meta.barcodes,
-	                    meta.categoryName,
-	                ].join(' ').toLowerCase();
-
-	                return haystack.includes(term) ? data : null;
+	                return window.PosProductSearch.score({ name: meta.name || data.text }, term) > 0 ? data : null;
 	            },
 	        });
 	    }
