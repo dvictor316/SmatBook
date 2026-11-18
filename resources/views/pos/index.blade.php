@@ -6282,8 +6282,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
                         <i class="fas fa-chart-line me-1"></i> Sales Register
                     </a>
-                    <a href="{{ ($posSalesLogUrl ?? url('/pos/sales')) . '?reprint=1' }}" class="btn pos-secondary-action">
-                        <i class="fas fa-list me-1"></i> Receipt Lookup
+                    <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
+                        <i class="fas fa-receipt me-1"></i> Sales & Reprint
                     </a>
                     <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
                         <i class="fas fa-plus me-1"></i> New Sale
@@ -8116,7 +8116,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline POS Receipt ${offlineReference}</title><style>
 	            ${pageStyle}
 	            *{box-sizing:border-box}body{margin:0;padding:14px;font:13px/1.4 Arial,sans-serif;color:#172b4d}.receipt{margin:0 auto;background:#fff}.toolbar{display:flex;justify-content:center;gap:8px;margin:0 auto 12px;max-width:720px}.toolbar button{border:0;border-radius:6px;padding:10px 18px;background:#123b7a;color:white;font-weight:700;font-size:14px}.brand{text-align:center;padding-bottom:12px;border-bottom:1px dashed #94a3b8}.brand h1{margin:0;color:#123b7a;font-size:20px}.brand p{margin:3px 0;color:#52627a}.offline{margin:12px 0;padding:8px;text-align:center;border:1px solid #d8bd67;background:#fff9e8;color:#705500;font-weight:700}.meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;padding:10px 0;border-bottom:1px solid #dce3ed}.meta strong{display:block}.item{padding:9px 0;border-bottom:1px dashed #ccd4df}.item-name{font-weight:700}.item-meta,.item-extra{display:flex;justify-content:space-between;gap:10px;color:#52627a}.item-extra{font-size:11px}.item-total,.summary div{display:flex;justify-content:space-between;gap:12px}.item-total{padding-top:4px}.summary{padding:10px 0;border-bottom:1px solid #dce3ed}.summary div{padding:3px 0}.grand{margin-top:5px;padding-top:7px;border-top:1px solid #94a3b8;font-size:16px;font-weight:700;color:#123b7a}.foot{text-align:center;padding-top:12px;color:#52627a;font-size:11px}.thanks{text-align:center;margin-top:8px;font-weight:700}@media screen{body{background:#f1f4f8}.receipt{padding:16px;box-shadow:0 4px 20px #10264b18}}@media print{body{padding:0}.toolbar{display:none!important}.receipt{box-shadow:none}}
-	        </style></head><body><div class="toolbar"><button type="button" onclick="window.focus();window.print()">Print receipt</button></div><main class="receipt"><header class="brand"><h1>${escapeHtml(@json(auth()->user()->company?->name ?? 'SmartProbook'))}</h1><p>${escapeHtml(branchName)}</p><p>Sales Receipt</p></header><div class="offline">OFFLINE RECEIPT · SYNC PENDING<br><span>${escapeHtml(offlineReference)}</span></div><section class="meta"><div>Customer<strong>${escapeHtml(customerName || 'Walk-in Customer')}</strong></div><div>Cashier<strong>${escapeHtml(@json(auth()->user()->name ?? 'Cashier'))}</strong></div><div>Date<strong>${escapeHtml(printedAt)}</strong></div><div>Payment<strong>${escapeHtml(paymentLabel)}</strong></div></section><section>${itemRows}</section><section class="summary"><div><span>Subtotal</span><strong>${money(subtotal)}</strong></div><div><span>Discount</span><strong>−${money(discount)}</strong></div><div><span>Tax</span><strong>${money(tax)}</strong></div>${wallet > 0 ? `<div><span>Wallet applied</span><strong>${money(wallet)}</strong></div>` : ''}${paymentLines}<div class="grand"><span>Total</span><strong>${money(total)}</strong></div>${balance > 0 ? `<div><span>Balance due</span><strong>${money(balance)}</strong></div>` : ''}${change > 0 ? `<div><span>Change</span><strong>${money(change)}</strong></div>` : ''}</section><footer class="foot">This receipt was printed from this device while offline. It will synchronize when internet returns.</footer><div class="thanks">Thank you for your patronage</div></main><script>window.addEventListener('load',function(){window.focus();window.print()},{once:true});</script></body></html>`;
+	        </style></head><body><div class="toolbar"><button type="button" onclick="window.focus();window.print()">Print receipt</button></div><main class="receipt"><header class="brand"><h1>${escapeHtml(@json(auth()->user()->company?->name ?? 'SmartProbook'))}</h1><p>${escapeHtml(branchName)}</p><p>Sales Receipt</p></header><div class="offline">OFFLINE RECEIPT · SYNC PENDING<br><span>${escapeHtml(offlineReference)}</span></div><section class="meta"><div>Customer<strong>${escapeHtml(customerName || 'Walk-in Customer')}</strong></div><div>Cashier<strong>${escapeHtml(@json(auth()->user()->name ?? 'Cashier'))}</strong></div><div>Date<strong>${escapeHtml(printedAt)}</strong></div><div>Payment<strong>${escapeHtml(paymentLabel)}</strong></div></section><section>${itemRows}</section><section class="summary"><div><span>Subtotal</span><strong>${money(subtotal)}</strong></div><div><span>Discount</span><strong>−${money(discount)}</strong></div><div><span>Tax</span><strong>${money(tax)}</strong></div>${wallet > 0 ? `<div><span>Wallet applied</span><strong>${money(wallet)}</strong></div>` : ''}${paymentLines}<div class="grand"><span>Total</span><strong>${money(total)}</strong></div>${balance > 0 ? `<div><span>Balance due</span><strong>${money(balance)}</strong></div>` : ''}${change > 0 ? `<div><span>Change</span><strong>${money(change)}</strong></div>` : ''}</section><footer class="foot">This receipt was printed from this device while offline. It will synchronize when internet returns.</footer><div class="thanks">Thank you for your patronage</div></main><script>window.addEventListener('load',function(){window.focus();window.print()},{once:true});<\/script></body></html>`;
 	        receiptWindow.document.open();
 	        receiptWindow.document.write(html);
 	        receiptWindow.document.close();
@@ -8762,36 +8762,73 @@ window.POS_ENABLE_FALLBACK = function () {
         return value;
     }
 
-    function openReprintLookup() {
+    async function openReprintLookup() {
         if (!requirePosPermission('sell', 'You do not have permission to reprint POS receipts.')) {
             return;
         }
 
-        if (!window.Swal || typeof Swal.fire !== 'function') {
+        let offlineSales = [];
+        try {
+            offlineSales = (await window.SmartProBookOffline?.listSales?.()) || [];
+        } catch (error) {
+            console.warn('Saved POS receipts could not be loaded.', error);
+        }
+        if (!offlineSales.length && navigator.onLine) {
             window.location.href = posSalesLogUrl;
             return;
         }
 
-        Swal.fire({
-            title: 'Reprint Receipt',
-            input: 'text',
-            inputLabel: 'Invoice or receipt number',
-            inputPlaceholder: 'Type invoice number',
-            showCancelButton: true,
-            confirmButtonText: 'Find Receipt',
-            confirmButtonColor: '#0f3a8a',
-            inputValidator: (value) => (!String(value || '').trim() ? 'Enter the invoice or receipt number.' : undefined),
-        }).then((result) => {
-            if (!result.isConfirmed) {
-                return;
-            }
+        if (!window.Swal || typeof Swal.fire !== 'function') {
+            if (navigator.onLine) window.location.href = posSalesLogUrl;
+            else alertFallback(offlineSales.length ? 'Offline receipts are available in this list.' : 'There are no saved offline receipts on this device.');
+            return;
+        }
 
-            const invoiceNo = String(result.value || '').trim();
-            const url = new URL(posSalesLogUrl, window.location.origin);
-            url.searchParams.set('invoice_no', invoiceNo);
-            url.searchParams.set('reprint', '1');
-            window.location.href = url.toString();
+        if (!offlineSales.length) {
+            alertFallback('There are no saved offline receipts on this device. Connect to the internet to view all sales.');
+            return;
+        }
+
+        const offlineReceiptRows = offlineSales
+            .slice()
+            .sort((a, b) => new Date(b.client_recorded_at || 0) - new Date(a.client_recorded_at || 0))
+            .map((sale, index) => {
+                const reference = `OFF-${String(sale.client_sale_id || '').replace(/[^a-z0-9]/gi, '').slice(-12).toUpperCase()}`;
+                const customerOption = Array.from(customerSelect?.options || []).find((option) => String(option.value) === String(sale.customer_id || ''));
+                const customerName = sale.customer_name || customerOption?.textContent?.trim() || 'Walk-in Customer';
+                const recordedAt = new Date(sale.client_recorded_at || Date.now()).toLocaleString();
+                return `<div class="d-flex align-items-center justify-content-between gap-3 border rounded p-2 mb-2 text-start"><div class="min-w-0"><strong class="d-block text-truncate">${escapeHtml(reference)} · ${escapeHtml(customerName)}</strong><small class="text-muted">${escapeHtml(recordedAt)} · ${fmt.format(Number(sale.total || 0))} · ${escapeHtml(sale.sync_status === 'needs_review' ? 'Needs review' : 'Sync pending')}</small></div><button type="button" class="btn btn-sm btn-primary flex-shrink-0" data-reprint-offline="${index}">Reprint</button></div>`;
+            }).join('');
+
+        const sortedOfflineSales = offlineSales
+            .slice()
+            .sort((a, b) => new Date(b.client_recorded_at || 0) - new Date(a.client_recorded_at || 0));
+        const result = await Swal.fire({
+            title: 'Offline receipts',
+            html: `<div style="max-height:55vh;overflow:auto">${offlineReceiptRows}</div>`,
+            showCancelButton: true,
+            showDenyButton: navigator.onLine,
+            confirmButtonText: 'Done',
+            denyButtonText: 'View all sales',
+            denyButtonColor: '#123b7a',
+            didOpen: (popup) => {
+                popup.querySelectorAll('[data-reprint-offline]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const sale = sortedOfflineSales[Number(button.dataset.reprintOffline)];
+                        if (!sale) return;
+                        const receiptWindow = window.open('about:blank', '_blank');
+                        const customerOption = Array.from(customerSelect?.options || []).find((option) => String(option.value) === String(sale.customer_id || ''));
+                        const customerName = sale.customer_name || customerOption?.textContent?.trim() || 'Walk-in Customer';
+                        const format = document.getElementById('receipt-format')?.value || 'standard';
+                        if (!printOfflineReceipt(receiptWindow, sale, format, customerName)) {
+                            receiptWindow?.close();
+                            alertFallback('Allow pop-ups on this device to reprint the offline receipt.');
+                        }
+                    });
+                });
+            },
         });
+        if (result.isDenied) window.location.href = posSalesLogUrl;
     }
 
     function openPriceCheck() {
@@ -10580,6 +10617,7 @@ window.POS_ENABLE_FALLBACK = function () {
         try {
             const payload = {
                     customer_id: customerSelect?.value || null,
+                    customer_name: customerSelect?.selectedOptions?.[0]?.textContent?.trim() || 'Walk-in Customer',
                     payment_method: paymentMethod?.value || 'Cash',
                     source: posSourceContext?.source || null,
                     source_id: posSourceContext?.source_id || null,

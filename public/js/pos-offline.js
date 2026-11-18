@@ -375,6 +375,10 @@
         }
     }
 
+    async function listSales() {
+        return (await all()).filter(belongsToActiveContext);
+    }
+
     async function validateOfflineStock(sale) {
         const records = (await allInventory()).filter((record) => record.context_key === contextKey);
         const stockByProduct = new Map(records.map((record) => [String(record.product_id), Number(record.stock || 0)]));
@@ -399,7 +403,7 @@
         }
     }
 
-    window.SmartProBookOffline = { submit, sync, updateIndicator, reviewQueue };
+    window.SmartProBookOffline = { submit, sync, updateIndicator, reviewQueue, listSales };
     window.addEventListener('online', refreshWhenOnline);
     window.addEventListener('online', updateIndicator);
     window.addEventListener('offline', updateIndicator);
