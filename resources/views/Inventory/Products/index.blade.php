@@ -1173,13 +1173,28 @@
                             </label>
                         </div>
                     </div>
-                    <div class="alert alert-info py-2">Leave a field blank to keep its current value. Prices and reorder settings apply to every chosen item.</div>
+                    <div class="alert alert-info py-2">Leave a field blank to keep its current value. Purchase unit settings apply to every chosen item; the conversion rate is stock units inside one purchase unit. On-hand stock will not change.</div>
                     <div class="row g-3">
                         <div class="col-md-6"><label class="form-label" for="bulk-edit-price">Selling price</label><input class="form-control" id="bulk-edit-price" name="price" type="number" min="0" step="0.01" placeholder="No change"></div>
                         <div class="col-md-6"><label class="form-label" for="bulk-edit-purchase-price">Purchase price</label><input class="form-control" id="bulk-edit-purchase-price" name="purchase_price" type="number" min="0" step="0.01" placeholder="No change"></div>
                         <div class="col-md-6"><label class="form-label" for="bulk-edit-wholesale-price">Wholesale price</label><input class="form-control" id="bulk-edit-wholesale-price" name="wholesale_price" type="number" min="0" step="0.01" placeholder="No change"></div>
                         <div class="col-md-6"><label class="form-label" for="bulk-edit-special-price">Special price</label><input class="form-control" id="bulk-edit-special-price" name="special_price" type="number" min="0" step="0.01" placeholder="No change"></div>
                         <div class="col-md-6"><label class="form-label" for="bulk-edit-category">Category</label><select class="form-select" id="bulk-edit-category" name="category_id"><option value="">No change</option><?php foreach ($categories as $category) { ?><option value="<?php echo e($category->id); ?>"><?php echo e($category->name); ?></option><?php } ?></select></div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="bulk-edit-purchase-unit">Purchase unit</label>
+                            <select class="form-select" id="bulk-edit-purchase-unit" name="purchase_unit_id">
+                                <option value="">No change</option>
+                                <?php foreach (($units ?? collect()) as $unit) { ?>
+                                    <option value="<?php echo e($unit->id); ?>"><?php echo e($unit->name); ?> (<?php echo e($unit->symbol); ?>)</option>
+                                <?php } ?>
+                            </select>
+                            <small class="form-text text-muted">The unit the business buys this product in.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="bulk-edit-conversion-rate">Stock units per purchase unit</label>
+                            <input class="form-control" id="bulk-edit-conversion-rate" name="conversion_rate" type="number" min="0.000001" step="0.000001" placeholder="No change">
+                            <small class="form-text text-muted">Required when setting a purchase unit. Use separate bulk edits for products with different pack sizes.</small>
+                        </div>
                         <div class="col-md-6"><label class="form-label" for="bulk-edit-status">Status</label><select class="form-select" id="bulk-edit-status" name="status"><option value="">No change</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
                         <div class="col-md-6"><label class="form-label" for="bulk-edit-reorder-level">Reorder level</label><input class="form-control" id="bulk-edit-reorder-level" name="reorder_level" type="number" min="0" step="1" placeholder="No change"></div>
                     </div>
@@ -1582,7 +1597,7 @@
                     return;
                 }
                 var hasChanges = bulkEditForm.find('input[name], select[name]')
-                    .filter('[name="price"], [name="purchase_price"], [name="wholesale_price"], [name="special_price"], [name="category_id"], [name="status"], [name="reorder_level"]')
+                    .filter('[name="price"], [name="purchase_price"], [name="wholesale_price"], [name="special_price"], [name="category_id"], [name="purchase_unit_id"], [name="conversion_rate"], [name="status"], [name="reorder_level"]')
                     .filter(function() { return String($(this).val() || '') !== ''; }).length > 0;
                 if (!hasChanges) {
                     event.preventDefault();

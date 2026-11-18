@@ -123,6 +123,7 @@ class ProductController extends Controller
             'productRows' => collect(),
             'transferProductsSearchUrl' => route('inventory.transfer-products.search'),
             'categories' => collect(),
+            'units' => collect(),
             'availableBranches' => $availableBranches,
             'stockTransferEnabled' => $stockTransferEnabled,
             'search' => trim((string) $request->input('search', '')),
@@ -1134,6 +1135,7 @@ class ProductController extends Controller
                 'products' => collect(),
                 'productRows' => $productRows,
                 'categories' => collect(),
+                'units' => collect(),
                 'availableBranches' => $this->getAvailableBranches(),
                 'search' => trim((string) $request->input('search', '')),
                 'session_domain' => env('SESSION_DOMAIN', null)
@@ -1240,12 +1242,14 @@ class ProductController extends Controller
             $categories = Schema::hasTable('categories')
                 ? Category::orderBy(Schema::hasColumn('categories', 'name') ? 'name' : 'id')->get()
                 : collect();
+            $units = $this->unitRows();
 
             return view('Inventory.Products.index', [
                 'products' => $products,
                 'productRows' => $productRows,
                 'transferProductsSearchUrl' => route('inventory.transfer-products.search'),
                 'categories' => $categories,
+                'units' => $units,
                 'availableBranches' => $this->getAvailableBranches(),
                 'stockTransferEnabled' => $this->planSupportsStockTransfer(),
                 'search' => $search,
@@ -3983,12 +3987,14 @@ public function inventory(Request $request)
             'wholesale_price' => 'nullable|numeric|min:0',
             'special_price' => 'nullable|numeric|min:0',
             'category_id' => 'nullable|integer|min:1',
+            'purchase_unit_id' => 'nullable|integer|min:1',
+            'conversion_rate' => 'nullable|numeric|gt:0',
             'status' => 'nullable|in:active,inactive',
             'reorder_level' => 'nullable|integer|min:0',
         ]);
 
         $changes = [];
-        foreach (['price', 'purchase_price', 'wholesale_price', 'special_price', 'category_id', 'status', 'reorder_level'] as $field) {
+        foreach (['price', 'purchase_price', 'wholesale_price', 'special_price', 'category_id', 'purchase_unit_id', 'conversion_rate', 'status', 'reorder_level'] as $field) {
             if (array_key_exists($field, $validated) && $validated[$field] !== null && $validated[$field] !== '') {
                 $changes[$field] = $validated[$field];
             }
@@ -4000,6 +4006,19 @@ public function inventory(Request $request)
             $categoryQuery = Category::query()->withoutGlobalScope('company_id');
             $this->applyTenantScope($categoryQuery, 'categories');
             abort_unless($categoryQuery->whereKey($changes['category_id'])->exists(), 422, 'The selected category is not available in this business.');
+        }
+        if (isset($changes['purchase_unit_id'])) {
+            $purchaseUnitId = (int) $changes['purchase_unit_id'];
+            abort_unless(
+                Schema::hasTable('units') && $this->unitRows()->contains(fn ($unit) => (int) $unit->id === $purchaseUnitId),
+                422,
+                'The selected purchase unit is not available in this business.'
+            );
+            if (!isset($changes['conversion_rate'])) {
+                throw ValidationException::withMessages([
+                    'conversion_rate' => 'Enter the number of stock units contained in one purchase unit.',
+                ]);
+            }
         }
         $changes = array_filter($changes, fn ($value, $field) => Schema::hasColumn('products', $field), ARRAY_FILTER_USE_BOTH);
         if ($changes === []) {
@@ -4038,9 +4057,22 @@ public function inventory(Request $request)
                 });
             }
 
-            $query->chunkById(200, function ($products) use ($changes, &$updated) {
+            $syncPurchaseUnits = isset($changes['purchase_unit_id']) || isset($changes['conversion_rate']);
+            $query->chunkById(200, function ($products) use ($changes, $syncPurchaseUnits, &$updated) {
                 foreach ($products as $product) {
                     $product->fill($changes)->save();
+                    if ($syncPurchaseUnits && Schema::hasTable('product_units')) {
+                        if (isset($changes['purchase_unit_id'])) {
+                            ProductUnit::query()
+                                ->where('product_id', $product->id)
+                                ->where('is_purchase_unit', true)
+                                ->update(['is_purchase_unit' => false]);
+                        }
+                        $freshProduct = $product->fresh(['unit', 'baseUnit', 'purchaseUnit']);
+                        if ($freshProduct) {
+                            $this->syncProductUnitRows($freshProduct);
+                        }
+                    }
                     $updated++;
                 }
             });
