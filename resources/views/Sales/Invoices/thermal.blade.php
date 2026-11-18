@@ -190,8 +190,6 @@
 
 <script>
     const printReturnUrl = @json(route('invoices.index'));
-    let thermalPrintLocked = false;
-
     function closePrintPage() {
         window.close();
         window.setTimeout(() => {
@@ -202,13 +200,9 @@
     }
 
     function printThermalReceipt() {
-        if (thermalPrintLocked) return;
-        thermalPrintLocked = true;
         window.focus();
-        window.setTimeout(() => window.print(), 120);
-        window.setTimeout(() => { thermalPrintLocked = false; }, 2500);
+        window.print();
     }
-    window.addEventListener('afterprint', () => { thermalPrintLocked = false; });
     if (@json(request()->boolean('autoprint'))) {
         window.addEventListener('load', () => window.setTimeout(printThermalReceipt, 300), { once: true });
     }

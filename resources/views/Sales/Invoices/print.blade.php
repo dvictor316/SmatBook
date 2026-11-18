@@ -479,7 +479,7 @@
         <div class="compact-invoice-shell">
             <div id="emailFeedback" class="compact-feedback no-print" aria-live="polite"></div>
             <div class="compact-controls no-print">
-                <button type="button" class="btn btn-primary" onclick="window.print()">
+                <button type="button" class="btn btn-primary" onclick="printInvoiceNow()">
                     <i class="bi bi-printer me-1"></i> Print
                 </button>
                 <a href="{{ route('sales.invoice.print', $sale->id) }}?format=thermal&amp;paper=80" class="btn btn-outline-primary">
@@ -708,8 +708,12 @@
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
     const printReturnUrl = @json(route('invoices.index'));
-    let compactPrintLocked = false;
     let invoiceEmailInFlight = false;
+
+    function printInvoiceNow() {
+        window.focus();
+        window.print();
+    }
 
     function closePrintPage() {
         window.close();
@@ -775,22 +779,9 @@
         }
     }
 
-    function releaseCompactPrintLock() {
-        compactPrintLocked = false;
-    }
-
     function printCompactInvoice() {
-        if (compactPrintLocked) {
-            return;
-        }
-
-        compactPrintLocked = true;
-        window.focus();
-        window.setTimeout(() => window.print(), 120);
-        window.setTimeout(releaseCompactPrintLock, 2500);
+        printInvoiceNow();
     }
-
-    window.addEventListener('afterprint', releaseCompactPrintLock);
 
     if (autoPrintReceipt) {
         if (document.readyState === 'complete') {
