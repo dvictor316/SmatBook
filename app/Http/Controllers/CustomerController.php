@@ -1096,6 +1096,14 @@ class CustomerController extends Controller
                 $runningOpeningBalance = max(0, $runningOpeningBalance - (float) $payment->amount);
             }
 
+            // Older partial opening-balance receipts were incorrectly stored
+            // as Pending. They are received payments; only the remaining debt
+            // is pending, so display these receipts as Completed in the ledger.
+            $paymentStatus = trim((string) ($payment->status ?: 'Completed'));
+            if ($isOpeningPayment && strtolower($paymentStatus) === 'pending') {
+                $paymentStatus = 'Completed';
+            }
+
             $paymentTimeline->push([
                 'date' => $payment->created_at,
                 'reference' => $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id)),
@@ -1103,8 +1111,8 @@ class CustomerController extends Controller
                 'type' => $isOpeningPayment ? 'Opening Balance / Payment' : 'Payment',
                 'entry_icon' => $isOpeningPayment ? 'fa-wallet' : 'fa-money-bill-wave',
                 'method' => $payment->method ?: 'Unspecified',
-                'status' => $payment->status ?: 'Completed',
-                'status_class' => match (strtolower((string) ($payment->status ?? 'completed'))) {
+                'status' => $paymentStatus,
+                'status_class' => match (strtolower($paymentStatus)) {
                     'completed', 'paid', 'success' => 'success',
                     'pending', 'partial' => 'warning',
                     'failed', 'cancelled' => 'danger',
@@ -1304,7 +1312,9 @@ class CustomerController extends Controller
                         'amount' => $openingPaymentAmount,
                         'receipt_no' => $this->generatePaymentReceiptNo(),
                         'method' => $request->input('method') ?: 'Bank Transfer',
-                        'status' => $openingOutstanding <= $openingPaymentAmount ? 'Completed' : 'Pending',
+                        // This row represents money received, so its status must
+                        // not depend on whether the opening debt is fully cleared.
+                        'status' => 'Completed',
                         'note' => $request->input('note') ?: 'Customer opening balance payment received.',
                         'created_by' => auth()->id(),
                     ];

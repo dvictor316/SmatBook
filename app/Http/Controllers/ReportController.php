@@ -2493,6 +2493,36 @@ class ReportController extends Controller
 
         }
 
+        // Payments that are not tied to an invoice still belong on the
+        // customer statement (for example, an overpayment credited to wallet).
+        $linkedPaymentIds = $payments
+            ->whereIn('sale_id', $salesIds)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $payments
+            ->where('customer_id', $customer->id)
+            ->reject(fn ($payment) => in_array((int) $payment->id, $linkedPaymentIds, true))
+            ->each(function ($payment) use (&$entries) {
+                $paymentEventAt = $payment->created_at ?: now();
+                $isWalletCredit = ($payment->source ?? null) === 'customer_wallet_deposit';
+
+                $entries->push([
+                    'date' => $payment->created_at,
+                    'sort_at' => $paymentEventAt,
+                    'sort_id' => (int) ($payment->id ?? 0),
+                    'sort_type' => 2,
+                    'visible' => true,
+                    'reference' => $payment->payment_id ?: ('PAY-'.$payment->id),
+                    'type' => 'Payment',
+                    'description' => $payment->note ?: ($isWalletCredit
+                        ? 'Customer advance credited to wallet'
+                        : 'Customer payment received'),
+                    'debit' => 0.0,
+                    'credit' => (float) ($payment->amount ?? 0),
+                ]);
+            });
+
         $entries = $entries
             ->sortBy(function ($entry) {
                 $sortAt = $entry['sort_at'] ?? $entry['date'];
