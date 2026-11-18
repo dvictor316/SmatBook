@@ -10873,6 +10873,10 @@ document.addEventListener('DOMContentLoaded', function () {
         icon.classList.toggle('fa-times', isOpen);
     };
     const syncHeaderMenuButtons = () => {
+        posRail?.setAttribute(
+            'aria-hidden',
+            isPosDrawerMode() && !document.body.classList.contains('pos-rail-open') ? 'true' : 'false'
+        );
         const isDesktopCloseState = document.body.classList.contains('sidebar-collapsed')
             || document.body.classList.contains('mini-sidebar')
             || document.body.classList.contains('sidebar-icon-only');
@@ -10890,11 +10894,16 @@ document.addEventListener('DOMContentLoaded', function () {
     headerMenuButtons.forEach((button) => {
         button.setAttribute('aria-controls', 'pos-action-rail');
         button.setAttribute('aria-label', 'Open POS menu');
+        button.setAttribute('aria-expanded', 'false');
         setMenuIconState(button, false);
     });
+    posRail?.setAttribute('aria-hidden', isPosDrawerMode() ? 'true' : 'false');
+    posRailBackdrop?.setAttribute('aria-hidden', 'true');
 
     const closePosRail = () => {
         document.body.classList.remove('pos-rail-open');
+        posRail?.setAttribute('aria-hidden', isPosDrawerMode() ? 'true' : 'false');
+        posRailBackdrop?.setAttribute('aria-hidden', 'true');
         headerMenuButtons.forEach((button) => {
             button.setAttribute('aria-expanded', 'false');
             button.classList.remove('is-open');
@@ -10906,6 +10915,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const togglePosRail = (button) => {
         const isOpen = document.body.classList.toggle('pos-rail-open');
+        posRail?.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        posRailBackdrop?.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
         headerMenuButtons.forEach((menuButton) => {
             menuButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             menuButton.classList.toggle('is-open', isOpen);
