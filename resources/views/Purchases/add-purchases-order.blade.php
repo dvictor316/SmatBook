@@ -129,14 +129,11 @@
 
                     {{-- Items table --}}
                     <div class="po-panel">
-                        <div class="po-panel-head d-flex justify-content-between align-items-center">
+                        <div class="po-panel-head">
                             <div>
                                 <h5 class="mb-1">Order Items</h5>
-                                <div class="text-muted small">Lines stay outstanding until received through a Goods Received Note.</div>
+                                <div class="text-muted small">Select a product to open the next line. Lines stay outstanding until received through a Goods Received Note.</div>
                             </div>
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="po-add-row">
-                                <i class="fe fe-plus me-1"></i> Add Item
-                            </button>
                         </div>
                         <div class="p-0">
                             <div class="table-responsive">
@@ -303,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const products = @json($productsData);
     const tbody    = document.getElementById('po-items-body');
-    const addBtn   = document.getElementById('po-add-row');
+    const form     = document.getElementById('po-form');
     let rowIndex   = {{ count($orderItems) }};
 
     function initializeProductSelect(select) {
@@ -352,6 +349,29 @@ document.addEventListener('DOMContentLoaded', function () {
             + '</tr>';
     }
 
+    function isBlankRow(row) {
+        const select = row.querySelector('.product-select');
+        return !select || !select.value;
+    }
+
+    function appendBlankRow() {
+        tbody.insertAdjacentHTML('beforeend', buildRow(rowIndex++));
+        const row = tbody.lastElementChild;
+        initializeProductSelect(row.querySelector('.product-select'));
+        setRowRequiredState(row);
+        return row;
+    }
+
+    function setRowRequiredState(row) {
+        const selected = !isBlankRow(row);
+        const product = row.querySelector('.product-select');
+        const quantity = row.querySelector('.quantity-input');
+        const rate = row.querySelector('.rate-input');
+        if (product) { product.required = selected; }
+        if (quantity) { quantity.required = selected; }
+        if (rate) { rate.required = selected; }
+    }
+
     function applyProductDefaults(row, forceRate) {
         var sel  = row.querySelector('.product-select');
         var opt  = sel ? sel.options[sel.selectedIndex] : null;
@@ -382,12 +402,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary-total').textContent = window.formatCompactAmount(grandTotal);
     }
 
-    addBtn.addEventListener('click', function () {
-        tbody.insertAdjacentHTML('beforeend', buildRow(rowIndex++));
-        initializeProductSelect(tbody.lastElementChild.querySelector('.product-select'));
-        recalculate();
-    });
-
     tbody.addEventListener('click', function (e) {
         const removeButton = e.target.closest('.po-remove-row');
         if (!removeButton || !tbody.contains(removeButton)) { return; }
@@ -400,24 +414,60 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         row.remove();
         // Keep one editable row so a user can continue when they remove the last item.
-        if (!tbody.querySelector('.po-item-row')) {
-            tbody.insertAdjacentHTML('beforeend', buildRow(rowIndex++));
-            initializeProductSelect(tbody.lastElementChild.querySelector('.product-select'));
-        }
+        if (!tbody.lastElementChild || !isBlankRow(tbody.lastElementChild)) { appendBlankRow(); }
         recalculate();
     });
 
     tbody.addEventListener('change', function (e) {
         var row = e.target.closest('tr');
         if (!row) { return; }
-        if (e.target.classList.contains('product-select')) { applyProductDefaults(row, true); }
+        if (e.target.classList.contains('product-select')) {
+            setRowRequiredState(row);
+            if (!isBlankRow(row) && row === tbody.lastElementChild) { appendBlankRow(); }
+            applyProductDefaults(row, true);
+        }
         recalculate();
     });
 
     tbody.addEventListener('input', recalculate);
 
-    tbody.querySelectorAll('.po-item-row').forEach(function (row) { applyProductDefaults(row, false); });
+    tbody.querySelectorAll('.po-item-row').forEach(function (row) {
+        applyProductDefaults(row, false);
+        setRowRequiredState(row);
+    });
     initializeProductSelects(tbody);
+    if (!tbody.querySelector('.po-item-row') || !isBlankRow(tbody.lastElementChild)) { appendBlankRow(); }
+
+    form.addEventListener('submit', function (event) {
+        const rows = Array.from(tbody.querySelectorAll('.po-item-row'));
+        const selectedRows = rows.filter(function (row) { return !isBlankRow(row); });
+        if (selectedRows.length === 0) {
+            event.preventDefault();
+            const firstRow = rows[0] || appendBlankRow();
+            const product = firstRow.querySelector('.product-select');
+            if (product) {
+                product.required = true;
+                window.jQuery && window.jQuery.fn && window.jQuery.fn.select2
+                    ? window.jQuery(product).select2('open')
+                    : product.focus();
+            }
+            return;
+        }
+
+        rows.filter(isBlankRow).forEach(function (row) {
+            const select = row.querySelector('.product-select');
+            if (select && window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && window.jQuery(select).hasClass('select2-hidden-accessible')) {
+                window.jQuery(select).select2('destroy');
+            }
+            row.remove();
+        });
+        tbody.querySelectorAll('.po-item-row').forEach(function (row, index) {
+            row.querySelector('.product-select').name = 'items[' + index + '][product_id]';
+            row.querySelector('.description-input').name = 'items[' + index + '][description]';
+            row.querySelector('.quantity-input').name = 'items[' + index + '][quantity]';
+            row.querySelector('.rate-input').name = 'items[' + index + '][rate]';
+        });
+    });
     recalculate();
 });
 </script>
