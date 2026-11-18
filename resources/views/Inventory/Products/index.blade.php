@@ -13,6 +13,12 @@
     $stockTransferEnabled = $stockTransferEnabled ?? false;
     $branchOptions = $availableBranches;
     $showStockTransferModal = $stockTransferEnabled && count($branchOptions) > 1;
+    $inventoryUser = auth()->user();
+    $canBulkEditProducts = $inventoryUser && (
+        $inventoryUser->isSuperAdmin()
+        || ($inventoryUser->permissions_override === null && ($inventoryUser->hasRole('administrator') || $inventoryUser->hasRole('admin')))
+        || $inventoryUser->hasPermissionTo('inventory.products.edit')
+    );
     $productRowsForView = collect($productRows)->values();
     $branchOptionsForView = array_values($branchOptions);
     $transferSourceBranchId = (string) old('from_branch_id', $activeBranch['id'] ?? '');
@@ -958,7 +964,7 @@
                         </ul>
                     </div>
 
-                    <?php if (auth()->user()?->can('inventory.products.edit')) { ?>
+                    <?php if ($canBulkEditProducts) { ?>
                         <button type="button" class="btn btn-outline-primary inventory-tool-btn inventory-toolbar-bulk-edit" data-bs-toggle="modal" data-bs-target="#bulkEditProductsModal">
                             <i class="fas fa-pen-to-square me-1"></i> Bulk Edit Inventory
                         </button>
@@ -992,7 +998,7 @@
                     <strong><span id="bulk-selected-count">0</span> selected</strong>
                     <span class="text-muted">Edit or remove selected stock items.</span>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="bulk-clear-selection">Clear selection</button>
-                    <?php if (auth()->user()?->can('inventory.products.edit')) { ?>
+                    <?php if ($canBulkEditProducts) { ?>
                         <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#bulkEditProductsModal" data-bulk-edit-scope="selected">
                             <i class="fas fa-pen-to-square me-1"></i> Edit Selected
                         </button>
@@ -1144,8 +1150,7 @@
     <span>Add Product</span>
 </a>
 
-<?php if ($showStockTransferModal) { ?>
-<?php if (auth()->user()?->can('inventory.products.edit')) { ?>
+<?php if ($canBulkEditProducts) { ?>
 <div class="modal fade" id="bulkEditProductsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -1210,6 +1215,7 @@
 </div>
 <?php } ?>
 
+<?php if ($showStockTransferModal) { ?>
 <div class="modal fade" id="transferStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
