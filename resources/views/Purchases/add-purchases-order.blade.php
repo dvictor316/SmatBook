@@ -14,7 +14,7 @@
     $productsData = ($products ?? collect())->map(fn ($p) => [
         'id'   => (int) $p->id,
         'name' => (string) ($p->name ?? ''),
-        'rate' => (float) ($p->purchase_rate ?? $p->purchase_price ?? $p->price ?? 0),
+        'rate' => (float) ($p->purchase_rate ?? $p->purchase_price ?? $p->cost_price ?? $p->price ?? 0),
     ])->values();
 @endphp
 
@@ -157,7 +157,7 @@
                                                         @foreach(($products ?? collect()) as $product)
                                                             <option value="{{ $product->id }}"
                                                                 data-name="{{ $product->name }}"
-                                                                data-rate="{{ (float) ($product->purchase_rate ?? $product->purchase_price ?? $product->price ?? 0) }}"
+                                                                data-rate="{{ (float) ($product->purchase_rate ?? $product->purchase_price ?? $product->cost_price ?? $product->price ?? 0) }}"
                                                                 @selected((string) ($item['product_id'] ?? '') === (string) $product->id)>
                                                                 {{ $product->name }}
                                                             </option>
@@ -304,16 +304,28 @@ document.addEventListener('DOMContentLoaded', function () {
     let rowIndex   = {{ count($orderItems) }};
 
     function initializeProductSelect(select) {
-        if (!select || !window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) { return; }
+        if (!select) { return; }
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+            if (!select.dataset.poSelectionBound) {
+                select.addEventListener('change', handleProductSelection);
+                select.dataset.poSelectionBound = 'true';
+            }
+            return;
+        }
         const $select = window.jQuery(select);
-        if ($select.hasClass('select2-hidden-accessible')) { return; }
-        $select.select2({
-            width: '100%',
-            placeholder: 'Type product name...',
-            allowClear: true,
-            minimumResultsForSearch: 0,
-            dropdownParent: window.jQuery(document.body)
-        });
+        if (!$select.hasClass('select2-hidden-accessible')) {
+            $select.select2({
+                width: '100%',
+                placeholder: 'Type product name...',
+                allowClear: true,
+                minimumResultsForSearch: 0,
+                dropdownParent: window.jQuery(document.body)
+            });
+        }
+        if (!select.dataset.poSelectionBound) {
+            $select.on('change.poAutoRow select2:select.poAutoRow', handleProductSelection);
+            select.dataset.poSelectionBound = 'true';
+        }
     }
 
     function initializeProductSelects(root) {
@@ -372,9 +384,22 @@ document.addEventListener('DOMContentLoaded', function () {
         if (rate) { rate.required = selected; }
     }
 
+    function handleProductSelection(event) {
+        const select = event.target;
+        const row = select.closest('.po-item-row');
+        if (!row) { return; }
+        setRowRequiredState(row);
+        if (!isBlankRow(row)) {
+            applyProductDefaults(row, true);
+            if (row === tbody.lastElementChild) { appendBlankRow(); }
+        }
+        recalculate();
+    }
+
     function applyProductDefaults(row, forceRate) {
         var sel  = row.querySelector('.product-select');
         var opt  = sel ? sel.options[sel.selectedIndex] : null;
+        var product = sel ? products.find(function (item) { return String(item.id) === String(sel.value); }) : null;
         var desc = row.querySelector('.description-input');
         var rate = row.querySelector('.rate-input');
 
@@ -382,7 +407,8 @@ document.addEventListener('DOMContentLoaded', function () {
             desc.value = opt.dataset.name;
         }
         if (opt && rate && (forceRate || !rate.value || parseFloat(rate.value) === 0)) {
-            rate.value = parseFloat(opt.dataset.rate || 0).toFixed(2);
+            const cost = product ? Number(product.rate || 0) : Number(opt.dataset.rate || 0);
+            rate.value = cost.toFixed(2);
         }
     }
 
@@ -415,17 +441,6 @@ document.addEventListener('DOMContentLoaded', function () {
         row.remove();
         // Keep one editable row so a user can continue when they remove the last item.
         if (!tbody.lastElementChild || !isBlankRow(tbody.lastElementChild)) { appendBlankRow(); }
-        recalculate();
-    });
-
-    tbody.addEventListener('change', function (e) {
-        var row = e.target.closest('tr');
-        if (!row) { return; }
-        if (e.target.classList.contains('product-select')) {
-            setRowRequiredState(row);
-            if (!isBlankRow(row) && row === tbody.lastElementChild) { appendBlankRow(); }
-            applyProductDefaults(row, true);
-        }
         recalculate();
     });
 

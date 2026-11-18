@@ -199,10 +199,12 @@ private function applyBranchScope($query, string $table = 'purchases')
             $unitChoices = $this->productUnitChoices($product);
             $purchaseUnit = collect($unitChoices)->firstWhere('is_purchase_unit', true)
                 ?: collect($unitChoices)->first();
-            $purchaseRate = $purchaseUnit['purchase_price']
-                ?? $product->purchase_price
-                ?? $product->price
-                ?? 0;
+            $purchaseRate = collect([
+                $purchaseUnit['purchase_price'] ?? null,
+                $product->purchase_price,
+                $product->cost_price,
+                $product->price,
+            ])->first(fn ($price) => is_numeric($price) && (float) $price > 0) ?? 0;
 
             $product->setAttribute('purchase_rate', (float) $purchaseRate);
             $product->setAttribute('purchase_unit_label', $purchaseUnit['name']
