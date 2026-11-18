@@ -1800,9 +1800,11 @@ public function store(Request $request)
 
         $transferAccountId = (int) data_get($request->all(), 'split_details.transfer_account_id', 0);
         $cardAccountId = (int) data_get($request->all(), 'split_details.card_account_id', 0);
-        $bankPaymentAccountId = $transferAccountId ?: $cardAccountId;
-        if ($bankPaymentAccountId > 0 && !$this->findScopedBankDepositAccount($bankPaymentAccountId)) {
-            $validator->errors()->add('split_details.transfer_account_id', 'Select one active bank account for both bank-transfer and POS payments. Cash accounts cannot receive these payments.');
+        if ($transferAccountId > 0 && !$this->findScopedBankDepositAccount($transferAccountId)) {
+            $validator->errors()->add('split_details.transfer_account_id', 'Select an active bank account for the bank transfer. Cash accounts cannot receive this payment.');
+        }
+        if ($cardAccountId > 0 && !$this->findScopedBankDepositAccount($cardAccountId)) {
+            $validator->errors()->add('split_details.card_account_id', 'Select an active bank account for the POS/card payment. Cash accounts cannot receive this payment.');
         }
 
         $paymentMethod = strtolower((string) $request->input('payment_method'));
@@ -2006,10 +2008,10 @@ public function store(Request $request)
             ? $this->findScopedBankDepositAccount((int) $splitDetails['transfer_account_id'])
             : null;
         if ($paymentMethod === 'split' && (float) $splitDetails['transfer'] > 0 && !$transferSplitAccount) {
-            throw new \RuntimeException('Select the shared bank-transfer / POS payment account. Contact your administrator if none is configured.');
+            throw new \RuntimeException('Select the bank account that received the transfer. Contact your administrator if none is configured.');
         }
         if ($paymentMethod === 'split' && (float) $splitDetails['card'] > 0 && !$cardSplitAccount) {
-            throw new \RuntimeException('Select the shared bank-transfer / POS payment account. Contact your administrator if none is configured.');
+            throw new \RuntimeException('Select the bank account that received the POS/card payment. Contact your administrator if none is configured.');
         }
 
         // --- 2. CREATE THE SALE RECORD ---
@@ -2759,16 +2761,19 @@ public function create()
             return [];
         }
 
-        $bankAccountId = !empty($splitDetails['transfer_account_id'])
+        $transferAccountId = !empty($splitDetails['transfer_account_id'])
             ? (int) $splitDetails['transfer_account_id']
             : (!empty($splitDetails['card_account_id']) ? (int) $splitDetails['card_account_id'] : null);
+        $cardAccountId = !empty($splitDetails['card_account_id'])
+            ? (int) $splitDetails['card_account_id']
+            : $transferAccountId;
 
         return [
             'cash' => (float) ($splitDetails['cash'] ?? 0),
             'card' => (float) ($splitDetails['pos'] ?? $splitDetails['card'] ?? 0),
             'transfer' => (float) ($splitDetails['bank'] ?? $splitDetails['transfer'] ?? 0),
-            'card_account_id' => $bankAccountId,
-            'transfer_account_id' => $bankAccountId,
+            'card_account_id' => $cardAccountId,
+            'transfer_account_id' => $transferAccountId,
         ];
     }
 
