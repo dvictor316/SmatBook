@@ -178,7 +178,7 @@
                                                 </td>
                                                 <td class="text-end fw-semibold line-total-cell pe-3">0.00</td>
                                                 <td class="text-center">
-                                                    <button type="button" class="btn btn-sm btn-outline-danger po-remove-row">&times;</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger po-remove-row" aria-label="Remove item" title="Remove item"><i class="fe fe-trash-2" aria-hidden="true"></i></button>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -306,12 +306,36 @@ document.addEventListener('DOMContentLoaded', function () {
     const addBtn   = document.getElementById('po-add-row');
     let rowIndex   = {{ count($orderItems) }};
 
+    function initializeProductSelect(select) {
+        if (!select || !window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) { return; }
+        const $select = window.jQuery(select);
+        if ($select.hasClass('select2-hidden-accessible')) { return; }
+        $select.select2({
+            width: '100%',
+            placeholder: 'Type product name...',
+            allowClear: true,
+            minimumResultsForSearch: 0,
+            dropdownParent: window.jQuery(document.body)
+        });
+    }
+
+    function initializeProductSelects(root) {
+        (root || tbody).querySelectorAll('.product-select').forEach(initializeProductSelect);
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'}[character];
+        });
+    }
+
     function productOptions(selectedId) {
         selectedId = selectedId || '';
         let html = '<option value="">Select product</option>';
         products.forEach(function (p) {
             const sel = String(p.id) === String(selectedId) ? ' selected' : '';
-            html += '<option value="' + p.id + '" data-name="' + p.name + '" data-rate="' + p.rate + '"' + sel + '>' + p.name + '</option>';
+            const name = escapeHtml(p.name);
+            html += '<option value="' + escapeHtml(p.id) + '" data-name="' + name + '" data-rate="' + escapeHtml(p.rate) + '"' + sel + '>' + name + '</option>';
         });
         return html;
     }
@@ -323,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
             + '<td><input type="number" step="0.01" min="0.01" class="form-control text-end quantity-input" name="items[' + index + '][quantity]" value="1" required></td>'
             + '<td><input type="number" step="0.01" min="0" class="form-control text-end rate-input" name="items[' + index + '][rate]" value="0" required></td>'
             + '<td class="text-end fw-semibold line-total-cell pe-3">0.00</td>'
-            + '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger po-remove-row">&times;</button></td>'
+            + '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger po-remove-row" aria-label="Remove item" title="Remove item"><i class="fe fe-trash-2" aria-hidden="true"></i></button></td>'
             + '</tr>';
     }
 
@@ -359,13 +383,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
     addBtn.addEventListener('click', function () {
         tbody.insertAdjacentHTML('beforeend', buildRow(rowIndex++));
+        initializeProductSelect(tbody.lastElementChild.querySelector('.product-select'));
         recalculate();
     });
 
     tbody.addEventListener('click', function (e) {
-        if (!e.target.classList.contains('po-remove-row')) { return; }
-        if (tbody.querySelectorAll('.po-item-row').length <= 1) { return; }
-        e.target.closest('tr').remove();
+        const removeButton = e.target.closest('.po-remove-row');
+        if (!removeButton || !tbody.contains(removeButton)) { return; }
+        const row = removeButton.closest('.po-item-row');
+        if (!row) { return; }
+
+        const select = row.querySelector('.product-select');
+        if (select && window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && window.jQuery(select).hasClass('select2-hidden-accessible')) {
+            window.jQuery(select).select2('destroy');
+        }
+        row.remove();
+        // Keep one editable row so a user can continue when they remove the last item.
+        if (!tbody.querySelector('.po-item-row')) {
+            tbody.insertAdjacentHTML('beforeend', buildRow(rowIndex++));
+            initializeProductSelect(tbody.lastElementChild.querySelector('.product-select'));
+        }
         recalculate();
     });
 
@@ -379,6 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tbody.addEventListener('input', recalculate);
 
     tbody.querySelectorAll('.po-item-row').forEach(function (row) { applyProductDefaults(row, false); });
+    initializeProductSelects(tbody);
     recalculate();
 });
 </script>
