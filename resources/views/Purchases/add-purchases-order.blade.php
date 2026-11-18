@@ -81,14 +81,19 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Supplier <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="supplier_id" required>
-                                        <option value="">Select supplier</option>
-                                        @foreach(($suppliers ?? collect()) as $supplier)
-                                            <option value="{{ $supplier->id }}" @selected((string) old('supplier_id', $order->supplier_id ?? '') === (string) $supplier->id)>
-                                                {{ $supplier->name ?: ($supplier->supplier_name ?: ($supplier->company_name ?: 'Supplier #' . $supplier->id)) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="input-group">
+                                        <select class="form-select" name="supplier_id" id="po-supplier-id" required>
+                                            <option value="">Select supplier</option>
+                                            @foreach(($suppliers ?? collect()) as $supplier)
+                                                <option value="{{ $supplier->id }}" @selected((string) old('supplier_id', $order->supplier_id ?? '') === (string) $supplier->id)>
+                                                    {{ $supplier->name ?: ($supplier->supplier_name ?: ($supplier->company_name ?: 'Supplier #' . $supplier->id)) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#poSupplierModal" title="Add supplier" aria-label="Add supplier without leaving this purchase order">
+                                            <i class="fas fa-plus-circle" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
                                     @error('supplier_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-4">
@@ -231,9 +236,71 @@
     </div>
 </div>
 
+<div class="modal fade" id="poSupplierModal" tabindex="-1" aria-labelledby="poSupplierModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form id="poSupplierForm" action="{{ route('suppliers.store') }}" method="POST">
+            @csrf
+            <div class="modal-header">
+                <h5 class="modal-title" id="poSupplierModalTitle">Add supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">The purchase order and its items will stay open.</p>
+                <div id="poSupplierErrors" class="alert alert-danger" role="alert" hidden></div>
+                <div class="mb-3"><label for="poSupplierName" class="form-label">Supplier / business name *</label><input id="poSupplierName" name="name" class="form-control" required maxlength="191"></div>
+                <div class="mb-3"><label for="poSupplierPhone" class="form-label">Phone</label><input id="poSupplierPhone" name="phone" type="tel" class="form-control" maxlength="191"></div>
+                <div class="mb-3"><label for="poSupplierEmail" class="form-label">Email</label><input id="poSupplierEmail" name="email" type="email" class="form-control" maxlength="191"></div>
+                <div><label for="poSupplierAddress" class="form-label">Address</label><textarea id="poSupplierAddress" name="address" class="form-control" maxlength="255" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save supplier &amp; continue order</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const supplierForm = document.getElementById('poSupplierForm');
+    const supplierModal = document.getElementById('poSupplierModal');
+    const supplierSelect = document.getElementById('po-supplier-id');
+    const supplierErrors = document.getElementById('poSupplierErrors');
+
+    supplierForm?.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (!supplierForm.reportValidity()) return;
+        const submitButton = supplierForm.querySelector('[type="submit"]');
+        submitButton.disabled = true;
+        supplierErrors.hidden = true;
+
+        try {
+            const response = await fetch(supplierForm.action, {
+                method: 'POST',
+                body: new FormData(supplierForm),
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Could not save supplier.');
+            }
+            if (!data.supplier?.id || !data.supplier?.name) {
+                throw new Error('Could not confirm the new supplier. Please try again.');
+            }
+
+            supplierSelect.add(new Option(data.supplier.name, data.supplier.id, true, true));
+            supplierSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            bootstrap.Modal.getOrCreateInstance(supplierModal).hide();
+            supplierForm.reset();
+        } catch (error) {
+            supplierErrors.textContent = error.message || 'Could not save supplier. Your purchase order is still open.';
+            supplierErrors.hidden = false;
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+
     const products = @json($productsData);
     const tbody    = document.getElementById('po-items-body');
     const addBtn   = document.getElementById('po-add-row');
