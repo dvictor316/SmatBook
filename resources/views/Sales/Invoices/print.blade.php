@@ -784,10 +784,11 @@
     }
 
     if (autoPrintReceipt) {
+        const requestReceiptPrint = () => window.requestAnimationFrame(printCompactInvoice);
         if (document.readyState === 'complete') {
-            window.setTimeout(printCompactInvoice, 300);
+            requestReceiptPrint();
         } else {
-            window.addEventListener('load', () => window.setTimeout(printCompactInvoice, 300), { once: true });
+            window.addEventListener('load', requestReceiptPrint, { once: true });
         }
     }
 </script>

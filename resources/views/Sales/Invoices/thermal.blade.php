@@ -204,7 +204,9 @@
         window.print();
     }
     if (@json(request()->boolean('autoprint'))) {
-        window.addEventListener('load', () => window.setTimeout(printThermalReceipt, 300), { once: true });
+        const requestThermalPrint = () => window.requestAnimationFrame(printThermalReceipt);
+        if (document.readyState === 'complete') requestThermalPrint();
+        else window.addEventListener('load', requestThermalPrint, { once: true });
     }
 </script>
 </body>

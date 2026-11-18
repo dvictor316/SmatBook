@@ -2356,7 +2356,11 @@ $sale = Sale::create([
 
     public function printInvoice(Request $request, $id)
     {
-        $saleQuery = Sale::with(['items.product', 'customer', 'user', 'payments']);
+        $saleQuery = Sale::with([
+            'items.product:id,name',
+            'customer',
+            'user:id,name',
+        ]);
         $this->applyTenantScope($saleQuery, 'sales');
         $sale = $saleQuery->findOrFail($id);
         $balanceQuery = Sale::query();
