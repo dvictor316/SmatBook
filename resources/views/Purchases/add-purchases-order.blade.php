@@ -14,7 +14,7 @@
     $productsData = ($products ?? collect())->map(fn ($p) => [
         'id'   => (int) $p->id,
         'name' => (string) ($p->name ?? ''),
-        'rate' => (float) ($p->purchase_price ?? $p->price ?? 0),
+        'rate' => (float) ($p->purchase_rate ?? $p->purchase_price ?? $p->price ?? 0),
     ])->values();
 @endphp
 
@@ -146,7 +146,7 @@
                                             <th class="product-cell ps-3">Product</th>
                                             <th>Description</th>
                                             <th class="text-end">Qty</th>
-                                            <th class="text-end">Rate</th>
+                                            <th class="text-end">Cost Price</th>
                                             <th class="text-end pe-3">Line Total</th>
                                             <th class="text-center" style="width:56px;"></th>
                                         </tr>
@@ -160,7 +160,7 @@
                                                         @foreach(($products ?? collect()) as $product)
                                                             <option value="{{ $product->id }}"
                                                                 data-name="{{ $product->name }}"
-                                                                data-rate="{{ (float) ($product->purchase_price ?? $product->price ?? 0) }}"
+                                                                data-rate="{{ (float) ($product->purchase_rate ?? $product->purchase_price ?? $product->price ?? 0) }}"
                                                                 @selected((string) ($item['product_id'] ?? '') === (string) $product->id)>
                                                                 {{ $product->name }}
                                                             </option>
@@ -331,11 +331,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function productOptions(selectedId) {
         selectedId = selectedId || '';
-        let html = '<option value="">Select product</option>';
+        let html = '<option value="">Search product by name...</option>';
         products.forEach(function (p) {
             const sel = String(p.id) === String(selectedId) ? ' selected' : '';
             const name = escapeHtml(p.name);
-            html += '<option value="' + escapeHtml(p.id) + '" data-name="' + name + '" data-rate="' + escapeHtml(p.rate) + '"' + sel + '>' + name + '</option>';
+            const rate = Number(p.rate || 0);
+            html += '<option value="' + escapeHtml(p.id) + '" data-name="' + name + '" data-rate="' + escapeHtml(rate) + '"' + sel + '>' + name + ' — ₦' + rate.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</option>';
         });
         return html;
     }

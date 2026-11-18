@@ -192,6 +192,29 @@ private function applyBranchScope($query, string $table = 'purchases')
             ->all();
     }
 
+    /** Attach the configured purchase-unit cost used to prefill purchase orders. */
+    private function preparePurchaseOrderProducts($products)
+    {
+        return $products->map(function (Product $product) {
+            $unitChoices = $this->productUnitChoices($product);
+            $purchaseUnit = collect($unitChoices)->firstWhere('is_purchase_unit', true)
+                ?: collect($unitChoices)->first();
+            $purchaseRate = $purchaseUnit['purchase_price']
+                ?? $product->purchase_price
+                ?? $product->price
+                ?? 0;
+
+            $product->setAttribute('purchase_rate', (float) $purchaseRate);
+            $product->setAttribute('purchase_unit_label', $purchaseUnit['name']
+                ?? $purchaseUnit['symbol']
+                ?? $product->base_unit_name
+                ?? $product->unit_type
+                ?? 'pcs');
+
+            return $product;
+        });
+    }
+
     private function resolvePurchaseLineUnit(Product $product, array $item): array
     {
         $requestedUnit = trim((string) ($item['unit'] ?? ''));
@@ -1509,7 +1532,7 @@ public function show($id)
         if (Schema::hasTable('product_units')) {
             $productsQuery->with('activeProductUnits');
         }
-        $products = $productsQuery->orderBy('name')->get();
+        $products = $this->preparePurchaseOrderProducts($productsQuery->orderBy('name')->get());
 
         return view('Purchases.add-purchases-order', compact('suppliers', 'vendors', 'products'));
     }
@@ -1662,7 +1685,7 @@ public function show($id)
         if (Schema::hasTable('product_units')) {
             $productsQuery->with('activeProductUnits');
         }
-        $products = $productsQuery->orderBy('name')->get();
+        $products = $this->preparePurchaseOrderProducts($productsQuery->orderBy('name')->get());
 
         return view('Purchases.add-purchases-order', compact('order', 'suppliers', 'vendors', 'products'));
     }
