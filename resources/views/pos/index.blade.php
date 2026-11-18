@@ -8080,6 +8080,48 @@ window.POS_ENABLE_FALLBACK = function () {
         '"': '&quot;',
         "'": '&#039;',
     })[char]);
+	    const printOfflineReceipt = (receiptWindow, sale, receiptFormat, customerName) => {
+	        if (!receiptWindow || receiptWindow.closed) return false;
+
+	        const money = (value) => fmt.format(Number(value || 0));
+	        const offlineReference = `OFF-${String(sale.client_sale_id || Date.now()).replace(/[^a-z0-9]/gi, '').slice(-12).toUpperCase()}`;
+	        const paperWidth = receiptFormat === 'thermal-58' ? '58mm' : (receiptFormat === 'thermal-80' ? '80mm' : null);
+	        const items = Array.isArray(sale.items) ? sale.items : [];
+	        const subtotal = items.reduce((sum, item) => sum + (Number(item.sub) || 0), 0);
+	        const discount = items.reduce((sum, item) => sum + (Number(item.discVal) || 0), 0);
+	        const tax = items.reduce((sum, item) => sum + (Number(item.taxVal) || 0), 0);
+	        const total = Number(sale.total) || 0;
+	        const paid = Number(sale.paid) || 0;
+	        const wallet = Number(sale.wallet_amount) || 0;
+	        const balance = Math.max(0, total - paid - wallet);
+	        const change = Math.max(0, paid + wallet - total);
+	        const split = sale.split_details || {};
+	        const paymentLabel = String(sale.payment_method || 'Cash');
+	        const paymentLines = paymentLabel.toLowerCase() === 'split'
+	            ? `<div><span>Cash</span><strong>${money(split.cash)}</strong></div><div><span>Transfer</span><strong>${money(split.transfer)}</strong></div><div><span>Card / POS</span><strong>${money(split.card)}</strong></div>`
+	            : `<div><span>Paid (${escapeHtml(paymentLabel)})</span><strong>${money(paid)}</strong></div>`;
+	        const itemRows = items.map((item) => {
+	            const quantity = Number(item.qty) || 0;
+	            const unit = item.unitLabel || item.unitType || 'unit';
+	            const lineTotal = Number(item.total) || 0;
+	            const lineDiscount = Number(item.discVal) || 0;
+	            const lineTax = Number(item.taxVal) || 0;
+	            return `<article class="item"><div class="item-name">${escapeHtml(item.name || 'Product')}</div><div class="item-meta">${quantity.toLocaleString('en-NG')} ${escapeHtml(unit)} × ${money(item.price)}</div>${lineDiscount > 0 ? `<div class="item-extra"><span>Discount</span><span>−${money(lineDiscount)}</span></div>` : ''}${lineTax > 0 ? `<div class="item-extra"><span>Tax</span><span>${money(lineTax)}</span></div>` : ''}<div class="item-total"><span>Line total</span><strong>${money(lineTotal)}</strong></div></article>`;
+	        }).join('');
+	        const printedAt = new Date(sale.client_recorded_at || Date.now()).toLocaleString('en-NG');
+	        const branchName = sale.offline_branch_name || @json($activeBranch['name'] ?? '');
+	        const pageStyle = paperWidth
+	            ? `@page{size:${paperWidth} auto;margin:3mm}.receipt{width:${paperWidth};max-width:100%;}`
+	            : '@page{size:A4 portrait;margin:12mm}.receipt{width:100%;max-width:720px;}';
+	        const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline POS Receipt ${offlineReference}</title><style>
+	            ${pageStyle}
+	            *{box-sizing:border-box}body{margin:0;padding:14px;font:13px/1.4 Arial,sans-serif;color:#172b4d}.receipt{margin:0 auto;background:#fff}.brand{text-align:center;padding-bottom:12px;border-bottom:1px dashed #94a3b8}.brand h1{margin:0;color:#123b7a;font-size:20px}.brand p{margin:3px 0;color:#52627a}.offline{margin:12px 0;padding:8px;text-align:center;border:1px solid #d8bd67;background:#fff9e8;color:#705500;font-weight:700}.meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;padding:10px 0;border-bottom:1px solid #dce3ed}.meta strong{display:block}.item{padding:9px 0;border-bottom:1px dashed #ccd4df}.item-name{font-weight:700}.item-meta,.item-extra{display:flex;justify-content:space-between;gap:10px;color:#52627a}.item-extra{font-size:11px}.item-total,.summary div{display:flex;justify-content:space-between;gap:12px}.item-total{padding-top:4px}.summary{padding:10px 0;border-bottom:1px solid #dce3ed}.summary div{padding:3px 0}.grand{margin-top:5px;padding-top:7px;border-top:1px solid #94a3b8;font-size:16px;font-weight:700;color:#123b7a}.foot{text-align:center;padding-top:12px;color:#52627a;font-size:11px}.thanks{text-align:center;margin-top:8px;font-weight:700}@media screen{body{background:#f1f4f8}.receipt{padding:16px;box-shadow:0 4px 20px #10264b18}}@media print{body{padding:0}.receipt{box-shadow:none}}
+	        </style></head><body><main class="receipt"><header class="brand"><h1>${escapeHtml(@json(auth()->user()->company?->name ?? 'SmartProbook'))}</h1><p>${escapeHtml(branchName)}</p><p>Sales Receipt</p></header><div class="offline">OFFLINE RECEIPT · SYNC PENDING<br><span>${escapeHtml(offlineReference)}</span></div><section class="meta"><div>Customer<strong>${escapeHtml(customerName || 'Walk-in Customer')}</strong></div><div>Cashier<strong>${escapeHtml(@json(auth()->user()->name ?? 'Cashier'))}</strong></div><div>Date<strong>${escapeHtml(printedAt)}</strong></div><div>Payment<strong>${escapeHtml(paymentLabel)}</strong></div></section><section>${itemRows}</section><section class="summary"><div><span>Subtotal</span><strong>${money(subtotal)}</strong></div><div><span>Discount</span><strong>−${money(discount)}</strong></div><div><span>Tax</span><strong>${money(tax)}</strong></div>${wallet > 0 ? `<div><span>Wallet applied</span><strong>${money(wallet)}</strong></div>` : ''}${paymentLines}<div class="grand"><span>Total</span><strong>${money(total)}</strong></div>${balance > 0 ? `<div><span>Balance due</span><strong>${money(balance)}</strong></div>` : ''}${change > 0 ? `<div><span>Change</span><strong>${money(change)}</strong></div>` : ''}</section><footer class="foot">This receipt was printed from this device while offline. It will synchronize when internet returns.</footer><div class="thanks">Thank you for your patronage</div></main><script>window.addEventListener('load',function(){window.focus();setTimeout(function(){window.print()},300)});</script></body></html>`;
+	        receiptWindow.document.open();
+	        receiptWindow.document.write(html);
+	        receiptWindow.document.close();
+	        return true;
+	    };
 	    const showAlert = (options) => {
         if (window.Swal && typeof Swal.fire === 'function') {
             return Swal.fire(options);
@@ -10584,9 +10626,13 @@ window.POS_ENABLE_FALLBACK = function () {
                 })() };
 
             if (submission.queued) {
-                receiptWindow?.close();
+	                const receiptFormat = document.getElementById('receipt-format')?.value || 'standard';
+	                const customerName = customerSelect?.selectedOptions?.[0]?.textContent?.trim() || 'Walk-in Customer';
+	                const localReceiptOpened = printOfflineReceipt(receiptWindow, submission.sale, receiptFormat, customerName);
                 resetVanillaPosWorkspace();
-                alertFallback('Sale saved offline. It will synchronize automatically when internet returns.');
+	                if (!localReceiptOpened) {
+	                    alertFallback('Sale saved offline and will synchronize when internet returns. Allow pop-ups to print its local receipt.');
+	                }
                 return;
             }
 
