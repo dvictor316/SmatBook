@@ -188,7 +188,7 @@
                                             <th>Quantity *</th>
                                             <th>Unit</th>
                                             <th>Rate *</th>
-                                            <th>Sales Price <small class="d-block text-muted fw-normal">Per stock unit</small></th>
+                                            <th>Selling Price <small class="d-block text-muted fw-normal">Per stock unit</small></th>
                                             <th>Discount</th>
                                             <th>Tax</th>
                                             <th>Amount</th>
@@ -674,7 +674,7 @@
             function toggleRowInputs(row, enabled) {
                 row.querySelectorAll('select, input').forEach((field) => {
                     field.disabled = !enabled || (field.classList.contains('sales-price-input')
-                        && (!@json((bool) $canEditPurchaseSalesPrice) || field.value === '' || Number(field.value) === Number(field.dataset.originalPrice)));
+                        && !@json((bool) $canEditPurchaseSalesPrice));
                 });
             }
 
