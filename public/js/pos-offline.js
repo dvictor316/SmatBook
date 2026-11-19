@@ -148,9 +148,20 @@
 
         window._posComboRefresh?.();
         window.POS_REFRESH_OFFLINE_PRODUCTS?.();
+        // Catalogue refresh replaces every product card. Reapply the cashier's
+        // current query synchronously so the unfiltered catalogue never flashes
+        // over an active search while background stock sync is running.
+        const searchInput = document.getElementById('quick-search');
+        if (searchInput?.value.trim() && window.PosProductSearch?.filterShelf) {
+            window.PosProductSearch.filterShelf(
+                document.querySelectorAll('.product-card'),
+                searchInput.value,
+                'all'
+            );
+        }
         if (window.jQuery) {
             window.jQuery(document).trigger('pos:catalogue-refreshed');
-            window.jQuery('#quick-search').trigger('input');
+            if (!searchInput?.value.trim()) window.jQuery('#quick-search').trigger('input');
         }
     }
 

@@ -6582,7 +6582,7 @@ window.POS_OFFLINE_CONFIG = {
     branchName: @json((string) ($activeBranch['name'] ?? '')),
 };
 </script>
-<script src="{{ asset('js/pos-offline.js') }}"></script>
+<script src="{{ asset('js/pos-offline.js') }}?v={{ filemtime(public_path('js/pos-offline.js')) }}"></script>
 
 <script>
 window.POS_USE_SAFE_TERMINAL = true;
