@@ -611,6 +611,86 @@ class SuperAdminDashboardController extends Controller
         return '1 = 0';
     }
 
+    private function freeTrialProspectsCount(): int
+    {
+        if (!app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
+            || !app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'status')) {
+            return 0;
+        }
+
+        $trials = $this->platformSubscriptionsQuery()
+            ->whereRaw("LOWER(COALESCE(subscriptions.status, '')) = ?", ['trial']);
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'payment_status')) {
+            $trials->whereRaw("LOWER(COALESCE(subscriptions.payment_status, '')) = ?", ['free']);
+        }
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'end_date')) {
+            $trials->where(function ($query) {
+                $query->whereNull('subscriptions.end_date')->orWhereDate('subscriptions.end_date', '>=', today());
+            });
+        }
+
+        $buyerKey = $this->subscriptionBuyerKeyExpression('subscriptions');
+        if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+            && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')) {
+            $trials->whereNotExists(function ($demo) {
+                $demo->selectRaw('1')->from('companies as trial_demo_companies')
+                    ->where('trial_demo_companies.is_demo', true)
+                    ->where(function ($linkedBusiness) {
+                        $hasMatch = false;
+                        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id')) {
+                            $linkedBusiness->whereColumn('trial_demo_companies.id', 'subscriptions.company_id');
+                            $hasMatch = true;
+                        }
+                        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id')
+                            && app(\App\Support\SchemaColumnCache::class)->hasColumn('users', 'company_id')) {
+                            $method = $hasMatch ? 'orWhereExists' : 'whereExists';
+                            $linkedBusiness->{$method}(function ($owner) {
+                                $owner->selectRaw('1')->from('users as trial_owners')
+                                    ->whereColumn('trial_owners.id', 'subscriptions.user_id')
+                                    ->whereColumn('trial_owners.company_id', 'trial_demo_companies.id');
+                            });
+                            $hasMatch = true;
+                        }
+                        if (!$hasMatch) {
+                            $linkedBusiness->whereRaw('1 = 0');
+                        }
+                    });
+            });
+        }
+
+        $paidCondition = $this->subscriptionPaidCondition('paid_subscriptions');
+        $paidBuyerKey = $this->subscriptionBuyerKeyExpression('paid_subscriptions');
+        $trials->whereNotExists(function ($paid) use ($paidCondition, $paidBuyerKey, $buyerKey) {
+            $paid->selectRaw('1')->from('subscriptions as paid_subscriptions')
+                ->whereRaw($paidCondition)
+                ->whereRaw("{$paidBuyerKey} = {$buyerKey}");
+        });
+
+        return (int) ($trials->selectRaw("COUNT(DISTINCT {$buyerKey}) as prospect_count")->value('prospect_count') ?? 0);
+    }
+
+    private function countriesReachedCount(): int
+    {
+        if (!app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+            || !app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'country')) {
+            return 0;
+        }
+
+        $companies = Company::withoutGlobalScope('tenant')
+            ->whereNotNull('country')
+            ->whereRaw("TRIM(COALESCE(country, '')) != ''");
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')) {
+            $companies->where(function ($query) {
+                $query->whereNull('is_demo')->orWhere('is_demo', false);
+            });
+        }
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deleted_at')) {
+            $companies->whereNull('deleted_at');
+        }
+
+        return (int) ($companies->selectRaw('COUNT(DISTINCT LOWER(TRIM(country))) as countries_reached')->value('countries_reached') ?? 0);
+    }
+
     private function subscriptionPaidAtExpression(string $table = 'subscriptions'): string
     {
         $columns = [];
@@ -825,6 +905,8 @@ class SuperAdminDashboardController extends Controller
             $registeredBusinessRevenue = (float) $registeredBusinessMetrics['revenue'];
             $registeredPaidBusinessCount = (int) ($registeredBusinessMetrics['paid_total'] ?? 0);
             $pendingBusinessCount = (int) ($registeredBusinessMetrics['pending_total'] ?? 0);
+            $trialProspectsCount = $this->freeTrialProspectsCount();
+            $countriesReachedCount = $this->countriesReachedCount();
             $demoBusinessCount = 0;
             if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
                 && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')) {
@@ -979,6 +1061,8 @@ class SuperAdminDashboardController extends Controller
                 'paid_subs'        => $dashboardPaidBusinesses,
                 'demo_accounts'    => $demoBusinessCount,
                 'pending_accounts' => $pendingBusinessCount,
+                'trial_prospects'  => $trialProspectsCount,
+                'countries_reached' => $countriesReachedCount,
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
@@ -1602,6 +1686,8 @@ class SuperAdminDashboardController extends Controller
                 }
                 return $query->count();
             });
+            $fallbackTrialProspects = $safeCount(fn () => $this->freeTrialProspectsCount());
+            $fallbackCountriesReached = $safeCount(fn () => $this->countriesReachedCount());
             $fallbackSubscriptionRevenue = $registeredBusinessRevenue > 0
                 ? $registeredBusinessRevenue
                 : $safeFloat(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
@@ -1671,7 +1757,9 @@ class SuperAdminDashboardController extends Controller
                 'state_managers_total' => $safeCount(fn () => (clone $this->stateManagersQuery())->count()),
                 'agents_total' => $safeCount(fn () => (clone $this->agentsQuery())->count()),
                 'other_users_total' => $safeCount(fn () => (clone $this->otherUsersQuery())->count()),
-                'paid_subs' => $fallbackPaidBusinesses, 'demo_accounts' => $fallbackDemoBusinesses, 'pending_accounts' => $fallbackPendingBusinesses, 'total_subs' => $fallbackTotalSubscriptions, 'verified_users' => $fallbackVerifiedUsers, 'recent_signups' => $fallbackRecentSignups,
+                'paid_subs' => $fallbackPaidBusinesses, 'demo_accounts' => $fallbackDemoBusinesses, 'pending_accounts' => $fallbackPendingBusinesses,
+                'trial_prospects' => $fallbackTrialProspects, 'countries_reached' => $fallbackCountriesReached,
+                'total_subs' => $fallbackTotalSubscriptions, 'verified_users' => $fallbackVerifiedUsers, 'recent_signups' => $fallbackRecentSignups,
                 'direct_paid_subs' => 0, 'deployment_paid_subs' => 0,
                 'direct_subscription_revenue' => 0, 'deployment_subscription_revenue' => 0,
                 'direct_customer_users' => 0, 'deployment_customer_users' => 0,

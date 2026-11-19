@@ -1693,6 +1693,53 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                                <div class="card executive-kpi kpi-subscriptions border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell"><i class="fas fa-user-clock" aria-hidden="true"></i></div>
+                                            <div class="kpi-badge">Free trial</div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6 class="kpi-kicker mb-2">Trial Prospects</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['trial_prospects'] ?? 0) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Active, non-demo free-trial businesses</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                                <div class="card executive-kpi kpi-users border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell"><i class="fas fa-people-group" aria-hidden="true"></i></div>
+                                            <div class="kpi-badge">Team</div>
+                                        </div>
+                                        <div class="d-flex align-items-end gap-4 mt-3">
+                                            <div><div class="kpi-kicker mb-1">Agents</div><div class="kpi-value">{{ number_format($metrics['agents_total'] ?? 0) }}</div></div>
+                                            <div><div class="kpi-kicker mb-1">State Managers</div><div class="kpi-value">{{ number_format($metrics['state_managers_total'] ?? 0) }}</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                                <div class="card executive-kpi kpi-companies border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell"><i class="fas fa-earth-africa" aria-hidden="true"></i></div>
+                                            <div class="kpi-badge">Reach</div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6 class="kpi-kicker mb-2">Global Reach</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['countries_reached'] ?? 0) }} countries</h3>
+                                            <p class="kpi-note mb-0 mt-2">Countries with non-demo businesses</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="visit-analytics-board">
                             <div class="visit-metric-strip">
                                 @foreach($visitorAnalytics['cards'] ?? [] as $visitCard)
