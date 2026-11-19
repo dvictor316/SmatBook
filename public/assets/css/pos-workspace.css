@@ -1086,3 +1086,53 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment {
 body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-order {
     background: linear-gradient(155deg, #f7f8fb 0%, #f1f3f7 100%) !important;
 }
+
+/* Deepen the pale blue panels and keep filled action labels high-contrast. */
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-header-bar,
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-product-shelf-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-cart-column > .pos-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .controls-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .summary-panel {
+    background-color: #e0e7f1 !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment {
+    background: linear-gradient(155deg, #d8e1ee 0%, #cbd7e8 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab.active,
+body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab:hover,
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspend,
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspense,
+body.pos-terminal-workspace #pos-checkout-screen .btn-process,
+body.pos-terminal-workspace #pos-sell-screen .btn-add-cart,
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn,
+body.pos-terminal-workspace #pos-sell-screen .btn-process,
+body.pos-terminal-workspace #pos-sell-screen .category-pill.active,
+body.pos-terminal-workspace #pos-sell-screen .category-pill:hover,
+body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn:hover {
+    color: #fff !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab.active:hover,
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspend:hover,
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspense:hover,
+body.pos-terminal-workspace #pos-checkout-screen .btn-process:hover,
+body.pos-terminal-workspace #pos-sell-screen .btn-add-cart:hover,
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn:hover,
+body.pos-terminal-workspace #pos-sell-screen .btn-process:hover,
+body.pos-terminal-workspace #pos-sell-screen .category-pill.active:hover,
+body.pos-terminal-workspace #pos-sell-screen .category-pill:hover,
+body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn:hover {
+    color: #f1d38b !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspend,
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspense {
+    color: #fff !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspend:hover,
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspense:hover {
+    color: #f1d38b !important;
+}
