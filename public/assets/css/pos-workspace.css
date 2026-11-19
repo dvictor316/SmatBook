@@ -821,3 +821,247 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-total strong { co
     body.pos-terminal-workspace #pos-sell-screen .cart-qty-input { width: 32px !important; min-width: 32px !important; }
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card { padding: 12px 10px !important; }
 }
+
+/* POS visual polish: preserve the existing layout and controls. */
+body.pos-terminal-workspace {
+    --pos-ink: #102447;
+    --pos-navy: #0b2348;
+    --pos-blue: #173f78;
+    --pos-blue-light: #eaf0f8;
+    --pos-gold: #d1aa55;
+    --pos-gold-light: #fbf6e8;
+    --pos-red: #b9434b;
+    --pos-red-light: #fff1f1;
+    --pos-line: #d7e0ec;
+    --pos-shadow: 0 8px 22px rgba(11, 35, 72, .08);
+}
+
+body.pos-terminal-workspace .pos-full-page-wrapper {
+    color: var(--pos-ink);
+}
+
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-header-bar,
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-product-shelf-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-cart-column > .pos-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .controls-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .summary-panel {
+    border-color: var(--pos-line) !important;
+    box-shadow: var(--pos-shadow) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card {
+    border-color: #d9e1ec !important;
+    border-radius: 12px !important;
+    box-shadow: 0 3px 10px rgba(11, 35, 72, .055) !important;
+    transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card:hover,
+body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card.active,
+body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card.last-picked {
+    border-color: var(--pos-gold) !important;
+    background: linear-gradient(155deg, #fff 0%, #fbf8ef 100%) !important;
+    box-shadow: inset 0 0 0 1px rgba(209, 170, 85, .22), 0 8px 20px rgba(11, 35, 72, .11) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill,
+body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
+    border-color: #d5deeb !important;
+    background: #fff !important;
+    color: var(--pos-blue) !important;
+    box-shadow: 0 2px 6px rgba(11, 35, 72, .045) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:hover,
+body.pos-terminal-workspace #pos-sell-screen .category-pill.active,
+body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn:hover {
+    border-color: var(--pos-gold) !important;
+    background: linear-gradient(135deg, var(--pos-navy), var(--pos-blue)) !important;
+    color: #fff !important;
+    box-shadow: inset 0 -2px 0 var(--pos-gold), 0 5px 12px rgba(11, 35, 72, .14) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .search-input,
+body.pos-terminal-workspace #pos-sell-screen .form-control,
+body.pos-terminal-workspace #pos-sell-screen .form-select,
+body.pos-terminal-workspace #pos-checkout-screen .form-control,
+body.pos-terminal-workspace #pos-checkout-screen .form-select {
+    border-color: #cbd6e4 !important;
+    color: var(--pos-ink) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .search-input:focus,
+body.pos-terminal-workspace #pos-sell-screen .form-control:focus,
+body.pos-terminal-workspace #pos-sell-screen .form-select:focus,
+body.pos-terminal-workspace #pos-checkout-screen .form-control:focus,
+body.pos-terminal-workspace #pos-checkout-screen .form-select:focus {
+    border-color: var(--pos-gold) !important;
+    box-shadow: 0 0 0 3px rgba(209, 170, 85, .2) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .btn-add-cart,
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn,
+body.pos-terminal-workspace #pos-sell-screen .btn-process,
+body.pos-terminal-workspace #pos-checkout-screen .btn-process {
+    border-color: rgba(209, 170, 85, .72) !important;
+    background: linear-gradient(135deg, #0b2348 0%, #17477f 100%) !important;
+    color: #fff !important;
+    box-shadow: inset 0 -2px 0 rgba(209, 170, 85, .92), 0 7px 16px rgba(11, 35, 72, .18) !important;
+    transition: box-shadow .18s ease, filter .18s ease, border-color .18s ease !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .btn-add-cart:hover,
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn:hover,
+body.pos-terminal-workspace #pos-sell-screen .btn-process:hover,
+body.pos-terminal-workspace #pos-checkout-screen .btn-process:hover {
+    border-color: var(--pos-gold) !important;
+    filter: brightness(1.09) !important;
+    box-shadow: inset 0 -2px 0 var(--pos-gold), 0 9px 20px rgba(11, 35, 72, .23) !important;
+}
+
+body.pos-terminal-workspace .pos-full-page-wrapper .btn:focus-visible,
+body.pos-terminal-workspace #pos-checkout-screen .btn:focus-visible,
+body.pos-terminal-workspace .pos-full-page-wrapper button:focus-visible {
+    outline: 2px solid var(--pos-gold) !important;
+    outline-offset: 2px;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn {
+    color: var(--pos-blue) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn > i {
+    border-color: rgba(209, 170, 85, .55) !important;
+    background: linear-gradient(145deg, #fff, var(--pos-gold-light)) !important;
+    color: var(--pos-blue) !important;
+    box-shadow: 0 3px 9px rgba(11, 35, 72, .10) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:hover,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn.active {
+    background: rgba(209, 170, 85, .15) !important;
+    color: var(--pos-navy) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .product-card-name,
+body.pos-terminal-workspace #pos-sell-screen .toolbar-title,
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
+    color: var(--pos-navy) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-product-meta strong,
+body.pos-terminal-workspace #pos-sell-screen .grand-total {
+    color: var(--pos-blue) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .cart-qty-step,
+body.pos-terminal-workspace #pos-sell-screen .btn-cart-edit {
+    border-color: rgba(23, 63, 120, .24) !important;
+    background: linear-gradient(145deg, #fff, var(--pos-blue-light)) !important;
+    color: var(--pos-blue) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .cart-remove-button,
+body.pos-terminal-workspace #pos-sell-screen .btn-remove,
+body.pos-terminal-workspace #pos-sell-screen .btn-danger {
+    border-color: rgba(185, 67, 75, .25) !important;
+    background: var(--pos-red-light) !important;
+    color: var(--pos-red) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .cart-remove-button:hover,
+body.pos-terminal-workspace #pos-sell-screen .btn-remove:hover,
+body.pos-terminal-workspace #pos-sell-screen .btn-danger:hover {
+    border-color: var(--pos-red) !important;
+    background: var(--pos-red) !important;
+    color: #fff !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-pend-order,
+body.pos-terminal-workspace #pos-sell-screen .pos-secondary-action {
+    border-color: rgba(209, 170, 85, .48) !important;
+    background: linear-gradient(145deg, #fff, var(--pos-gold-light)) !important;
+    color: #765b24 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading button {
+    border-color: rgba(185, 67, 75, .3) !important;
+    background: var(--pos-red-light) !important;
+    color: var(--pos-red) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-header h1 {
+    color: var(--pos-navy) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-step-label {
+    color: #9b772e !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-layout {
+    border-color: #d4deea !important;
+    box-shadow: 0 14px 34px rgba(11, 35, 72, .10) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment {
+    background: linear-gradient(155deg, #f3f6fb 0%, #eaf0f8 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-order {
+    background: linear-gradient(155deg, #fff 0%, #fcfbf7 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-notice {
+    background: linear-gradient(135deg, #fff9e9, #fffdf7) !important;
+    color: #765b24 !important;
+    box-shadow: inset 0 0 0 1px rgba(209, 170, 85, .38) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab {
+    border-color: #c8d4e4 !important;
+    background: linear-gradient(145deg, #fff 0%, #edf2f8 100%) !important;
+    color: var(--pos-blue) !important;
+    text-shadow: none !important;
+    box-shadow: 0 3px 9px rgba(11, 35, 72, .07) !important;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab:hover,
+body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab.active {
+    border-color: var(--pos-gold) !important;
+    background: linear-gradient(135deg, var(--pos-navy) 0%, #1a477b 100%) !important;
+    color: #fff !important;
+    box-shadow: inset 0 -2px 0 var(--pos-gold), 0 7px 16px rgba(11, 35, 72, .17) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspend {
+    background: linear-gradient(135deg, #8c6822, #b28a39) !important;
+    box-shadow: inset 0 -2px 0 rgba(255, 226, 160, .8), 0 3px 8px rgba(11, 35, 72, .12) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspense {
+    background: linear-gradient(135deg, var(--pos-navy), var(--pos-blue)) !important;
+    box-shadow: inset 0 -2px 0 rgba(209, 170, 85, .86), 0 3px 8px rgba(11, 35, 72, .12) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-totals .pos-checkout-total {
+    border-top-color: rgba(209, 170, 85, .65) !important;
+    color: var(--pos-navy) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-total strong,
+body.pos-terminal-workspace #pos-checkout-screen #change-amount {
+    color: var(--pos-blue) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-header .btn {
+    border-color: rgba(185, 67, 75, .38) !important;
+    background: linear-gradient(145deg, #fff, #fff8f7) !important;
+    color: #934047 !important;
+    box-shadow: 0 3px 9px rgba(11, 35, 72, .06) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-header .btn:hover {
+    border-color: var(--pos-red) !important;
+    background: var(--pos-red-light) !important;
+}
