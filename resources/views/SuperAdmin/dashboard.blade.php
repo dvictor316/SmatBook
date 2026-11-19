@@ -1560,7 +1560,7 @@
                     <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
                         <div class="row">
-                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                            <div class="col-lg-2 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-revenue border-0">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
@@ -1577,7 +1577,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                            <div class="col-lg-2 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-subscriptions border-0">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
@@ -1594,7 +1594,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                            <div class="col-lg-2 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-companies border-0">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
@@ -1611,7 +1611,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                            <div class="col-lg-2 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-users border-0">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start">
@@ -1624,6 +1624,36 @@
                                             <h6 class="kpi-kicker mb-2">Average Plan Sale</h6>
                                             <h3 class="fw-bold mb-0 kpi-value">₦{{ \App\Support\CompactNumber::format($metrics['avg_plan_sale'] ?? 0, 2) }}</h3>
                                             <p class="kpi-note mb-0 mt-2">Average income per verified plan purchase</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-6 grid-margin stretch-card">
+                                <div class="card executive-kpi kpi-subscriptions border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell"><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i></div>
+                                            <div class="kpi-badge">35%</div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6 class="kpi-kicker mb-2">Agent Commission</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ \App\Support\CompactNumber::format($metrics['agent_commission'] ?? 0, 2) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Commission on deployed plan sales</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-6 grid-margin stretch-card">
+                                <div class="card executive-kpi kpi-revenue border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell"><i class="fas fa-building-columns" aria-hidden="true"></i></div>
+                                            <div class="kpi-badge">Net</div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6 class="kpi-kicker mb-2">App Plan Earnings</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">₦{{ \App\Support\CompactNumber::format($metrics['platform_plan_earnings'] ?? 0, 2) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Plan revenue after agent commission</p>
                                         </div>
                                     </div>
                                 </div>

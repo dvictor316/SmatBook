@@ -861,6 +861,21 @@ class SuperAdminDashboardController extends Controller
             $dashboardPaidBusinesses = $paidBuyersCount;
             $dashboardSubscriptionRevenue = $registeredBusinessRevenue > 0 ? $registeredBusinessRevenue : $subscriptionRevenue;
             $avgPlanSale = $dashboardPaidBusinesses > 0 ? ($dashboardSubscriptionRevenue / $dashboardPaidBusinesses) : 0;
+            $agentCommission = null;
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('deployment_commissions')) {
+                $commissionColumn = app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'commission_amount')
+                    ? 'commission_amount'
+                    : (app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'amount') ? 'amount' : null);
+                if ($commissionColumn) {
+                    $commissionQuery = DB::table('deployment_commissions');
+                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'status')) {
+                        $commissionQuery->whereRaw("LOWER(COALESCE(status, '')) != ?", ['cancelled']);
+                    }
+                    $agentCommission = (float) ($commissionQuery->sum($commissionColumn) ?? 0);
+                }
+            }
+            $agentCommission ??= round($deploymentSubscriptionRevenue * (\App\Http\Controllers\SuperAdmin\DeploymentManagerController::COMMISSION_RATE / 100), 2);
+            $platformPlanEarnings = max(0, $dashboardSubscriptionRevenue - $agentCommission);
 
             // METRICS
             $metrics = [
@@ -884,6 +899,8 @@ class SuperAdminDashboardController extends Controller
                                       : 0,
                 'platform_revenue' => $dashboardSubscriptionRevenue > 0 ? $dashboardSubscriptionRevenue : $platformRevenue,
                 'owner_subscription_revenue' => $dashboardSubscriptionRevenue,
+                'agent_commission' => $agentCommission,
+                'platform_plan_earnings' => $platformPlanEarnings,
                 'direct_subscription_revenue' => $directSubscriptionRevenue,
                 'deployment_subscription_revenue' => $deploymentSubscriptionRevenue,
                 'pending_setups'   => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
@@ -1520,6 +1537,23 @@ class SuperAdminDashboardController extends Controller
                 ? $this->applyFinalizedSalesFilter(DB::table('sales'))->sum('total')
                 : 0);
             $fallbackPayouts = $safeFloat(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('platform_payouts') ? PlatformPayout::sum('amount') : 0);
+            $fallbackAgentCommission = $safeFloat(function () {
+                if (!app(\App\Support\SchemaColumnCache::class)->hasTable('deployment_commissions')) {
+                    return 0;
+                }
+                $commissionColumn = app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'commission_amount')
+                    ? 'commission_amount'
+                    : (app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'amount') ? 'amount' : null);
+                if (!$commissionColumn) {
+                    return 0;
+                }
+                $query = DB::table('deployment_commissions');
+                if (app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'status')) {
+                    $query->whereRaw("LOWER(COALESCE(status, '')) != ?", ['cancelled']);
+                }
+                return $query->sum($commissionColumn);
+            });
+            $fallbackPlatformPlanEarnings = max(0, $fallbackSubscriptionRevenue - $fallbackAgentCommission);
             $fallbackTotalSubscriptions = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions') ? $this->platformSubscriptionsQuery()->count() : 0);
 
             $emptyMetrics = [
@@ -1543,6 +1577,8 @@ class SuperAdminDashboardController extends Controller
                 'net_platform_balance' => $fallbackSubscriptionRevenue - $fallbackPayouts,
                 'registered_businesses_total' => $fallbackPaidBusinesses,
                 'registered_user_revenue' => $fallbackSubscriptionRevenue,
+                'agent_commission' => $fallbackAgentCommission,
+                'platform_plan_earnings' => $fallbackPlatformPlanEarnings,
             ];
 
             return view('SuperAdmin.dashboard', [
