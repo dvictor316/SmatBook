@@ -663,17 +663,28 @@ class SettingController extends Controller
             // from transactions). The stored current_balance column can become stale
             // because LedgerService doesn't update it after every posting.
             if (Schema::hasTable('transactions')) {
+                $postedOpeningBalanceAccountIds = Transaction::query()
+                    ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                    ->where('related_type', Account::class)
+                    ->whereColumn('account_id', 'related_id')
+                    ->distinct()
+                    ->pluck('account_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+
                 $txnTotals = \App\Models\Transaction::query()
                     ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
                     ->groupBy('account_id')
                     ->get()
                     ->keyBy('account_id');
 
-                $accounts = $accounts->map(function (Account $account) use ($txnTotals) {
+                $accounts = $accounts->map(function (Account $account) use ($txnTotals, $postedOpeningBalanceAccountIds) {
                     $t   = $txnTotals->get($account->id);
                     $dr  = (float) ($t->total_debit  ?? 0);
                     $cr  = (float) ($t->total_credit ?? 0);
-                    $ob  = (float) ($account->opening_balance ?? 0);
+                    $ob  = in_array((int) $account->id, $postedOpeningBalanceAccountIds, true)
+                        ? 0.0
+                        : (float) ($account->opening_balance ?? 0);
                     $isDebit = in_array($account->type, [Account::TYPE_ASSET, Account::TYPE_EXPENSE]);
                     // In-memory only — does NOT write to DB
                     $account->current_balance = $isDebit ? ($ob + $dr) - $cr : ($ob + $cr) - $dr;

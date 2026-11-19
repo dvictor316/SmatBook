@@ -1087,14 +1087,26 @@ class ReportController extends Controller
             ->get()
             ->keyBy('account_id');
 
+        $postedOpeningBalanceAccountIds = \App\Models\Transaction::query()
+            ->where('transaction_type', \App\Models\Transaction::TYPE_OPENING_BALANCE)
+            ->where('related_type', Account::class)
+            ->whereColumn('account_id', 'related_id')
+            ->whereDate('transaction_date', '<=', $end->toDateString())
+            ->distinct()
+            ->pluck('account_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
 
         $accounts = $accountsBase
-            ->map(function ($account) use ($txnTotals, &$openingTotals) {
+            ->map(function ($account) use ($txnTotals, $postedOpeningBalanceAccountIds, &$openingTotals) {
                 $totals = $txnTotals->get($account->id);
                 $totalDebit = (float) ($totals->total_debit ?? 0);
                 $totalCredit = (float) ($totals->total_credit ?? 0);
-                $openingBalance = (float) ($account->opening_balance ?? 0);
+                $openingBalance = in_array((int) $account->id, $postedOpeningBalanceAccountIds, true)
+                    ? 0.0
+                    : (float) ($account->opening_balance ?? 0);
 
                 $debitBalance = 0;
                 $creditBalance = 0;

@@ -181,13 +181,26 @@ class Account extends Model
         $debits = $query->sum('debit');
         $credits = $query->sum('credit');
 
+        // Opening balances are stored on the account and also posted as a
+        // double-entry journal. Once that journal exists, use the ledger
+        // movement alone so the opening amount is not counted twice.
+        $openingBalance = (float) ($this->opening_balance ?? 0);
+        if ($this->transactions()
+            ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+            ->where('related_type', self::class)
+            ->where('related_id', $this->id)
+            ->when($upToDate, fn ($openingQuery) => $openingQuery->where('transaction_date', '<=', $upToDate))
+            ->exists()) {
+            $openingBalance = 0.0;
+        }
+
         // For Assets and Expenses: Debit increases, Credit decreases
         if (in_array($this->type, [self::TYPE_ASSET, self::TYPE_EXPENSE])) {
-            return $this->opening_balance + $debits - $credits;
+            return $openingBalance + $debits - $credits;
         }
 
         // For Liabilities, Equity, and Revenue: Credit increases, Debit decreases
-        return $this->opening_balance + $credits - $debits;
+        return $openingBalance + $credits - $debits;
     }
 
     /**
