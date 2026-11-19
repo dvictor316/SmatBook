@@ -148,11 +148,36 @@ class Sale extends Model
         if (in_array($mode, ['Credit', 'Charge to Room'], true)) {
             return $prefix.$mode;
         }
+
+        if ($this->relationLoaded('payments')) {
+            $accountLabels = $this->payments
+                ->filter(fn ($payment) => (float) $payment->amount > 0
+                    && ! in_array(strtolower(trim((string) $payment->status)), ['failed', 'error', 'cancelled', 'canceled', 'pending approval', 'rejected', 'refunded', 'void'], true))
+                ->map(function ($payment) {
+                    $accountName = trim((string) ($payment->account?->name ?? ''));
+                    if ($accountName !== '') {
+                        return $accountName;
+                    }
+
+                    return match (strtolower(trim((string) $payment->method))) {
+                        'cash' => 'Cash',
+                        default => 'Account not recorded',
+                    };
+                })
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($accountLabels->isNotEmpty()) {
+                return $prefix.$accountLabels->implode(' / ');
+            }
+        }
+
         $split = is_array($details['split'] ?? null) ? $details['split'] : [];
         $channels = [
             'cash' => ['Cash', 'payment_account_name'],
-            'transfer' => ['Bank Transfer', 'transfer_account_name'],
-            'card' => ['POS/Card', 'card_account_name'],
+            'transfer' => ['Account not recorded', 'transfer_account_name'],
+            'card' => ['Account not recorded', 'card_account_name'],
         ];
         $labels = [];
         foreach ($channels as $channel => [$mode, $accountKey]) {
@@ -170,8 +195,7 @@ class Sale extends Model
             default => 'payment_account_name',
         };
         return $prefix.(trim((string) ($details[$accountKey] ?? $details['payment_account_name'] ?? '')) ?: match ($method) {
-            'transfer', 'bank_transfer', 'bank transfer' => 'Bank Transfer',
-            'card', 'pos', 'pos/card' => 'POS/Card',
+            'transfer', 'bank_transfer', 'bank transfer', 'card', 'pos', 'pos/card' => 'Account not recorded',
             'split' => 'Split Payment',
             'charge_to_room' => 'Charge to Room',
             default => $mode,

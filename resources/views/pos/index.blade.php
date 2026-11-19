@@ -7804,6 +7804,7 @@ $(document).ready(function() {
         applyProductSelection($('#product-select').find(':selected'));
         syncProductSearchValue(null);
         $('#quick-search').val('');
+        window._posComboClear?.();
         $('#barcode-input').val('');
         $('#quantity').val(1);
         $('#discount, #tax').val(0);
@@ -9706,6 +9707,7 @@ window.POS_ENABLE_FALLBACK = function () {
 
         if (productSelect) productSelect.value = '';
 	        syncProductSearchDropdown('');
+        window._posComboClear?.();
         if (quickSearch) quickSearch.value = '';
         window.PosWorkspace?.showProducts();
         if (barcodeInput) barcodeInput.value = '';
@@ -10847,7 +10849,17 @@ window.POS_ENABLE_FALLBACK = function () {
 
         // Called by syncProductSearchDropdown (card clicks, barcode scans, etc.)
         window._posComboSync = function(productId) {
-            if (!productId) { clearCombo(); return; }
+            if (!productId) {
+                selId = '';
+                if (input.value.trim()) {
+                    if (clear) clear.style.display = '';
+                    setComboHasValue(true);
+                    openWith(input.value.trim());
+                    return;
+                }
+                clearCombo();
+                return;
+            }
             const opt = Array.from(sel.options).find(function(o) { return String(o.value) === String(productId); });
             if (opt) {
                 selId = String(productId);
@@ -10857,6 +10869,7 @@ window.POS_ENABLE_FALLBACK = function () {
                 close();
             }
         };
+        window._posComboClear = clearCombo;
         window._posComboOpen = function(keyword = '') {
             input.value = keyword;
             if (clear) clear.style.display = (keyword || selId) ? '' : 'none';

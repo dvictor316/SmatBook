@@ -119,13 +119,16 @@ class SaleController extends Controller
 
     private function posSalesPaymentBreakdown(Collection $sales): array
     {
-        $summary = [
-            'cash' => ['label' => 'Cash', 'amount' => 0.0, 'count' => 0],
-            'transfer' => ['label' => 'Bank Transfer', 'amount' => 0.0, 'count' => 0],
-            'card' => ['label' => 'POS/Card', 'amount' => 0.0, 'count' => 0],
-            'wallet' => ['label' => 'Customer Wallet', 'amount' => 0.0, 'count' => 0],
-            'charge_to_room' => ['label' => 'Charge to Room', 'amount' => 0.0, 'count' => 0],
-        ];
+        $summary = [];
+        $add = static function (string $key, string $label, float $amount) use (&$summary): void {
+            $amount = round($amount, 2);
+            if ($amount <= 0) {
+                return;
+            }
+            $summary[$key] ??= ['label' => $label, 'amount' => 0.0, 'count' => 0];
+            $summary[$key]['amount'] += $amount;
+            $summary[$key]['count']++;
+        };
 
         foreach ($sales as $sale) {
             $method = strtolower((string) ($sale->payment_method ?? 'cash'));
@@ -139,18 +142,24 @@ class SaleController extends Controller
             $split = $this->normalizeSplitDetails($details['split'] ?? []);
             $wallet = (float) ($details['wallet_applied'] ?? $details['wallet_requested'] ?? 0);
             $splitTotal = (float) $split['cash'] + (float) $split['transfer'] + (float) $split['card'];
+            $channelAccounts = [
+                'cash' => ['id' => $details['payment_account_id'] ?? null, 'name' => 'Cash'],
+                'transfer' => ['id' => $details['transfer_account_id'] ?? null, 'name' => trim((string) ($details['transfer_account_name'] ?? ''))],
+                'card' => ['id' => $details['card_account_id'] ?? null, 'name' => trim((string) ($details['card_account_name'] ?? ''))],
+            ];
 
             if ($splitTotal > 0 && ($method === 'split' || ($details['source'] ?? null) === 'pos')) {
                 foreach (['cash', 'transfer', 'card'] as $key) {
                     $amount = round((float) ($split[$key] ?? 0), 2);
                     if ($amount > 0) {
-                        $summary[$key]['amount'] += $amount;
-                        $summary[$key]['count']++;
+                        $account = $channelAccounts[$key];
+                        $label = $key === 'cash' ? 'Cash' : ($account['name'] !== '' ? $account['name'] : 'Account not recorded');
+                        $summaryKey = !empty($account['id']) ? 'account:'.$account['id'] : $key;
+                        $add($summaryKey, $label, $amount);
                     }
                 }
             } elseif (in_array($method, ['charge_to_room', 'chargetoroom', 'charge-room'], true)) {
-                $summary['charge_to_room']['amount'] += (float) ($sale->total ?? 0);
-                $summary['charge_to_room']['count']++;
+                $add('charge_to_room', 'Charge to Room', (float) ($sale->total ?? 0));
             } else {
                 $amount = (float) ($sale->amount_paid ?? $sale->paid ?? $sale->total ?? 0);
                 $channel = match (true) {
@@ -159,24 +168,23 @@ class SaleController extends Controller
                     default => 'cash',
                 };
                 if ($amount > 0 || $method !== 'split') {
-                    $summary[$channel]['amount'] += $amount;
-                    $summary[$channel]['count']++;
+                    $account = $channelAccounts[$channel];
+                    $label = $channel === 'cash' ? 'Cash' : ($account['name'] !== '' ? $account['name'] : 'Account not recorded');
+                    $summaryKey = !empty($account['id']) ? 'account:'.$account['id'] : $channel;
+                    $add($summaryKey, $label, $amount);
                 }
             }
 
             if ($wallet > 0) {
-                $summary['wallet']['amount'] += $wallet;
-                $summary['wallet']['count']++;
+                $add('wallet', 'Customer Wallet', $wallet);
             }
         }
 
-        return collect($summary)
-            ->map(fn ($row) => [
-                'label' => $row['label'],
-                'amount' => round((float) $row['amount'], 2),
-                'count' => (int) $row['count'],
-            ])
-            ->all();
+        return collect($summary)->map(fn ($row) => [
+            'label' => $row['label'],
+            'amount' => round((float) $row['amount'], 2),
+            'count' => (int) $row['count'],
+        ])->all();
     }
 
     private function posChargeToRoomEnabled(): bool
@@ -878,7 +886,12 @@ class SaleController extends Controller
     public function posSales(Request $request)
     {
         $reportingPeriod = \App\Support\ReportingPeriod::fromRequest($request, 'all');
-        $query = Sale::with(['customer', 'user', 'items'])->select('sales.*')->selectRaw(\App\Support\SalesReportingDate::expression().' as reporting_sale_date');
+        $reportRelations = ['customer', 'user', 'items'];
+        if (Schema::hasTable('payments') && Schema::hasTable('accounts')
+            && (Schema::hasColumn('payments', 'payment_account_id') || Schema::hasColumn('payments', 'account_id'))) {
+            $reportRelations[] = 'payments.account';
+        }
+        $query = Sale::with($reportRelations)->select('sales.*')->selectRaw(\App\Support\SalesReportingDate::expression().' as reporting_sale_date');
         $activeBranch = $this->getActiveBranchContext();
         $this->applyTenantScope($query, 'sales');
         $this->applyBranchScope($query, 'sales');
