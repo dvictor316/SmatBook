@@ -33,7 +33,20 @@
         catch (_) { /* Search remains usable when storage is unavailable. */ }
     }
     function filterShelf(cards, query, category) {
-        const activeCategory = normalize(category || 'all');
+        const hasQuery = String(query ?? '').trim().length > 0;
+        let activeCategory = normalize(category || 'all');
+        // Product search should span every category. Keeping the old category
+        // active made a valid match elsewhere disappear as soon as it was typed.
+        if (hasQuery) {
+            activeCategory = 'all';
+            if (typeof document !== 'undefined') {
+                document.querySelectorAll('.category-pill').forEach((pill) => {
+                    const active = normalize(pill.dataset.category || 'all') === 'all';
+                    pill.classList.toggle('active', active);
+                    pill.setAttribute('aria-pressed', String(active));
+                });
+            }
+        }
         const entries = Array.from(cards).map((card) => ({ card, score: score(card.dataset, query) }));
         let visible = 0;
         entries.sort((a, b) => b.score - a.score).forEach(({ card, score: relevance }, index) => {
