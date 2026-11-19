@@ -1065,3 +1065,24 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-header .btn:hover
     border-color: var(--pos-red) !important;
     background: var(--pos-red-light) !important;
 }
+
+/* Slightly deepen the POS surfaces while keeping cards and inputs readable. */
+body.pos-terminal-workspace {
+    --pos-blue-light: #e2e9f3;
+}
+
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-header-bar,
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-product-shelf-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .pos-cart-column > .pos-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .controls-card,
+body.pos-terminal-workspace .pos-full-page-wrapper .summary-panel {
+    background-color: #f4f6fa !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment {
+    background: linear-gradient(155deg, #e9eef6 0%, #dde6f1 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-order {
+    background: linear-gradient(155deg, #f7f8fb 0%, #f1f3f7 100%) !important;
+}
