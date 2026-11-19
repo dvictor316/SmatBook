@@ -346,7 +346,7 @@ class SaleController extends Controller
         $priceLevel = strtolower(trim((string) ($itemData['priceLevel'] ?? 'retail')));
         $quantity = max(0.01, (float) ($itemData['qty'] ?? 1));
 
-        $retailPrice = (float) ($product->retail_price ?? $product->price ?? $product->product_price ?? 0);
+        $retailPrice = (float) ($product->price ?? $product->retail_price ?? $product->product_price ?? 0);
         $wholesalePrice = (float) ($product->wholesale_price ?? 0);
         $specialPrice = (float) ($product->special_price ?? 0);
 
@@ -374,7 +374,8 @@ class SaleController extends Controller
             default => null,
         };
 
-        if ($unitPrice !== null && is_numeric($unitPrice)) {
+        if ($unitPrice !== null && is_numeric($unitPrice)
+            && !($priceLevel === 'retail' && $multiplier <= 1)) {
             return round(max(0, (float) $unitPrice), 2);
         }
 

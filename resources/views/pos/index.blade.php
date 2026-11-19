@@ -5862,7 +5862,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
         <div class="product-grid" id="product-grid">
             @foreach(($products ?? []) as $p)
             @php
-                $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
+                $retailPrice = (float) ($p->price ?? $p->retail_price ?? 0);
                 $wholesalePrice = (float) ($p->wholesale_price ?? 0);
                 $specialPrice = (float) ($p->special_price ?? 0);
                 $unitsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
@@ -5994,7 +5994,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <option value="">-- Choose Product --</option>
                     @foreach(($products ?? []) as $p)
                     @php
-                        $retailPrice = (float) ($p->retail_price ?? $p->price ?? 0);
+                        $retailPrice = (float) ($p->price ?? $p->retail_price ?? 0);
                         $wholesalePrice = (float) ($p->wholesale_price ?? 0);
                         $specialPrice = (float) ($p->special_price ?? 0);
                         $unitsPerCarton = max((int) ($p->units_per_carton ?? 0), 0);
@@ -6089,7 +6089,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         <label>Price Level</label>
                         <select id="price-tier" class="form-select">
                             <option value="list">Selected Price List</option>
-                            <option value="retail">Retail / Default</option>
+                            <option value="retail" selected>Retail / Default</option>
                             <option value="wholesale">Wholesale</option>
                             <option value="special">Special Discount</option>
                         </select>
@@ -6954,7 +6954,7 @@ $(document).ready(function() {
         const tier = $('#price-tier').val() || 'retail';
         const priceListId = $('#price-list-select').val() || '';
         const quantity = parseFloat($('#quantity').val()) || 1;
-        const retailPrice = parseFloat(selectedOption.data('retail')) || parseFloat(selectedOption.data('price')) || 0;
+        const retailPrice = parseFloat(selectedOption.data('price')) || parseFloat(selectedOption.data('retail')) || 0;
         const listPrice = getPriceListProductPrice(priceListId, selectedOption.val(), quantity, retailPrice);
         const wholesalePrice = parseFloat(selectedOption.data('wholesale')) || 0;
         const specialPrice = parseFloat(selectedOption.data('special')) || 0;
@@ -6990,7 +6990,7 @@ $(document).ready(function() {
         const configuredPrice = configuredPriceValue === undefined || configuredPriceValue === null || configuredPriceValue === ''
             ? null
             : parseFloat(configuredPriceValue);
-        const computedPrice = configuredPrice !== null && Number.isFinite(configuredPrice)
+        const computedPrice = configuredPrice !== null && Number.isFinite(configuredPrice) && !(basePrice.key === 'retail' && unitMeta.multiplier <= 1)
             ? configuredPrice
             : basePrice.value * unitMeta.multiplier;
         $('#unit-price-input').val(computedPrice.toFixed(2));
@@ -7560,7 +7560,7 @@ $(document).ready(function() {
         $('#discount-type').val('percent');
         $('#discount-helper').text('Percent of item subtotal');
         $('#discount').attr('max', '100');
-        $('#price-tier').val($('#price-list-select').val() ? 'list' : 'retail');
+        $('#price-tier').val('retail');
         $('#barcode-input').val('');
         $('#quick-search').trigger('focus');
 
@@ -7811,7 +7811,7 @@ $(document).ready(function() {
         $('#discount-type').val('percent');
         $('#discount-helper').text('Percent of item subtotal');
         $('#discount').attr('max', '100');
-        $('#price-tier').val($('#price-list-select').val() ? 'list' : 'retail');
+        $('#price-tier').val('retail');
         $('#unit-type-unit').prop('checked', true).trigger('change');
 
         filterProductCards();
@@ -9108,7 +9108,7 @@ window.POS_ENABLE_FALLBACK = function () {
         const productId = data.id || '';
         const quantity = parseFloat(qtyInput?.value || '1') || 1;
         const priceListId = priceListInput?.value || '';
-        const retail = parseFloat(data.retail || data.price || '0') || 0;
+        const retail = parseFloat(data.price || data.retail || '0') || 0;
         const listPrice = getVanillaPriceListProductPrice(priceListId, productId, quantity, retail);
         const wholesale = parseFloat(data.wholesale || '0') || 0;
         const special = parseFloat(data.special || '0') || 0;
@@ -9214,7 +9214,7 @@ window.POS_ENABLE_FALLBACK = function () {
         }
 
         if (!salesUnitsConfigured && !units.some((unit) => String(unit.name || unit.symbol || '').toLowerCase() === baseUnit)) {
-            units.unshift({ name: baseUnit, symbol: baseUnit, conversion_factor: 1, selling_price: data.retail || data.price || 0, wholesale_price: data.wholesale || 0, is_default_sales_unit: true });
+            units.unshift({ name: baseUnit, symbol: baseUnit, conversion_factor: 1, selling_price: data.price || data.retail || 0, wholesale_price: data.wholesale || 0, is_default_sales_unit: true });
         }
 
         grid.innerHTML = units.map((unit, index) => {
@@ -9347,7 +9347,7 @@ window.POS_ENABLE_FALLBACK = function () {
         const configuredPrice = configuredPriceValue === undefined || configuredPriceValue === null || configuredPriceValue === ''
             ? null
             : parseFloat(configuredPriceValue);
-        const computedPrice = configuredPrice !== null && Number.isFinite(configuredPrice)
+        const computedPrice = configuredPrice !== null && Number.isFinite(configuredPrice) && !(basePrice.key === 'retail' && unitMeta.multiplier <= 1)
             ? configuredPrice
             : basePrice.value * unitMeta.multiplier;
         if (priceInput) priceInput.value = computedPrice.toFixed(2);

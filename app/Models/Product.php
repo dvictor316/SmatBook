@@ -152,7 +152,7 @@ class Product extends Model
                     'name' => 'carton',
                     'symbol' => 'ctn',
                     'conversion_factor' => 1,
-                    'selling_price' => $this->retail_price ?? $this->price ?? 0,
+                    'selling_price' => $this->price ?? $this->retail_price ?? 0,
                     'wholesale_price' => $this->wholesale_price ?? 0,
                     'is_default_sales_unit' => strtolower((string) $this->unit_type) === 'carton',
                 ]]
@@ -190,7 +190,7 @@ class Product extends Model
                 'name' => $baseUnitName,
                 'symbol' => $baseUnitName,
                 'conversion_factor' => 1,
-                'selling_price' => $this->retail_price ?? $this->price ?? 0,
+                'selling_price' => $this->price ?? $this->retail_price ?? 0,
                 'wholesale_price' => $this->wholesale_price ?? 0,
                 'is_default_sales_unit' => strtolower((string) $this->unit_type) === 'unit',
             ]);
