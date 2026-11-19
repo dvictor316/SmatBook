@@ -16,6 +16,7 @@
     $initialPurchaseRows = $isEditingPurchase
         ? $purchase->items->map(fn ($item) => [
             'product_id' => (string) $item->product_id,
+            'product_name' => (string) ($item->product?->name ?? $item->product_name ?? ''),
             'quantity' => (float) ($item->qty ?? $item->quantity ?? 1),
             'unit' => (string) ($item->unit_type ?? $item->unit ?? ''),
             'rate' => (float) ($item->unit_price ?? $item->rate ?? 0),
@@ -548,10 +549,16 @@
                 tableBody.appendChild(row);
                 productCounter += 1;
                 bindRowEvents(row);
-                initProductSearch(row.querySelector('.product-select'));
                 row.querySelector('.tax-select').value = String(initialData.tax_id ?? '');
                 if (productId) {
                     const productSelect = row.querySelector('.product-select');
+                    const productOptionExists = Array.from(productSelect.options)
+                        .some((option) => option.value === productId);
+                    if (!productOptionExists && initialData.product_name) {
+                        const savedProductOption = new Option(initialData.product_name, productId, true, true);
+                        savedProductOption.setAttribute('data-name', initialData.product_name);
+                        productSelect.add(savedProductOption);
+                    }
                     productSelect.value = productId;
                     const product = productsById.get(productId);
                     const unitSelect = row.querySelector('.unit-select');
@@ -576,6 +583,9 @@
                     }
                     updateProductAmount(rowIndex);
                 }
+                // Select2 must be initialized after restoring a saved product value;
+                // initializing first leaves the visible control on its placeholder.
+                initProductSearch(row.querySelector('.product-select'));
                 return row;
             }
 
