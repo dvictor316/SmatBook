@@ -6317,7 +6317,6 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             <button type="button" class="pos-pay-tab pos-pay-cash active" data-payment-method="Cash" id="pos-pay-cash"><i class="fas fa-money-bill-wave" aria-hidden="true"></i><span>Cash</span></button>
                             <button type="button" class="pos-pay-tab pos-pay-card" data-payment-method="Split" id="pos-pay-card"><i class="fas fa-credit-card" aria-hidden="true"></i><span>Card / POS</span></button>
                             <button type="button" class="pos-pay-tab" data-payment-method="Split" id="pos-pay-transfer"><i class="fas fa-building-columns" aria-hidden="true"></i><span>Transfer</span></button>
-                            <button type="button" class="pos-pay-tab" data-payment-method="Cash" id="pos-pay-wallet"><i class="fas fa-wallet" aria-hidden="true"></i><span>Store Wallet</span></button>
                             <button type="button" class="pos-pay-tab" data-payment-method="Credit" id="pos-pay-credit"><span>Credit</span></button>
                             <button type="button" class="pos-pay-tab pos-pay-split" data-payment-method="Split" id="pos-pay-split"><i class="fas fa-shuffle" aria-hidden="true"></i><span>Split</span></button>
                         </div>
@@ -6346,7 +6345,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             <option value="Credit">Credit</option>
                         </select>
                         <div class="col-md-6" id="pos-cash-account-wrap">
-                                <label class="fw-semibold"><span id="pos-cash-account-label">Payment Method</span></label>
+                                <label class="fw-semibold"><span id="pos-cash-account-label">Cash Account</span></label>
                                 <input type="hidden" id="deposit-account" value="{{ $cashDepositAccount?->id }}">
                                 <div class="form-control @unless($cashDepositAccount ?? null) is-unconfigured @endunless" id="pos-cash-account-name">
                                     @if($cashDepositAccount ?? null)
@@ -6367,9 +6366,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                             <input type="number" min="0" step="0.01" id="amount-paid" class="form-control form-control-lg fw-bold text-end tabular-nums" style="font-size: 1rem; color: var(--success-500);">
                         </div>
                         <div class="col-md-6 d-none" id="split-transfer-account-wrap">
-                                <label for="transfer-account" id="pos-transfer-account-label">Transfer account</label>
+                            <label for="transfer-account" id="pos-transfer-account-label">Bank Transfer Account</label>
                                 <select id="transfer-account" class="form-select">
-                                    <option value="">-- Select Account --</option>
+                                    <option value="">-- Select Bank Account --</option>
                                     @foreach(($depositAccounts ?? []) as $acct)
                                         <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
                                     @endforeach
@@ -6381,9 +6380,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                                 @endif
                             </div>
                         <div class="col-md-6 d-none" id="split-card-account-wrap">
-                            <label for="card-account" id="pos-card-account-label">POS / Card account</label>
+                            <label for="card-account" id="pos-card-account-label">Bank Name</label>
                             <select id="card-account" class="form-select">
-                                <option value="">-- Select Account --</option>
+                                <option value="">-- Select Bank --</option>
                                 @foreach(($depositAccounts ?? []) as $acct)
                                     <option value="{{ $acct->id }}">{{ $acct->name }}@if($acct->code) ({{ $acct->code }})@endif</option>
                                 @endforeach
@@ -7764,13 +7763,6 @@ $(document).ready(function() {
 
     $(document).on('input', '#amount-paid, #transfer-amount, #card-amount', updateChange);
     $(document).on('change', '#payment-method', function() {
-        const method = $('#payment-method').val();
-        const isSplit = method === 'Split';
-        $('#split-transfer-wrap').toggleClass('d-none', !isSplit);
-        $('#split-transfer-account-wrap').toggleClass('d-none', !isSplit);
-        $('#split-card-wrap').toggleClass('d-none', !isSplit);
-        $('#split-card-account-wrap').toggleClass('d-none', !isSplit);
-        $('#pos-idle-illustration').toggleClass('is-split-compact', isSplit);
         updateChange();
     });
 
@@ -9585,32 +9577,14 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function syncSplitCounterpart(changedField) {
-        const isMixedSplit = activePaymentTab === 'pos-pay-split';
-        const isBankShortcut = activePaymentTab === 'pos-pay-card' || activePaymentTab === 'pos-pay-transfer';
-        if (
-            splitAutoSync
-            || paymentMethod?.value !== 'Split'
-            || (!isMixedSplit && !isBankShortcut)
-        ) {
+        if (splitAutoSync || paymentMethod?.value !== 'Split' || activePaymentTab !== 'pos-pay-split' || changedField !== 'cash') {
             return;
         }
 
         const total = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
         const cashPaid = moneyValue(amountPaid);
-        const transferPaid = moneyValue(transferAmount);
-        const cardPaid = moneyValue(cardAmount);
-
         splitAutoSync = true;
-        const remainingBase = Math.max(0, total - (isMixedSplit ? cashPaid : 0));
-
-        if (changedField === 'transfer' && cardAmount) {
-            cardAmount.value = Math.max(0, remainingBase - transferPaid).toFixed(2);
-        }
-
-        if (changedField === 'card' && transferAmount) {
-            transferAmount.value = Math.max(0, remainingBase - cardPaid).toFixed(2);
-        }
-
+        if (transferAmount) transferAmount.value = Math.max(0, total - cashPaid).toFixed(2);
         splitAutoSync = false;
         updateChange();
     }
@@ -9622,12 +9596,9 @@ window.POS_ENABLE_FALLBACK = function () {
         const isMixed = activePaymentTab === 'pos-pay-split';
         const isTransferOnly = activePaymentTab === 'pos-pay-transfer';
         const isCardOnly = activePaymentTab === 'pos-pay-card';
-        const showsBankChannels = isMixed || isTransferOnly || isCardOnly;
         const showCash = !isCredit && !isWallet && (!isSplit || isMixed);
-        // POS and bank transfer may be collected together. Selecting either bank
-        // channel exposes both amount fields so staff can enter both payments.
-        const showTransfer = isSplit && (isMixed || isTransferOnly || isCardOnly);
-        const showCard = isSplit && (isMixed || isCardOnly || isTransferOnly);
+        const showTransfer = isSplit && (isMixed || isTransferOnly);
+        const showCard = isSplit && isCardOnly;
         paymentTabs.forEach((button) => {
             button.classList.toggle('active', (button.id || button.textContent.trim()) === activePaymentTab);
         });
@@ -9644,37 +9615,37 @@ window.POS_ENABLE_FALLBACK = function () {
         splitCardAccountWrap?.classList.toggle('d-none', !showCard);
         idleIllustration?.classList.toggle('is-split-compact', isSplit);
         const labels = {
-            'pos-cash-account-label': isMixed ? 'Cash payment account' : 'Payment Method',
-            'pos-cash-amount-label': isMixed ? 'Cash Amount' : 'Amount Paid',
-            'pos-transfer-account-label': showsBankChannels ? 'Bank transfer account' : 'Payment Method',
-            'pos-transfer-amount-label': showsBankChannels ? 'Transfer Amount' : 'Amount Paid',
-            'pos-card-amount-label': showsBankChannels ? 'POS Amount' : 'Amount Paid',
+            'pos-cash-account-label': 'Cash Account',
+            'pos-cash-amount-label': isMixed ? 'Cash Amount' : 'Amount',
+            'pos-transfer-account-label': isMixed ? 'Bank Account' : 'Bank Transfer Account',
+            'pos-transfer-amount-label': isMixed ? 'Remaining Amount' : 'Amount',
+            'pos-card-account-label': 'Bank Name',
+            'pos-card-amount-label': 'Amount',
         };
         Object.entries(labels).forEach(([id, label]) => {
             const element = document.getElementById(id);
             if (element) element.textContent = label;
         });
+        if (transferAmount) transferAmount.readOnly = isMixed;
 
         if (isSplit && amountPaid) {
             const total = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
 
-            if (activePaymentTab === 'pos-pay-card' || activePaymentTab === 'pos-pay-transfer') {
+            if (isCardOnly || isTransferOnly) {
                 amountPaid.value = '0.00';
-                if (activePaymentTab === 'pos-pay-card' && cardAmount && moneyValue(cardAmount) <= 0) cardAmount.value = total.toFixed(2);
-                if (activePaymentTab === 'pos-pay-transfer' && transferAmount && moneyValue(transferAmount) <= 0) transferAmount.value = total.toFixed(2);
+                if (isCardOnly) {
+                    if (transferAmount) transferAmount.value = '0.00';
+                    if (cardAmount && moneyValue(cardAmount) <= 0) cardAmount.value = total.toFixed(2);
+                } else {
+                    if (cardAmount) cardAmount.value = '0.00';
+                    if (transferAmount && moneyValue(transferAmount) <= 0) transferAmount.value = total.toFixed(2);
+                }
             } else {
-                if (transferAmount && !transferAmount.value) {
-                    transferAmount.value = '0.00';
-                }
-                if (cardAmount && !cardAmount.value) {
-                    cardAmount.value = '0.00';
-                }
-                if (
-                    moneyValue(amountPaid) + moneyValue(transferAmount) + moneyValue(cardAmount) <= 0
-                    && total > 0
-                ) {
+                if (cardAmount) cardAmount.value = '0.00';
+                if (moneyValue(amountPaid) + moneyValue(transferAmount) <= 0 && total > 0) {
                     amountPaid.value = total.toFixed(2);
                 }
+                if (transferAmount) transferAmount.value = Math.max(0, total - moneyValue(amountPaid)).toFixed(2);
             }
         }
 
@@ -9683,11 +9654,17 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function syncSelectedPaymentAmount(previousDue) {
         const due = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
-        if (activePaymentTab === 'pos-pay-bank-shortcut' || activePaymentTab === 'pos-pay-card') {
-            const transferPaid = moneyValue(transferAmount);
-            const totalBankPaid = transferPaid + moneyValue(cardAmount);
-            if (totalBankPaid <= 0 || Math.abs(totalBankPaid - previousDue) < 0.01) {
-                if (cardAmount) cardAmount.value = Math.max(0, due - transferPaid).toFixed(2);
+        if (activePaymentTab === 'pos-pay-split' && transferAmount) {
+            const cashPaid = moneyValue(amountPaid);
+            const previousCombined = cashPaid + moneyValue(transferAmount);
+            if (previousCombined <= 0 || Math.abs(previousCombined - previousDue) < 0.01) {
+                transferAmount.value = Math.max(0, due - cashPaid).toFixed(2);
+            }
+            return;
+        }
+        if (activePaymentTab === 'pos-pay-card') {
+            if (cardAmount && (moneyValue(cardAmount) <= 0 || Math.abs(moneyValue(cardAmount) - previousDue) < 0.01)) {
+                cardAmount.value = due.toFixed(2);
             }
             return;
         }
@@ -10469,14 +10446,10 @@ window.POS_ENABLE_FALLBACK = function () {
     });
     discountTypeInput?.addEventListener('change', updateItemTotal);
     amountPaid?.addEventListener('input', function () {
-        if (paymentMethod?.value === 'Split') {
-            const lastEdited = document.activeElement === transferAmount ? 'transfer' : (document.activeElement === cardAmount ? 'card' : null);
-            if (lastEdited) {
-                syncSplitCounterpart(lastEdited);
-                return;
-            }
+        if (paymentMethod?.value === 'Split' && activePaymentTab === 'pos-pay-split') {
+            syncSplitCounterpart('cash');
+            return;
         }
-
         updateChange();
     });
     [amountPaid, transferAmount, cardAmount].forEach((input) => {
@@ -10486,10 +10459,10 @@ window.POS_ENABLE_FALLBACK = function () {
         });
     });
     transferAmount?.addEventListener('input', function () {
-        syncSplitCounterpart('transfer');
+        updateChange();
     });
     cardAmount?.addEventListener('input', function () {
-        syncSplitCounterpart('card');
+        updateChange();
     });
 	    paymentMethod?.addEventListener('change', toggleSplitFields);
     paymentTabs.forEach((button) => {
