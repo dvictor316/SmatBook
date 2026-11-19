@@ -7022,7 +7022,7 @@ $(document).ready(function() {
         syncCategoryToggle();
     });
 
-    $('#quick-search').on('input', filterProductCards);
+    window.PosProductSearch.bindLiveShelfSearch(document.getElementById('quick-search'), filterProductCards);
 
     $(document).on('click', '.product-card', function() {
         applyProductSelection($(this));
@@ -10404,7 +10404,7 @@ window.POS_ENABLE_FALLBACK = function () {
         });
     });
 
-    quickSearch?.addEventListener('input', filterProductCards);
+    window.PosProductSearch.bindLiveShelfSearch(quickSearch, filterProductCards);
     categoryToggle?.addEventListener('click', function () {
         categoryPillsWrap?.classList.toggle('collapsed');
         categoryToggle.textContent = categoryPillsWrap?.classList.contains('collapsed') ? 'Show More' : 'Show Less';

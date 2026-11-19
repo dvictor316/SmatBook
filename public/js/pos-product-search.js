@@ -32,6 +32,26 @@
         try { root.localStorage.setItem('smartprobook.pos.product-history', JSON.stringify([String(id), ...getRecent().filter((value) => value !== String(id))].slice(0, 20))); }
         catch (_) { /* Search remains usable when storage is unavailable. */ }
     }
+    function bindLiveShelfSearch(input, filter) {
+        if (!input || typeof filter !== 'function') return;
+        let lastValue = input.value;
+        let framePending = false;
+        const update = () => {
+            const value = input.value;
+            if (value === lastValue) return;
+            lastValue = value;
+            if (framePending) return;
+            framePending = true;
+            const render = () => {
+                framePending = false;
+                filter();
+            };
+            if (typeof root.requestAnimationFrame === 'function') root.requestAnimationFrame(render);
+            else root.setTimeout(render, 0);
+        };
+        input.addEventListener('input', update);
+        input.addEventListener('keyup', update);
+    }
     function filterShelf(cards, query, category) {
         const hasQuery = String(query ?? '').trim().length > 0;
         let activeCategory = normalize(category || 'all');
@@ -67,6 +87,6 @@
         }
         return visible;
     }
-    root.PosProductSearch = { normalize, score, rank, filterShelf, remember };
+    root.PosProductSearch = { normalize, score, rank, filterShelf, remember, bindLiveShelfSearch };
     if (typeof module !== 'undefined') module.exports = root.PosProductSearch;
 })(typeof window !== 'undefined' ? window : globalThis);
