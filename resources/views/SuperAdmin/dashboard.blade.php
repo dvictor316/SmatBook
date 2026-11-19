@@ -992,32 +992,40 @@
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
             linear-gradient(135deg, #7c2d12 0%, #f59e0b 52%, #fde68a 100%);
     }
+    .dashboard-primary-metrics,
     .dashboard-account-metrics {
-        margin-left: -0.5rem;
-        margin-right: -0.5rem;
+        display: grid !important;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 0 0 1rem !important;
     }
+    .dashboard-account-metrics {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .dashboard-primary-metrics > [class*="col-"],
     .dashboard-account-metrics > [class*="col-"] {
-        flex: 0 0 20%;
-        max-width: 20%;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        flex: initial;
+        padding: 0;
     }
     @media (max-width: 991.98px) {
-        .dashboard-account-metrics > [class*="col-"] {
-            flex-basis: 33.3333%;
-            max-width: 33.3333%;
+        .dashboard-primary-metrics,
+        .dashboard-account-metrics {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
     }
     @media (max-width: 575.98px) {
-        .dashboard-account-metrics > [class*="col-"] {
-            flex-basis: 50%;
-            max-width: 50%;
+        .dashboard-primary-metrics,
+        .dashboard-account-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
     @media (max-width: 380px) {
-        .dashboard-account-metrics > [class*="col-"] {
-            flex-basis: 100%;
-            max-width: 100%;
+        .dashboard-primary-metrics,
+        .dashboard-account-metrics {
+            grid-template-columns: minmax(0, 1fr);
         }
     }
     .dashboard-tight .card.tone-card,
@@ -1452,9 +1460,20 @@
             font-size: 0.88rem;
         }
         .executive-kpi {
-            min-height: 86px;
-            height: 86px !important;
-            max-height: 86px !important;
+            min-height: 96px;
+            height: 96px !important;
+            max-height: 96px !important;
+        }
+        .dashboard-primary-metrics,
+        .dashboard-account-metrics {
+            gap: 0.5rem;
+        }
+        .executive-kpi .card-body {
+            padding: 0.45rem !important;
+        }
+        .executive-kpi .kpi-kicker {
+            font-size: 0.44rem;
+            letter-spacing: 0.04em;
         }
         .executive-kpi .kpi-value {
             font-size: 0.98rem;
@@ -1587,7 +1606,7 @@
                 <div class="tab-content tab-content-basic dashboard-tight">
                     <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
-                        <div class="row">
+                        <div class="row dashboard-primary-metrics">
                             <div class="col-lg-2 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-revenue border-0">
                                     <div class="card-body">
