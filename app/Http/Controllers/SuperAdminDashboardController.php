@@ -330,6 +330,7 @@ class SuperAdminDashboardController extends Controller
         if (app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')) {
             $revenue = $this->subscriptionRevenueExpression('subscriptions');
             $paid = $this->subscriptionPaidCondition('subscriptions');
+            $pending = $this->subscriptionPendingCondition('subscriptions');
             $paidAt = $this->subscriptionPaidAtExpression('subscriptions');
             $matches = [];
             if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id')) {
@@ -340,12 +341,32 @@ class SuperAdminDashboardController extends Controller
                 $matches[] = "({$unassigned}subscriptions.user_id = owners.id AND owners.company_id = companies.id)";
             }
             $match = implode(' OR ', $matches ?: ['1 = 0']);
+            $deploymentSources = [];
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deployed_by')) {
+                $deploymentSources[] = 'NULLIF(companies.deployed_by, 0) IS NOT NULL';
+            }
+            if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'deployed_by')) {
+                $deploymentPaid = $this->subscriptionPaidCondition('deployed_subscriptions');
+                $deploymentMatch = str_replace('subscriptions.', 'deployed_subscriptions.', $match);
+                $deploymentSources[] = "EXISTS (SELECT 1 FROM subscriptions AS deployed_subscriptions WHERE {$deploymentPaid} AND ({$deploymentMatch}) AND NULLIF(deployed_subscriptions.deployed_by, 0) IS NOT NULL)";
+            }
+            $deploymentSourceExpression = $deploymentSources !== [] ? implode(' OR ', $deploymentSources) : '1 = 0';
             $query->addSelect(
                 DB::raw("(SELECT COALESCE(SUM({$revenue}), 0) FROM subscriptions WHERE {$paid} AND ({$match})) as total_paid"),
-                DB::raw("(SELECT MAX({$paidAt}) FROM subscriptions WHERE {$paid} AND ({$match})) as last_paid_at")
+                DB::raw("(SELECT COALESCE(SUM({$revenue}), 0) FROM subscriptions WHERE {$pending} AND ({$match})) as pending_revenue"),
+                DB::raw("(SELECT MAX({$paidAt}) FROM subscriptions WHERE {$paid} AND ({$match})) as last_paid_at"),
+                DB::raw("CASE WHEN {$deploymentSourceExpression} THEN 1 ELSE 0 END as is_deployment_business")
             );
         } else {
-            $query->addSelect(DB::raw('0 as total_paid'), DB::raw('NULL as last_paid_at'));
+            $deploymentSourceExpression = app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deployed_by')
+                ? 'NULLIF(companies.deployed_by, 0) IS NOT NULL'
+                : '1 = 0';
+            $query->addSelect(
+                DB::raw('0 as total_paid'),
+                DB::raw('0 as pending_revenue'),
+                DB::raw('NULL as last_paid_at'),
+                DB::raw("CASE WHEN {$deploymentSourceExpression} THEN 1 ELSE 0 END as is_deployment_business")
+            );
         }
 
         return $query;
@@ -356,8 +377,15 @@ class SuperAdminDashboardController extends Controller
         $rows = (clone $this->registeredBusinessesQuery())->get();
         $total = $rows->count();
         $revenue = (float) $rows->sum(fn ($row) => (float) ($row->total_paid ?? 0));
+        $paid_total = $rows->filter(fn ($row) => (float) ($row->total_paid ?? 0) > 0)->count();
+        $pending_total = $rows->filter(fn ($row) => (float) ($row->total_paid ?? 0) <= 0 && (float) ($row->pending_revenue ?? 0) > 0)->count();
+        $deploymentRows = $rows->filter(fn ($row) => (bool) ($row->is_deployment_business ?? false));
+        $deployment_paid_total = $deploymentRows->filter(fn ($row) => (float) ($row->total_paid ?? 0) > 0)->count();
+        $deployment_revenue = (float) $deploymentRows->sum(fn ($row) => (float) ($row->total_paid ?? 0));
+        $direct_paid_total = max(0, $paid_total - $deployment_paid_total);
+        $direct_revenue = max(0, $revenue - $deployment_revenue);
 
-        return compact('total', 'revenue');
+        return compact('total', 'revenue', 'paid_total', 'pending_total', 'direct_paid_total', 'deployment_paid_total', 'direct_revenue', 'deployment_revenue');
     }
 
     private function safeRegisteredBusinessMetrics(): array
@@ -368,7 +396,7 @@ class SuperAdminDashboardController extends Controller
             Log::warning('Registered business dashboard metrics fallback used: ' . $e->getMessage());
         }
 
-        $metrics = ['total' => 0, 'revenue' => 0.0];
+        $metrics = ['total' => 0, 'revenue' => 0.0, 'paid_total' => 0, 'pending_total' => 0];
 
         try {
             if (!app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')) {
@@ -390,23 +418,42 @@ class SuperAdminDashboardController extends Controller
             $paidSubscriptions = $this->platformSubscriptionsQuery()
                 ->whereRaw($subscriptionPaidCondition)
                 ->whereRaw("{$subscriptionRevenueExpr} > 0");
+            $pendingSubscriptions = $this->platformSubscriptionsQuery()
+                ->whereRaw($this->subscriptionPendingCondition('subscriptions'))
+                ->whereRaw("{$subscriptionRevenueExpr} > 0");
 
             if ($registeredBusinessIds !== []) {
-                $paidSubscriptions->where(function ($query) use ($registeredBusinessIds, $companyIds) {
-                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id')) {
-                        $query->whereIn('subscriptions.user_id', $registeredBusinessIds);
-                    }
+                foreach ([$paidSubscriptions, $pendingSubscriptions] as $businessSubscriptions) {
+                    $businessSubscriptions->where(function ($query) use ($registeredBusinessIds, $companyIds) {
+                        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id')) {
+                            $query->whereIn('subscriptions.user_id', $registeredBusinessIds);
+                        }
 
-                    if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id') && $companyIds->isNotEmpty()) {
-                        $method = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id') ? 'orWhereIn' : 'whereIn';
-                        $query->{$method}('subscriptions.company_id', $companyIds->all());
-                    }
-                });
+                        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'company_id') && $companyIds->isNotEmpty()) {
+                            $method = app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'user_id') ? 'orWhereIn' : 'whereIn';
+                            $query->{$method}('subscriptions.company_id', $companyIds->all());
+                        }
+                    });
+                }
             }
 
             $metrics['revenue'] = (float) ((clone $paidSubscriptions)
                 ->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")
                 ->value('total_revenue') ?? 0);
+            $buyerKey = $this->subscriptionBuyerKeyExpression('subscriptions');
+            $metrics['paid_total'] = (int) ((clone $paidSubscriptions)
+                ->selectRaw("COUNT(DISTINCT {$buyerKey}) as buyer_count")
+                ->value('buyer_count') ?? 0);
+            $metrics['pending_total'] = (int) ((clone $pendingSubscriptions)
+                ->whereNotExists(function ($query) use ($buyerKey) {
+                    $query->selectRaw('1')->from('subscriptions as existing_paid');
+                    $paid = $this->subscriptionPaidCondition('existing_paid');
+                    $query->whereRaw($paid);
+                    $existingBuyerKey = $this->subscriptionBuyerKeyExpression('existing_paid');
+                    $query->whereRaw("{$existingBuyerKey} = {$buyerKey}");
+                })
+                ->selectRaw("COUNT(DISTINCT {$buyerKey}) as buyer_count")
+                ->value('buyer_count') ?? 0);
 
             if ($registeredBusinessIds !== []) {
                 $metrics['total'] = count($registeredBusinessIds);
@@ -548,6 +595,20 @@ class SuperAdminDashboardController extends Controller
         }
 
         return '(' . implode(' OR ', $conditions ?: ['1 = 0']) . ')';
+    }
+
+    private function subscriptionPendingCondition(string $table = 'subscriptions'): string
+    {
+        $statuses = "'pending','pending_verification','awaiting payment','awaiting_payment','unpaid','processing'";
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'payment_status')) {
+            return "LOWER(COALESCE({$table}.payment_status, '')) IN ({$statuses})";
+        }
+
+        if (app(\App\Support\SchemaColumnCache::class)->hasColumn('subscriptions', 'status')) {
+            return "LOWER(COALESCE({$table}.status, '')) IN ({$statuses})";
+        }
+
+        return '1 = 0';
     }
 
     private function subscriptionPaidAtExpression(string $table = 'subscriptions'): string
@@ -762,6 +823,17 @@ class SuperAdminDashboardController extends Controller
             $registeredBusinessMetrics = $this->safeRegisteredBusinessMetrics();
             $registeredBusinessesTotal = (int) $registeredBusinessMetrics['total'];
             $registeredBusinessRevenue = (float) $registeredBusinessMetrics['revenue'];
+            $registeredPaidBusinessCount = (int) ($registeredBusinessMetrics['paid_total'] ?? 0);
+            $pendingBusinessCount = (int) ($registeredBusinessMetrics['pending_total'] ?? 0);
+            $demoBusinessCount = 0;
+            if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+                && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')) {
+                $demoBusinessesQuery = Company::withoutGlobalScope('tenant')->where('is_demo', true);
+                if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deleted_at')) {
+                    $demoBusinessesQuery->whereNull('deleted_at');
+                }
+                $demoBusinessCount = (int) $demoBusinessesQuery->count();
+            }
 
             $deploymentCustomerUsers = 0;
             if (
@@ -822,6 +894,10 @@ class SuperAdminDashboardController extends Controller
 
             $directSubscriptionRevenue = max(0, $subscriptionRevenue - $deploymentSubscriptionRevenue);
             $directPaidSubs = max(0, $paidBuyersCount - $deploymentPaidSubs);
+            $deploymentSubscriptionRevenue = (float) ($registeredBusinessMetrics['deployment_revenue'] ?? $deploymentSubscriptionRevenue);
+            $directSubscriptionRevenue = (float) ($registeredBusinessMetrics['direct_revenue'] ?? max(0, $registeredBusinessRevenue - $deploymentSubscriptionRevenue));
+            $deploymentPaidSubs = (int) ($registeredBusinessMetrics['deployment_paid_total'] ?? $deploymentPaidSubs);
+            $directPaidSubs = (int) ($registeredBusinessMetrics['direct_paid_total'] ?? max(0, $registeredPaidBusinessCount - $deploymentPaidSubs));
 
             $stockValue = 0;
             $lowStockItems = 0;
@@ -858,7 +934,7 @@ class SuperAdminDashboardController extends Controller
             $planSalesToday = $planSalesBaseQuery ? (int) ((clone $planSalesBaseQuery)->whereDate('subscriptions.created_at', today())->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0) : 0;
             $planSalesMonth = $planSalesBaseQuery ? (int) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->selectRaw("COUNT(DISTINCT {$subscriptionBuyerKeyExpr}) as buyer_count")->value('buyer_count') ?? 0) : 0;
             $planSalesValueMonth = $planSalesBaseQuery ? (float) ((clone $planSalesBaseQuery)->whereMonth('subscriptions.created_at', now()->month)->whereYear('subscriptions.created_at', now()->year)->selectRaw("SUM({$subscriptionRevenueExpr}) as total_revenue")->value('total_revenue') ?? 0) : 0;
-            $dashboardPaidBusinesses = $paidBuyersCount;
+            $dashboardPaidBusinesses = $registeredPaidBusinessCount;
             $dashboardSubscriptionRevenue = $registeredBusinessRevenue > 0 ? $registeredBusinessRevenue : $subscriptionRevenue;
             $avgPlanSale = $dashboardPaidBusinesses > 0 ? ($dashboardSubscriptionRevenue / $dashboardPaidBusinesses) : 0;
             $agentCommission = null;
@@ -870,6 +946,15 @@ class SuperAdminDashboardController extends Controller
                     $commissionQuery = DB::table('deployment_commissions');
                     if (app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'status')) {
                         $commissionQuery->whereRaw("LOWER(COALESCE(status, '')) != ?", ['cancelled']);
+                    }
+                    if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+                        && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')
+                        && app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'company_id')) {
+                        $commissionQuery->whereNotExists(function ($demo) {
+                            $demo->selectRaw('1')->from('companies as demo_companies')
+                                ->whereColumn('demo_companies.id', 'deployment_commissions.company_id')
+                                ->where('demo_companies.is_demo', true);
+                        });
                     }
                     $agentCommission = (float) ($commissionQuery->sum($commissionColumn) ?? 0);
                 }
@@ -892,6 +977,8 @@ class SuperAdminDashboardController extends Controller
                 'other_users_total' => (clone $this->otherUsersQuery())->count(),
                 'active_subs'      => $activeSubs > 0 ? $activeSubs : $activeCompanies,
                 'paid_subs'        => $dashboardPaidBusinesses,
+                'demo_accounts'    => $demoBusinessCount,
+                'pending_accounts' => $pendingBusinessCount,
                 'direct_paid_subs' => $directPaidSubs,
                 'deployment_paid_subs' => $deploymentPaidSubs,
                 'total_subs'       => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
@@ -1502,9 +1589,19 @@ class SuperAdminDashboardController extends Controller
             $fallbackRecentSignups = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('users')
                 ? (clone $this->customerUsersQuery())->where('created_at', '>=', now()->subDays(30))->count()
                 : 0);
-            $fallbackPaidBusinesses = $safeCount(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
-                    ? (clone $fallbackPaidSubscriptions())->selectRaw("COUNT(DISTINCT {$fallbackBuyerExpr}) as buyer_count")->value('buyer_count')
-                    : 0);
+            $fallbackPaidBusinesses = (int) ($registeredBusinessMetrics['paid_total'] ?? 0);
+            $fallbackPendingBusinesses = (int) ($registeredBusinessMetrics['pending_total'] ?? 0);
+            $fallbackDemoBusinesses = $safeCount(function () {
+                if (!app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+                    || !app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')) {
+                    return 0;
+                }
+                $query = Company::withoutGlobalScope('tenant')->where('is_demo', true);
+                if (app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'deleted_at')) {
+                    $query->whereNull('deleted_at');
+                }
+                return $query->count();
+            });
             $fallbackSubscriptionRevenue = $registeredBusinessRevenue > 0
                 ? $registeredBusinessRevenue
                 : $safeFloat(fn () => app(\App\Support\SchemaColumnCache::class)->hasTable('subscriptions')
@@ -1551,6 +1648,15 @@ class SuperAdminDashboardController extends Controller
                 if (app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'status')) {
                     $query->whereRaw("LOWER(COALESCE(status, '')) != ?", ['cancelled']);
                 }
+                if (app(\App\Support\SchemaColumnCache::class)->hasTable('companies')
+                    && app(\App\Support\SchemaColumnCache::class)->hasColumn('companies', 'is_demo')
+                    && app(\App\Support\SchemaColumnCache::class)->hasColumn('deployment_commissions', 'company_id')) {
+                    $query->whereNotExists(function ($demo) {
+                        $demo->selectRaw('1')->from('companies as demo_companies')
+                            ->whereColumn('demo_companies.id', 'deployment_commissions.company_id')
+                            ->where('demo_companies.is_demo', true);
+                    });
+                }
                 return $query->sum($commissionColumn);
             });
             $fallbackPlatformPlanEarnings = max(0, $fallbackSubscriptionRevenue - $fallbackAgentCommission);
@@ -1565,7 +1671,7 @@ class SuperAdminDashboardController extends Controller
                 'state_managers_total' => $safeCount(fn () => (clone $this->stateManagersQuery())->count()),
                 'agents_total' => $safeCount(fn () => (clone $this->agentsQuery())->count()),
                 'other_users_total' => $safeCount(fn () => (clone $this->otherUsersQuery())->count()),
-                'paid_subs' => $fallbackPaidBusinesses, 'total_subs' => $fallbackTotalSubscriptions, 'verified_users' => $fallbackVerifiedUsers, 'recent_signups' => $fallbackRecentSignups,
+                'paid_subs' => $fallbackPaidBusinesses, 'demo_accounts' => $fallbackDemoBusinesses, 'pending_accounts' => $fallbackPendingBusinesses, 'total_subs' => $fallbackTotalSubscriptions, 'verified_users' => $fallbackVerifiedUsers, 'recent_signups' => $fallbackRecentSignups,
                 'direct_paid_subs' => 0, 'deployment_paid_subs' => 0,
                 'direct_subscription_revenue' => 0, 'deployment_subscription_revenue' => 0,
                 'direct_customer_users' => 0, 'deployment_customer_users' => 0,

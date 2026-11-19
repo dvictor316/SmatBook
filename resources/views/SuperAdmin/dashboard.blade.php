@@ -1604,9 +1604,9 @@
                                             <div class="kpi-badge">Buyers</div>
                                         </div>
                                         <div class="mt-3">
-                                            <h6 class="kpi-kicker mb-2">Deployed Paid Businesses</h6>
+                                            <h6 class="kpi-kicker mb-2">Real Paid Businesses</h6>
                                             <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['paid_subs'] ?? 0) }}</h3>
-                                            <p class="kpi-note mb-0 mt-2">Businesses deployed by managers or agents</p>
+                                            <p class="kpi-note mb-0 mt-2">Non-demo businesses with confirmed plan payments</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1654,6 +1654,39 @@
                                             <h6 class="kpi-kicker mb-2">App Plan Earnings</h6>
                                             <h3 class="fw-bold mb-0 kpi-value">₦{{ \App\Support\CompactNumber::format($metrics['platform_plan_earnings'] ?? 0, 2) }}</h3>
                                             <p class="kpi-note mb-0 mt-2">Plan revenue after agent commission</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                                <div class="card executive-kpi kpi-companies border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell"><i class="fas fa-flask" aria-hidden="true"></i></div>
+                                            <div class="kpi-badge">Demo</div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6 class="kpi-kicker mb-2">Demo Accounts</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['demo_accounts'] ?? 0) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Flagged demo businesses, excluded from paid count</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 grid-margin stretch-card">
+                                <div class="card executive-kpi kpi-users border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="kpi-icon-shell"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
+                                            <div class="kpi-badge">Pending</div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6 class="kpi-kicker mb-2">Pending Accounts</h6>
+                                            <h3 class="fw-bold mb-0 kpi-value">{{ number_format($metrics['pending_accounts'] ?? 0) }}</h3>
+                                            <p class="kpi-note mb-0 mt-2">Non-demo businesses awaiting plan payment</p>
                                         </div>
                                     </div>
                                 </div>
