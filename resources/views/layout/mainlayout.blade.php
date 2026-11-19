@@ -86,8 +86,9 @@
 <head>
     @livewireStyles
     <style>
-        /* Keep Livewire's in-page progress strip from competing with the browser tab indicator. */
-        #nprogress {
+        /* Keep app-level navigation bars from duplicating the browser tab spinner. */
+        #nprogress,
+        #spb-navigation-progress {
             display: none !important;
         }
     </style>
