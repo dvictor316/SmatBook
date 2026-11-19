@@ -19,7 +19,7 @@ fn main() {
                 "nav_back" => "if (window.history.length > 1) window.history.back();",
                 "nav_forward" => "window.history.forward();",
                 "nav_reload" => "window.location.reload();",
-                "nav_home" => "window.location.href = 'https://smartprobook.com/pos';",
+                "nav_home" => "window.location.href = 'https://smartprobook.com/pos?desktop_offline=1';",
                 _ => return,
             };
 

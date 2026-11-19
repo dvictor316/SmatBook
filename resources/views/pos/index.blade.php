@@ -6571,6 +6571,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
 <script src="{{ asset('assets/js/select2.min.js') }}"></script>
 <script>
 window.POS_OFFLINE_CONFIG = {
+    forceLocal: @json(request()->query->has('desktop_offline')),
     saleUrl: @json($posSaleStoreUrl ?? url('/sales')),
     catalogueUrl: @json(route('sales.showPos')),
     csrfToken: @json(csrf_token()),
@@ -10552,7 +10553,7 @@ window.POS_ENABLE_FALLBACK = function () {
             return;
         }
 
-        if (currentSuspendedSaleId !== null && !navigator.onLine) {
+        if (currentSuspendedSaleId !== null && (!navigator.onLine || window.POS_OFFLINE_CONFIG?.forceLocal)) {
             alertFallback('Connect to the internet before checking out a recalled suspended sale. The saved cart will remain available if checkout cannot complete.');
             return;
         }
@@ -10632,7 +10633,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	                    } : {}),
                 };
 
-            if (!navigator.onLine && (walletApplied > 0 || posSourceContext?.source || isCreditSale || paymentMethod?.value === 'ChargeToRoom')) {
+            if ((!navigator.onLine || window.POS_OFFLINE_CONFIG?.forceLocal) && (walletApplied > 0 || posSourceContext?.source || isCreditSale || paymentMethod?.value === 'ChargeToRoom')) {
                 throw new Error('Wallet, room-charge, and converted-document sales require an internet connection.');
             }
 

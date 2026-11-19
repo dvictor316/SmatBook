@@ -134,7 +134,9 @@
             cache: 'no-store',
             signal: controller.signal,
           });
-          window.location.replace(POS_URL);
+          // The desktop app always uses the local-first POS, even with a
+          // connection. Sales are saved on-device and synchronized later.
+          window.location.replace(OFFLINE_POS_URL.href);
         } catch {
           showOffline();
           launchInProgress = false;

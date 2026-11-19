@@ -8,6 +8,7 @@
     const storeName = 'pending-sales';
     const inventoryStoreName = 'inventory-snapshots';
     const catalogueUrl = config.catalogueUrl;
+    const forceLocal = config.forceLocal === true;
     const companyId = String(config.companyId || '');
     const branchId = String(config.branchId || config.branchName || '');
     const contextKey = `${companyId}:${branchId}`;
@@ -213,6 +214,41 @@
     }
 
     async function initializeInventory() {
+        if (forceLocal) {
+            const products = new Map();
+            document.querySelectorAll('.product-card[data-id]').forEach((card) => {
+                const id = String(card.dataset.id || '');
+                const stock = Number(card.dataset.stock);
+                if (id && Number.isFinite(stock)) products.set(id, stock);
+            });
+            document.querySelectorAll('#product-select option[value]').forEach((option) => {
+                const id = String(option.value || '');
+                const stock = Number(option.dataset.stock);
+                if (id && Number.isFinite(stock)) products.set(id, stock);
+            });
+
+            const existing = (await allInventory()).filter((record) => record.context_key === contextKey);
+            const presentIds = new Set(products.keys());
+            for (const record of existing) {
+                if (!presentIds.has(String(record.product_id))) await removeInventory(record.key);
+            }
+            for (const [id, stock] of products) {
+                await putInventory({
+                    key: `${contextKey}:${id}`,
+                    context_key: contextKey,
+                    product_id: id,
+                    stock,
+                    refreshed_at: new Date().toISOString(),
+                });
+            }
+
+            const queued = (await all()).filter(belongsToActiveContext);
+            for (const sale of queued) await applySaleToInventory(sale);
+            const localRecords = (await allInventory()).filter((record) => record.context_key === contextKey);
+            localRecords.forEach((record) => updateProductStock(String(record.product_id), Number(record.stock || 0)));
+            return;
+        }
+
         if (navigator.onLine) {
             await sync();
             try {
@@ -237,10 +273,14 @@
         indicator.textContent = !navigator.onLine
             ? `Offline${queued ? ` - ${queued} queued` : ''}`
             : review ? `${review} sale${review === 1 ? '' : 's'} need review`
-                : queued ? `Syncing ${queued} sale${queued === 1 ? '' : 's'}` : 'Online';
+                : queued
+                    ? `${forceLocal && !syncPromise ? 'Queued' : 'Syncing'} ${queued} sale${queued === 1 ? '' : 's'}`
+                    : (forceLocal ? 'Local mode' : 'Online');
         indicator.title = review
             ? 'A queued sale could not synchronize. Click to review stock, account, or business/branch details.'
-            : 'POS connection and offline sale queue status';
+            : forceLocal
+                ? 'Sales are saved on this device first; synchronization runs in the background when connected.'
+                : 'POS connection and offline sale queue status';
     }
 
     async function send(payload) {
@@ -312,6 +352,10 @@
         if (refreshPromise) return refreshPromise;
         refreshPromise = (async () => {
             await sync();
+            if (forceLocal) {
+                await updateIndicator();
+                return;
+            }
             try {
                 await pullCatalogue();
             } catch (error) {
@@ -366,7 +410,7 @@
             offline_branch_name: String(config.branchName || ''),
         };
 
-        if (!navigator.onLine) {
+        if (!navigator.onLine || forceLocal) {
             if (!canQueue) {
                 throw new Error('This payment type requires an internet connection.');
             }
