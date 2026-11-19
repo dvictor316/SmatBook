@@ -992,6 +992,34 @@
             radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 30%),
             linear-gradient(135deg, #7c2d12 0%, #f59e0b 52%, #fde68a 100%);
     }
+    .dashboard-account-metrics {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+    .dashboard-account-metrics > [class*="col-"] {
+        flex: 0 0 20%;
+        max-width: 20%;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    @media (max-width: 991.98px) {
+        .dashboard-account-metrics > [class*="col-"] {
+            flex-basis: 33.3333%;
+            max-width: 33.3333%;
+        }
+    }
+    @media (max-width: 575.98px) {
+        .dashboard-account-metrics > [class*="col-"] {
+            flex-basis: 50%;
+            max-width: 50%;
+        }
+    }
+    @media (max-width: 380px) {
+        .dashboard-account-metrics > [class*="col-"] {
+            flex-basis: 100%;
+            max-width: 100%;
+        }
+    }
     .dashboard-tight .card.tone-card,
     .dashboard-tight .stretch-card > .card.tone-card,
     .dashboard-tight .card.compact-side-snapshot,
@@ -1660,7 +1688,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
+                        <div class="row dashboard-account-metrics">
                             <div class="col-lg-3 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-companies border-0">
                                     <div class="card-body">
@@ -1691,9 +1719,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-lg-3 col-md-6 grid-margin stretch-card">
                                 <div class="card executive-kpi kpi-subscriptions border-0">
                                     <div class="card-body">
