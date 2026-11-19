@@ -85,6 +85,12 @@
 
 <head>
     @livewireStyles
+    <style>
+        /* Keep Livewire's in-page progress strip from competing with the browser tab indicator. */
+        #nprogress {
+            display: none !important;
+        }
+    </style>
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
