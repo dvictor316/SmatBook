@@ -1977,6 +1977,12 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment > .d-flex
     margin-top: 8px !important;
 }
 
+@media (min-width: 721px) {
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-layout {
+        grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr) !important;
+    }
+}
+
 @media (max-width: 720px) {
     body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment {
         padding: 14px 16px !important;
