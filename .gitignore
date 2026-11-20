@@ -29,3 +29,5 @@ yarn-error.log
 /apps/mobile/dist
 /apps/desktop/src-tauri/target
 /apps/desktop/dist
+/apps/desktop/tauri-updater.key
+/apps/desktop/tauri-updater.key.pub

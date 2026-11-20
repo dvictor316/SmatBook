@@ -89,6 +89,9 @@ jobs:
 
       - name: Build Windows MSI
         working-directory: apps/desktop
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         run: npm run build -- --bundles msi
 
       - name: Create stable offline installer download
@@ -99,6 +102,35 @@ jobs:
             throw "Expected one Windows MSI, found $($installers.Count)."
           }
           Copy-Item $installers[0].FullName (Join-Path $installers[0].DirectoryName "SmartProbook-Offline-Installer.msi")
+
+      - name: Create updater manifest
+        shell: pwsh
+        env:
+          DESKTOP_VERSION: ${{ inputs.version }}
+          REPOSITORY_SLUG: ${{ github.repository }}
+        run: |
+          $bundleDir = "apps/desktop/src-tauri/target/release/bundle/msi"
+          $updateBundles = @(Get-ChildItem -Path $bundleDir -Filter "*.msi.zip")
+          if ($updateBundles.Count -ne 1) {
+            throw "Expected one signed MSI updater bundle, found $($updateBundles.Count)."
+          }
+          $bundle = $updateBundles[0]
+          $signaturePath = "$($bundle.FullName).sig"
+          if (-not (Test-Path $signaturePath)) {
+            throw "The MSI updater signature was not generated: $signaturePath"
+          }
+          $manifest = @{
+            version = $env:DESKTOP_VERSION
+            notes = "SmartProbook desktop update"
+            pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = @{
+              "windows-x86_64" = @{
+                signature = (Get-Content -Raw $signaturePath).Trim()
+                url = "https://github.com/$($env:REPOSITORY_SLUG)/releases/download/desktop-v$($env:DESKTOP_VERSION)/$($bundle.Name)"
+              }
+            }
+          }
+          $manifest | ConvertTo-Json -Depth 6 | Set-Content -Path (Join-Path $bundleDir "latest.json") -Encoding utf8
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
@@ -117,6 +149,10 @@ jobs:
             Windows desktop installer for SmartProbook.
 
             Sign in and synchronize the POS product catalogue while online before using offline sales.
-          files: apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          files: |
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi.zip
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi.zip.sig
+            apps/desktop/src-tauri/target/release/bundle/msi/latest.json
           overwrite_files: true
           fail_on_unmatched_files: true

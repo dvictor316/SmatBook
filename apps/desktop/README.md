@@ -25,6 +25,21 @@ The Windows installer is built on a Windows GitHub Actions runner. After the wor
 3. When the workflow completes, download the `.msi` from the GitHub Release named `SmartProbook Desktop v<version> for Windows`.
 4. Share that release download link with Windows users. GitHub release assets are publicly downloadable only if this repository is public; for a private repository, upload the MSI to SmartProbook's customer download area instead.
 
+### In-app updates
+
+The desktop app checks for signed updates when it starts and prompts the user to install one when available. Updates require an internet connection; offline sales continue to work without checking for updates.
+
+The first updater-enabled release must be installed over the existing app once. After that, users can accept updates in the app without manually uninstalling and reinstalling.
+
+The release workflow signs update bundles with the private key in apps/desktop/tauri-updater.key. Keep this file out of Git and backed up securely. Add it to the repository's GitHub Actions secrets as TAURI_PRIVATE_KEY:
+
+~~~bash
+gh auth login
+gh secret set TAURI_PRIVATE_KEY < apps/desktop/tauri-updater.key
+~~~
+
+Do not regenerate the key after publishing updater-enabled releases. The public key is embedded in src-tauri/tauri.conf.json; losing the matching private key prevents signing updates for those installations.
+
 Business owners can use **Install offline app** on the business dashboard to download the MSI directly. After installing, **Open offline app** launches SmartProbook from the dashboard. Windows or the browser may ask for confirmation the first time the app link is opened.
 
 The installer is unsigned unless a Windows code-signing certificate is configured. Windows may show a SmartScreen warning until the application is signed and has established reputation.
