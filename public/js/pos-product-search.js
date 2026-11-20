@@ -52,8 +52,15 @@
         input.addEventListener('input', update);
         input.addEventListener('keyup', update);
     }
+    let pinnedShelfQuery = null;
+    let pinnedShelfIds = null;
     function filterShelf(cards, query, category) {
-        const hasQuery = String(query ?? '').trim().length > 0;
+        const queryText = String(query ?? '').trim();
+        const hasQuery = queryText.length > 0;
+        if (queryText !== pinnedShelfQuery) {
+            pinnedShelfQuery = queryText;
+            pinnedShelfIds = null;
+        }
         let activeCategory = normalize(category || 'all');
         // Product search should span every category. Keeping the old category
         // active made a valid match elsewhere disappear as soon as it was typed.
@@ -67,11 +74,18 @@
                 });
             }
         }
-        const entries = Array.from(cards).map((card) => ({ card, score: score(card.dataset, query) }));
+        const entries = Array.from(cards).map((card) => ({ card, score: score(card.dataset, queryText) }));
+        if (hasQuery && pinnedShelfIds === null) {
+            pinnedShelfIds = new Set(entries.filter((entry) => entry.score > 0)
+                .map(({ card }) => String(card.dataset.id || card.dataset.productId || '')));
+        }
         let visible = 0;
         entries.sort((a, b) => b.score - a.score).forEach(({ card, score: relevance }, index) => {
             const cardCategory = normalize(card.dataset.category || card.dataset.categoryName || 'uncategorized');
-            const show = relevance > 0 && (activeCategory === 'all' || cardCategory === activeCategory);
+            const id = String(card.dataset.id || card.dataset.productId || '');
+            const show = relevance > 0
+                && (!hasQuery || pinnedShelfIds.has(id))
+                && (activeCategory === 'all' || cardCategory === activeCategory);
             card.hidden = !show;
             card.style.display = show ? '' : 'none';
             card.style.order = String(index);

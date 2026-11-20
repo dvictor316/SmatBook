@@ -1136,3 +1136,48 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .
 body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn-suspense:hover {
     color: #f1d38b !important;
 }
+
+/* Keep the sale workspace inside one viewport; only the order lines scroll. */
+@media (min-width: 721px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: auto !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .summary-panel,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-secondary-actions {
+        flex: 0 0 auto !important;
+    }
+}
+
+@media (max-width: 720px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        display: flex !important;
+        flex-direction: column !important;
+        max-height: calc(100dvh - var(--sb-header-h, 76px) - 12px) !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
+        flex: 1 1 auto !important;
+        min-height: 110px !important;
+        max-height: 38dvh !important;
+        height: auto !important;
+        overflow: auto !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .summary-panel,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-cart-actions,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-secondary-actions {
+        flex: 0 0 auto !important;
+    }
+}

@@ -7057,6 +7057,8 @@ $(document).ready(function() {
 
         let selId  = null;
         let isOpen = false;
+        let pinnedQuery = null;
+        let pinnedItems = [];
 
         function setComboHasValue(hasValue) {
             $combo.toggleClass('has-value', Boolean(hasValue));
@@ -7080,7 +7082,13 @@ $(document).ready(function() {
         let cache = buildCache();
         window._posComboRefresh = function () {
             cache = buildCache();
-            if (isOpen) renderList(filter($input.val()), String($input.val() || '').toLowerCase().trim());
+            // Keep the visible matches stable while catalogue/stock refreshes
+            // complete. A cashier's next query change will use the new cache.
+            if (isOpen && !String($input.val() || '').trim()) {
+                pinnedQuery = '';
+                pinnedItems = filter('');
+                renderList(pinnedItems, '');
+            }
         };
 
         function esc(s) {
@@ -7137,9 +7145,17 @@ $(document).ready(function() {
         }
 
         function openWith(kw) {
-            // Re-build cache lazily in case products were late-loaded
-            if (!cache.length) cache = buildCache();
-            renderList(filter(kw), (kw || '').toLowerCase().trim());
+            const query = String(kw || '').trim();
+            if (pinnedQuery === null || query !== pinnedQuery) {
+                // Snapshot the result set only when the cashier changes text.
+                cache = buildCache();
+                pinnedQuery = query;
+                pinnedItems = filter(query);
+            } else if (!cache.length) {
+                cache = buildCache();
+                pinnedItems = filter(query);
+            }
+            renderList(pinnedItems, query.toLowerCase());
             positionPortal();
             $portal.show();
             $caret.addClass('open');
@@ -7168,6 +7184,8 @@ $(document).ready(function() {
 
         function clearCombo() {
             selId = null;
+            pinnedQuery = null;
+            pinnedItems = [];
             $input.val('');
             $clear.hide();
             setComboHasValue(false);
