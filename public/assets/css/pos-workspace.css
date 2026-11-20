@@ -1696,3 +1696,121 @@ body.pos-terminal-workspace #pos-checkout-screen #process-btn {
     box-shadow: inset 0 -3px 0 rgba(209, 170, 85, .85), 0 5px 12px rgba(10, 35, 76, .16) !important;
     font-weight: 800 !important;
 }
+
+/* Darker POS surfaces and a more polished action rail; preserve the layout. */
+body.pos-terminal-workspace #pos-sell-screen .pos-action-rail {
+    background: linear-gradient(180deg, #102b58 0%, #0b2148 100%) !important;
+    border-right-color: #c7a24a !important;
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, .08) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-panel {
+    gap: 7px !important;
+    padding: 5px 2px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn {
+    min-height: 62px !important;
+    padding: 6px 3px !important;
+    gap: 5px !important;
+    border: 1px solid rgba(215, 183, 104, .28) !important;
+    border-radius: 9px !important;
+    background: linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.025)) !important;
+    color: #f6f8fc !important;
+    box-shadow: 0 3px 8px rgba(3, 15, 38, .22) !important;
+    transition: background .16s ease, border-color .16s ease, transform .16s ease !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn > i {
+    width: 30px !important;
+    height: 30px !important;
+    border: 1px solid #d8b95f !important;
+    background: linear-gradient(145deg, #fff9e7, #e6cf91) !important;
+    color: #12376f !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .2) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn > span {
+    color: #f6f8fc !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-shadow: none !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:hover,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:focus-visible {
+    transform: translateY(-1px) !important;
+    border-color: #e1c36c !important;
+    background: linear-gradient(145deg, #d9b65a, #f3dda0) !important;
+    color: #102b58 !important;
+    outline: none !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:hover > i,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:focus-visible > i {
+    background: #102b58 !important;
+    color: #f3d77e !important;
+    border-color: #102b58 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:hover > span,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:focus-visible > span {
+    color: #102b58 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .header-stage {
+    background: linear-gradient(110deg, #cbd7e8 0%, #d9e2ee 72%, #e8dfc6 100%) !important;
+    border-bottom-color: #9eafc7 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+    background: linear-gradient(180deg, #e7edf6 0%, #dce5f0 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+    padding: 8px 10px !important;
+    background: linear-gradient(180deg, #dce5f0 0%, #d1dceb 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading {
+    min-height: 25px !important;
+    margin-bottom: 3px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
+    font-size: 13px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading button {
+    min-height: 25px !important;
+    padding: 3px 8px !important;
+    font-size: 10px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-receipt-toolbar {
+    padding-bottom: 3px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-heading {
+    min-height: 21px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-heading .receipt-toolbar-label {
+    font-size: 10px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-sales-reprint-quicklink,
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-add-btn {
+    min-height: 24px !important;
+    padding: 3px 6px !important;
+    font-size: 9px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-compact .form-control,
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-compact .form-select {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 3px 7px !important;
+    font-size: 10px !important;
+}
