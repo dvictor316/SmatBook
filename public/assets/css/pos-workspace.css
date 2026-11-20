@@ -1158,10 +1158,60 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .
     }
 }
 
+/* Reprint sits with customer actions; four lower actions use two equal columns. */
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* Keep reprint beside the customer controls and spread the remaining actions evenly. */
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-heading {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-heading .receipt-toolbar-label {
+    flex: 0 0 auto !important;
+    margin-right: auto !important;
+    grid-column: auto !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-sales-reprint-quicklink {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 28px !important;
+    padding: 4px 7px !important;
+    border: 1px solid #b8c9e2 !important;
+    border-radius: 5px !important;
+    background: #fff !important;
+    color: #163d78 !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid > .btn {
+    min-height: 38px !important;
+    padding-inline: 8px !important;
+    font-size: 10px !important;
+}
+
+@media (max-width: 380px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-customer-heading { gap: 3px !important; }
+    body.pos-terminal-workspace #pos-sell-screen .pos-sales-reprint-quicklink { padding-inline: 4px !important; font-size: 8px !important; }
+    body.pos-terminal-workspace #pos-sell-screen .pos-customer-add-btn { padding-inline: 5px !important; font-size: 9px !important; }
+}
+
 /* Six compact actions in two rows leave the center of the order panel for items. */
 body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 5px !important;
     flex: 0 0 auto !important;
     margin-top: 6px !important;

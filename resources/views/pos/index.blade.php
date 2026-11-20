@@ -6197,6 +6197,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <div class="pos-customer-compact">
                         <div class="pos-customer-heading">
                             <span class="receipt-toolbar-label">Customer</span>
+                        <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="pos-sales-reprint-quicklink">
+                            <i class="fas fa-receipt me-1" aria-hidden="true"></i> Sales &amp; Reprint
+                        </a>
                             @if($posCanCreateCustomers)
                                 <button type="button" id="pos-add-customer" class="pos-customer-add-btn" data-pos-add-customer data-customer-store-url="{{ route('customers.store') }}" title="Add a customer without leaving this sale">
                                     <i class="fas fa-plus-circle" aria-hidden="true"></i> Add customer
@@ -6278,9 +6281,6 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     @endif
                     <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
                         <i class="fas fa-chart-line me-1"></i> Sales Register
-                    </a>
-                    <a href="{{ $posSalesLogUrl ?? url('/pos/sales') }}" class="btn pos-secondary-action">
-                        <i class="fas fa-receipt me-1"></i> Sales & Reprint
                     </a>
                     <button type="button" id="new-sale-btn" class="btn pos-secondary-action">
                         <i class="fas fa-plus me-1"></i> New Sale
