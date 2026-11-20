@@ -1988,3 +1988,26 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment > .d-flex
         padding: 14px 16px !important;
     }
 }
+
+/* Keep the dark treatment on the POS heading band; keep work surfaces light. */
+body.pos-terminal-workspace .pos-full-page-wrapper,
+body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+    background: #f4f6f9 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .header-stage {
+    background: linear-gradient(115deg, #102b58 0%, #173d77 72%, #204b83 100%) !important;
+    border-bottom: 1px solid #c5a44e !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-header-title {
+    color: #fff !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+    background: #f7f8fa !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+    background: #f3f5f8 !important;
+}
