@@ -2098,3 +2098,38 @@ body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary:focus-visible
     color: #12376f !important;
     border-color: #c7a24a !important;
 }
+
+/* Lighten the heading and rail slightly; keep Checkout styled like its peers. */
+body.pos-terminal-workspace #pos-sell-screen .header-stage {
+    background: linear-gradient(110deg, #dce6f3 0%, #e5edf7 72%, #f0ebdc 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-action-rail,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-panel {
+    background: linear-gradient(180deg, #e2ebf7 0%, #d9e4f1 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn {
+    border: 1px solid #b4c4da !important;
+    border-bottom: 2px solid #c7a24a !important;
+    background: linear-gradient(145deg, #e8eff8, #d7e2f0) !important;
+    color: #12376f !important;
+    box-shadow: 0 2px 6px rgba(18, 55, 111, .12) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn > i {
+    border: 1px solid #c7a24a !important;
+    background: #fff !important;
+    color: #123b7a !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn > span {
+    color: #12376f !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn:hover,
+body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn:focus-visible {
+    border-color: #c7a24a !important;
+    background: linear-gradient(145deg, #fff7e4, #efdfb2) !important;
+    color: #12376f !important;
+}
