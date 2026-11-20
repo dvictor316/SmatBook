@@ -1158,6 +1158,61 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .
     }
 }
 
+/* Six compact actions in two rows leave the center of the order panel for items. */
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    flex: 0 0 auto !important;
+    margin-top: 6px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid > .btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 4px 5px !important;
+    border-radius: 5px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid #pos-start-checkout {
+    background: #0f3a8a !important;
+    color: #fff !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid #pos-pend-order {
+    border: 1px solid #d7a928 !important;
+    background: #fffbef !important;
+    color: #765900 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid .pos-cart-clear-action {
+    border: 1px solid #e2b1ae !important;
+    background: #fff !important;
+    color: #b42318 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid .pos-secondary-action {
+    min-height: 34px !important;
+    padding-inline: 3px !important;
+    font-size: 9px !important;
+    letter-spacing: 0 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid .pos-secondary-action i {
+    display: none !important;
+}
+
 /* Compress the order controls so the cart lines get the available height. */
 body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
     overflow: hidden !important;
