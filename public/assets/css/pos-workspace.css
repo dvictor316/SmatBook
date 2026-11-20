@@ -1907,3 +1907,78 @@ body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
 body.pos-terminal-workspace #pos-sell-screen .header-stage {
     background: linear-gradient(110deg, #bdc8d8 0%, #cbd3df 72%, #ddd3b7 100%) !important;
 }
+
+/* Tighten checkout form spacing and give the payment card a cleaner inset. */
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment {
+    padding: 16px 24px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment > h2 {
+    margin-bottom: 8px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer {
+    margin: 8px 0 4px !important;
+    padding-top: 6px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer > h2 {
+    margin-bottom: 4px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer .pos-receipt-toolbar {
+    padding: 4px 0 !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer .pos-customer-compact {
+    gap: 5px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer .form-control,
+body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer .form-select {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 4px 9px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer .receipt-wallet-hint {
+    display: block !important;
+    margin-top: 3px !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment > .row.g-3 {
+    --bs-gutter-x: 10px;
+    --bs-gutter-y: 5px;
+    margin-top: 2px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment > .row.g-3 > .col-12 {
+    padding-bottom: 0 !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment > .row.g-3 > .col-12 .small + .small {
+    margin-top: 2px !important;
+    line-height: 1.25 !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment label {
+    margin-bottom: 3px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment .form-control,
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment .form-select {
+    min-height: 36px !important;
+    padding: 5px 9px !important;
+}
+
+body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment > .d-flex.justify-content-between {
+    margin-top: 8px !important;
+}
+
+@media (max-width: 720px) {
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment {
+        padding: 14px 16px !important;
+    }
+}
