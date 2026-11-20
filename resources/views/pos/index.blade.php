@@ -6192,7 +6192,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
 
         <div class="col-xl-8 pos-cart-column">
             <div class="card pos-card p-4">
-                <div class="pos-cart-heading"><h2>Current order</h2></div>
+                <div class="pos-cart-heading"><h2>Current order</h2><button type="button" id="pos-cart-clear">Clear all</button></div>
                 <div class="pos-receipt-toolbar">
                     <div class="pos-customer-compact">
                         <div class="pos-customer-heading">
@@ -6272,7 +6272,6 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 </div>
 
                 <div class="pos-cart-action-grid">
-                    <button type="button" id="pos-cart-clear" class="btn pos-cart-clear-action">Clear all</button>
                     <button type="button" id="pos-start-checkout" class="btn btn-process" @disabled(!$posCanSell)>Checkout <span data-pos-copy="hdr-cart-count">0</span> item(s) <span data-pos-copy="grand-total">₦0.00</span> <i class="fas fa-arrow-right ms-2"></i></button>
                     @if($posCanSuspendSales)
                     <button type="button" id="pos-pend-order" class="btn pos-pend-order"><i class="fas fa-pause me-1"></i>Suspend order</button>
