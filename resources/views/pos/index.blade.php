@@ -6275,7 +6275,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                 </div>
 
                 <div class="pos-cart-action-grid">
-                    <button type="button" id="pos-start-checkout" class="btn btn-process" @disabled(!$posCanSell)>Checkout <span data-pos-copy="hdr-cart-count">0</span> item(s) <span data-pos-copy="grand-total">₦0.00</span> <i class="fas fa-arrow-right ms-2"></i></button>
+                    <button type="button" id="pos-start-checkout" class="btn btn-process" @disabled(!$posCanSell)><i class="fas fa-check-circle me-1" aria-hidden="true"></i>PROCESS SALE</button>
                     @if($posCanSuspendSales)
                     <button type="button" id="pos-pend-order" class="btn pos-pend-order"><i class="fas fa-pause me-1"></i>Suspend order</button>
                     @endif
@@ -6430,7 +6430,7 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
 
                 <button type="button" id="process-btn" class="btn btn-process w-100 mt-3">
                     <span id="btn-text"><i class="fas fa-check-circle me-2"></i> PROCESS SALE</span>
-                    <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING...</span>
+                    <span id="btn-loading" style="display:none;"><i class="fas fa-sync fa-spin me-2"></i> PROCESSING NOW...</span>
                 </button>
 
         </aside>
