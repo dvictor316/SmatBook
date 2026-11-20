@@ -1,4 +1,4 @@
-const SMARTPROBOOK_SW_VERSION = 'smartprobook-static-v4';
+const SMARTPROBOOK_SW_VERSION = 'smartprobook-static-v5';
 const STATIC_CACHE = `${SMARTPROBOOK_SW_VERSION}-assets`;
 const POS_PAGE_CACHE = 'smartprobook-pos-page-v2';
 const PREVIOUS_POS_PAGE_CACHE = 'smartprobook-pos-page-v1';
@@ -115,6 +115,14 @@ self.addEventListener('fetch', (event) => {
 
     if (request.method !== 'GET') return;
     if (request.mode === 'navigate') {
+        if (url.origin === self.location.origin && url.pathname.replace(/\/+$/, '') === '/desktop-launch') {
+            event.respondWith(fetch(request).catch(() => {
+                const offlinePosUrl = new URL('/pos?desktop_offline=1', self.location.origin);
+                return Response.redirect(offlinePosUrl.href, 302);
+            }));
+            return;
+        }
+
         if (url.origin === self.location.origin && url.pathname.replace(/\/+$/, '') === '/pos') {
             event.respondWith(fetch(request).then((response) => {
                 if (response.ok && !response.redirected) {

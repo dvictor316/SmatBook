@@ -3,7 +3,7 @@
   "name": "SmartProBook",
   "short_name": "SmartProBook",
   "description": "Install SmartProBook as a secure desktop app for accounting, invoices, inventory, payroll, and business reports.",
-  "start_url": "/",
+  "start_url": "/desktop-launch",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
