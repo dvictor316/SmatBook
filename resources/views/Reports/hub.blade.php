@@ -580,10 +580,13 @@
                             <a href="{{ route('balance-sheet-comparison') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
 
+                    @endif
+
+                    @if($canUseProReports)
                         <div class="rl-row" data-section="financial" data-tab="financial" data-id="trial-balance" data-url="{{ route('trial-balance') }}" data-keywords="trial balance debits credits ledger accounts">
                             <button class="rl-star" data-id="trial-balance" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('trial-balance') }}" class="rl-name">Trial Balance</a>
-                            <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
                             <a href="{{ route('trial-balance') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
                     @endif
@@ -613,11 +616,11 @@
                         </div>
                     @endif
 
-                    @if($canUseEnterpriseReports && Route::has('general-ledger'))
+                    @if($canUseProReports && Route::has('general-ledger'))
                         <div class="rl-row" data-section="financial" data-tab="financial" data-id="general-ledger" data-url="{{ route('general-ledger') }}" data-keywords="general ledger accounts double entry transactions history">
                             <button class="rl-star" data-id="general-ledger" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('general-ledger') }}" class="rl-name">General Ledger</a>
-                            <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
+                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
                             <a href="{{ route('general-ledger') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
                     @endif

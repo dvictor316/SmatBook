@@ -159,7 +159,6 @@
                     <ul>
                         <li><a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Fixed Assets <span class="badge bg-warning">Enterprise</span></a></li>
                         <li><a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Budgets <span class="badge bg-warning">Enterprise</span></a></li>
-                        <li><a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Trial Balance <span class="badge bg-warning">Enterprise</span></a></li>
                         <li><a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Balance Sheet <span class="badge bg-warning">Enterprise</span></a></li>
                     </ul>
                 </li>

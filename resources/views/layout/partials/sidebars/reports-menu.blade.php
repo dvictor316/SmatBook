@@ -46,6 +46,12 @@
     @if(Route::has('reports.hub'))
         <li><a href="{{ route('reports.hub') }}?tab=management" class="{{ request()->routeIs('reports.hub') && $currentTab === 'management' ? 'active' : '' }}">Management Reports</a></li>
     @endif
+    @if(Route::has('trial-balance'))
+        <li><a href="{{ route('trial-balance') }}" class="{{ request()->routeIs('trial-balance') ? 'active' : '' }}">Trial Balance</a></li>
+    @endif
+    @if(Route::has('general-ledger'))
+        <li><a href="{{ route('general-ledger') }}" class="{{ request()->routeIs('general-ledger') ? 'active' : '' }}">General Ledger</a></li>
+    @endif
 @endif
 
 @if($canEnterprise)
