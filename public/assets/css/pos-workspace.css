@@ -2062,3 +2062,39 @@ body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:hover > span,
 body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn:focus-visible > span {
     color: #12376f !important;
 }
+
+/* Slightly deepen the blue, and make the primary rail button match the set. */
+body.pos-terminal-workspace #pos-sell-screen .header-stage {
+    background: linear-gradient(110deg, #d0dbea 0%, #dbe4f0 72%, #e9e2d0 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-action-rail,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-panel {
+    background: linear-gradient(180deg, #d3deed 0%, #cbd7e7 100%) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary {
+    border: 1px solid #b4c4da !important;
+    border-bottom: 2px solid #c7a24a !important;
+    background: linear-gradient(145deg, #e8eff8, #d7e2f0) !important;
+    color: #12376f !important;
+    box-shadow: 0 2px 6px rgba(18, 55, 111, .12) !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary > i {
+    background: #fff !important;
+    color: #123b7a !important;
+    border-color: #c7a24a !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary > span {
+    color: #12376f !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary:hover,
+body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary:focus-visible {
+    background: linear-gradient(145deg, #fff7e4, #efdfb2) !important;
+    color: #12376f !important;
+    border-color: #c7a24a !important;
+}
