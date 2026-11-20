@@ -91,7 +91,7 @@
       <h1>SmartProbook</h1>
       <p id="launch-message">Connecting to your secure workspace. To use offline POS, sign in online on this desktop and open the POS once so its stock and account can be saved.</p>
       <div class="status" id="connection-status" role="status" aria-live="polite">Checking connection…</div>
-      <a id="open-link" href="https://smartprobook.com/pos">Open POS</a>
+      <a id="open-link" href="https://smartprobook.com/desktop-launch">Open SmartProbook</a>
     </main>
 
     <script>
@@ -99,19 +99,21 @@
       const POS_URL = new URL('/pos', SMARTPROBOOK_URL).href;
       const OFFLINE_POS_URL = new URL(POS_URL);
       OFFLINE_POS_URL.searchParams.set('desktop_offline', '1');
+      const DESKTOP_LAUNCH_URL = new URL('/desktop-launch', SMARTPROBOOK_URL).href;
       const openLink = document.getElementById('open-link');
       const status = document.getElementById('connection-status');
       const message = document.getElementById('launch-message');
       let launchInProgress = false;
 
-      openLink.href = POS_URL;
+      openLink.href = DESKTOP_LAUNCH_URL;
 
       function showOffline() {
         status.dataset.state = 'offline';
-        status.textContent = 'You are offline. The saved POS will ask for the account password before it opens.';
-        message.textContent = 'First connect, sign in on this desktop, open the POS, and let its product stock load. Offline access is limited to POS sales and saved stock; queued sales sync when you reconnect.';
+        status.textContent = 'You are offline. Opening the saved POS workspace…';
+        message.textContent = 'The saved POS workspace will open using this device’s locally stored stock and account.';
         openLink.textContent = 'Try Offline POS';
         openLink.href = OFFLINE_POS_URL.href;
+        window.location.replace(OFFLINE_POS_URL.href);
       }
 
       async function launch() {
@@ -123,26 +125,8 @@
 
         launchInProgress = true;
         status.dataset.state = 'checking';
-        status.textContent = 'Checking the SmartProbook connection…';
-
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 7000);
-        try {
-          await fetch(POS_URL, {
-            method: 'HEAD',
-            mode: 'no-cors',
-            cache: 'no-store',
-            signal: controller.signal,
-          });
-          // The desktop app always uses the local-first POS, even with a
-          // connection. Sales are saved on-device and synchronized later.
-          window.location.replace(OFFLINE_POS_URL.href);
-        } catch {
-          showOffline();
-          launchInProgress = false;
-        } finally {
-          window.clearTimeout(timeout);
-        }
+        status.textContent = 'Opening secure sign in…';
+        window.location.replace(DESKTOP_LAUNCH_URL);
       }
 
       window.addEventListener('online', launch);

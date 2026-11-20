@@ -658,6 +658,17 @@ class AuthController extends Controller
     |--------------------------------------------------------------------------
     */
 
+    public function desktopLaunch(Request $request): RedirectResponse
+    {
+        if (Auth::check()) {
+            return redirect()->route('sales.showPos', ['desktop_offline' => 1]);
+        }
+
+        $request->session()->put('desktop_offline_login', true);
+
+        return redirect()->route('login');
+    }
+
     public function showLogin(Request $request)
     {
         $currentUser = Auth::user();
@@ -889,14 +900,24 @@ class AuthController extends Controller
             }
         });
 
+        $desktopOfflineLogin = (bool) $request->session()->pull('desktop_offline_login', false);
+
         if ($this->isAssignedWorkspaceStaff($user)) {
             $this->forceAssignedWorkspaceSession($request, $user);
             app(ActiveBranchResolver::class)->ensureSession($user);
+
+            if ($desktopOfflineLogin) {
+                return redirect()->route('sales.showPos', ['desktop_offline' => 1]);
+            }
 
             return redirect()->route('user.dashboard');
         }
 
         app(ActiveBranchResolver::class)->ensureSession($user);
+
+        if ($desktopOfflineLogin) {
+            return redirect()->route('sales.showPos', ['desktop_offline' => 1]);
+        }
 
         $intended = (string) $request->session()->pull('url.intended', '');
         if ($this->isAllowedPostLoginRedirect($intended)) {
