@@ -1814,3 +1814,96 @@ body.pos-terminal-workspace #pos-sell-screen .pos-customer-compact .form-select 
     padding: 3px 7px !important;
     font-size: 10px !important;
 }
+
+/* Give the product tray room on tablets while keeping both panels in bounds. */
+@media (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.25fr) minmax(280px, .85fr) !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        grid-template-areas: 'header header' 'shelf receipt' !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: calc(100dvh - var(--sb-header-h, 76px)) !important;
+        min-height: 520px !important;
+        max-height: none !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage > .row.g-4 {
+        display: contents !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+        grid-area: shelf !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        padding: 10px !important;
+        background: linear-gradient(180deg, #dfe4ec 0%, #d5dbe5 100%) !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column {
+        grid-area: receipt !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        min-width: 0 !important;
+        overflow-x: hidden !important;
+    }
+}
+
+@media (max-width: 720px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-rows: auto auto auto !important;
+        grid-template-areas: 'header' 'shelf' 'receipt' !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+}
+
+body.pos-terminal-workspace #pos-sell-screen,
+body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+    box-sizing: border-box !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+    background: #d7dde6 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .header-stage {
+    background: linear-gradient(110deg, #bdc8d8 0%, #cbd3df 72%, #ddd3b7 100%) !important;
+}
