@@ -1418,3 +1418,118 @@ body.pos-terminal-workspace #pos-sell-screen .pos-secondary-action {
         flex: 0 0 auto !important;
     }
 }
+
+/* Fit checkout controls and order review into the initial desktop viewport. */
+@media (min-width: 961px) {
+    body.pos-terminal-workspace #pos-checkout-screen {
+        width: min(100% - 24px, 1500px) !important;
+        margin: 8px auto !important;
+        padding: 12px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-header {
+        min-height: 0 !important;
+        padding: 0 0 8px !important;
+        margin-bottom: 8px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-header h1 {
+        margin-top: 2px !important;
+        font-size: 21px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-header .btn {
+        padding: 6px 10px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment,
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-order {
+        padding: 14px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen h2 {
+        margin-bottom: 9px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-pay-tab {
+        min-height: 48px !important;
+        padding: 7px 9px !important;
+        font-size: 12px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions {
+        margin: 8px 0 10px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .btn {
+        padding: 6px 8px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer {
+        margin: 10px 0 8px !important;
+        padding-top: 8px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment .row {
+        --bs-gutter-y: 7px;
+        margin-top: 6px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment .form-control,
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-payment .form-select {
+        min-height: 36px !important;
+        padding-top: 5px !important;
+        padding-bottom: 5px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-notice {
+        margin-bottom: 12px !important;
+        padding: 8px 10px !important;
+        line-height: 1.4 !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-items {
+        max-height: 150px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-line {
+        padding: 7px 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-totals {
+        padding: 8px 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-totals > div {
+        padding: 4px 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-checkout-totals .pos-checkout-total {
+        margin-top: 5px !important;
+        padding-top: 8px !important;
+        font-size: 17px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-receipt-format {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        margin-top: 8px !important;
+        padding: 7px 9px !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-receipt-format label {
+        margin: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen .pos-receipt-format select {
+        width: min(58%, 300px) !important;
+    }
+
+    body.pos-terminal-workspace #pos-checkout-screen #process-btn {
+        min-height: 42px !important;
+        margin-top: 8px !important;
+        font-size: 13px !important;
+    }
+}
