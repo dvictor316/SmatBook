@@ -2211,28 +2211,32 @@ body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):hover {
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
     display: flex !important;
     align-items: center !important;
-    flex: 0 1 auto !important;
+    flex: 1 1 auto !important;
     min-width: 0 !important;
     width: auto !important;
     gap: 6px !important;
-    margin: 0 0 0 auto !important;
+    margin: 0 0 0 14px !important;
     white-space: nowrap !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
-    font-size: 10px !important;
+    font-size: 11px !important;
     letter-spacing: .02em !important;
+    font-weight: 800 !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .pos-view-switch button {
     min-height: 28px !important;
     padding: 4px 7px !important;
-    font-size: 9px !important;
+    font-size: 10px !important;
+    font-weight: 750 !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
-    margin-left: 0 !important;
-    font-size: 9px !important;
+    margin-left: auto !important;
+    color: #526985 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .header-stage {
@@ -2257,6 +2261,48 @@ body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
-        font-size: 9px !important;
+        font-size: 10px !important;
     }
+}
+
+/* Cycle subtle category tints through every category, including hidden ones. */
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(6n + 2) {
+    background: #edf5e9 !important;
+    border-color: #cfdfc5 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(6n + 3) {
+    background: #fbf2df !important;
+    border-color: #e9d9ae !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(6n + 4) {
+    background: #e9f1fc !important;
+    border-color: #cbd9ec !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(6n + 5) {
+    background: #f1ebf8 !important;
+    border-color: #d8c9e8 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(6n + 6) {
+    background: #faecec !important;
+    border-color: #e8cccc !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(6n + 7) {
+    background: #e6f3f2 !important;
+    border-color: #c1dfdb !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active) {
+    color: #213c5d !important;
+    font-weight: 700 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
+    background: #e9eef6 !important;
+    color: #17365f !important;
+    font-weight: 750 !important;
 }
