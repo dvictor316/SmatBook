@@ -2111,8 +2111,16 @@ body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolba
     text-shadow: 0 1px 1px rgba(5, 20, 45, .35) !important;
 }
 
-body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
-    color: #fff8e7 !important;
+body.pos-terminal-workspace #pos-sell-screen .pos-header-title .gradient-text {
+    color: #fff !important;
+    background: none !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .header-stage #product-count,
+body.pos-terminal-workspace #pos-sell-screen .header-stage #product-count * {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-action-rail,
