@@ -1248,6 +1248,7 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .
         grid-auto-rows: 70px !important;
         height: 145px !important;
         max-height: 145px !important;
+        row-gap: 0 !important;
         overflow-y: auto !important;
         overscroll-behavior: auto !important;
         -webkit-overflow-scrolling: touch !important;
@@ -3420,16 +3421,57 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 320px)) !important;
+        min-height: 300px !important;
         max-height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 320px)) !important;
+        padding: 6px !important;
         overflow: hidden !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
-        min-height: 56px !important;
+        flex: 1 1 0 !important;
+        height: auto !important;
+        min-height: 40px !important;
         max-height: none !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
         overscroll-behavior: auto !important;
         -webkit-overflow-scrolling: touch !important;
         touch-action: pan-y !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .summary-panel {
+        flex: 0 0 auto !important;
+        padding: 5px 7px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .summary-panel .summary-row {
+        margin: 2px 0 !important;
+        padding-bottom: 2px !important;
+        font-size: 10px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .summary-panel > .d-flex {
+        margin: 4px 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-cart-action-grid {
+        flex: 0 0 auto !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 3px !important;
+        margin-top: 4px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-cart-action-grid > .btn {
+        min-height: 27px !important;
+        padding: 3px 2px !important;
+        font-size: 7px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-idle-illustration {
+        display: none !important;
     }
 }
 
