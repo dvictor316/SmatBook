@@ -784,7 +784,10 @@
     }
 
     if (autoPrintReceipt) {
-        const requestReceiptPrint = () => window.requestAnimationFrame(printCompactInvoice);
+        const requestReceiptPrint = () => {
+            const mobileDelay = window.matchMedia('(max-width: 768px)').matches ? 700 : 0;
+            window.setTimeout(() => window.requestAnimationFrame(printCompactInvoice), mobileDelay);
+        };
         if (document.readyState === 'complete') {
             requestReceiptPrint();
         } else {

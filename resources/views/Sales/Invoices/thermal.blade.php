@@ -204,7 +204,10 @@
         window.print();
     }
     if (@json(request()->boolean('autoprint'))) {
-        const requestThermalPrint = () => window.requestAnimationFrame(printThermalReceipt);
+        const requestThermalPrint = () => {
+            const mobileDelay = window.matchMedia('(max-width: 768px)').matches ? 700 : 0;
+            window.setTimeout(() => window.requestAnimationFrame(printThermalReceipt), mobileDelay);
+        };
         if (document.readyState === 'complete') requestThermalPrint();
         else window.addEventListener('load', requestThermalPrint, { once: true });
     }
