@@ -33,11 +33,20 @@
         document.querySelectorAll('#cart-body tr').forEach((row) => {
             const line = document.createElement('div');
             line.className = 'pos-checkout-line';
+            const copy = document.createElement('div');
+            copy.className = 'pos-checkout-line-copy';
             const name = document.createElement('span');
             const amount = document.createElement('strong');
             name.textContent = row.querySelector('.cart-item-name')?.textContent.trim() || row.cells[0]?.textContent.trim();
             amount.textContent = row.querySelector('.cart-line-total')?.textContent.trim() || row.cells[2]?.textContent.trim();
-            line.append(name, amount);
+            copy.append(name);
+            row.querySelectorAll('.cart-adjustment-summary').forEach((adjustment) => {
+                const detail = document.createElement('small');
+                detail.className = `pos-checkout-adjustment ${adjustment.classList.contains('is-tax') ? 'is-tax' : 'is-discount'}`;
+                detail.textContent = adjustment.textContent.trim();
+                copy.append(detail);
+            });
+            line.append(copy, amount);
             items.append(line);
         });
     }

@@ -10335,7 +10335,7 @@ window.POS_ENABLE_FALLBACK = function () {
                                 <small class="cart-adjustment-help">Tax applies after this item’s discount. Current tax: ${fmt.format(item.taxVal)}</small>
                             </div>
                             ${unitPicker ? `<div class="cart-item-unit-row">${unitPicker}</div>` : ''}
-                            <span class="cart-line-total visually-hidden">${fmt.format(item.total)}</span>
+                            <span class="cart-line-total visually-hidden">${fmt.format(lineTotal)}</span>
                         </div>
                     </td>
                 </tr>
