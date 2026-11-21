@@ -1413,7 +1413,7 @@ body.pos-terminal-workspace #pos-sell-screen .pos-secondary-action {
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .summary-panel,
-    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-cart-actions,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-cart-action-grid,
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-secondary-actions {
         flex: 0 0 auto !important;
     }
@@ -2425,6 +2425,129 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
 @media (orientation: portrait) and (min-width: 721px) and (max-width: 1199.98px) {
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Keep the POS work panels bounded by the live viewport on desktop and tablets. */
+@media (min-width: 721px) {
+    body.pos-terminal-workspace #pos-sell-screen {
+        height: calc(100dvh - var(--sb-header-h, 76px)) !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-action-rail {
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column {
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column {
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
+        flex: 1 1 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .summary-panel,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-cart-actions,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .pos-secondary-actions {
+        flex: 0 0 auto !important;
+    }
+}
+
+/* On phones, keep the page stacked and size its independent scroll regions to the viewport. */
+@media (max-width: 720px) {
+    body.pos-terminal-workspace #pos-sell-screen {
+        height: auto !important;
+        min-height: calc(100dvh - var(--sb-header-h, 76px)) !important;
+        overflow: visible !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: 58dvh !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        flex: 0 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: min(48dvh, 520px) !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
+        flex: 0 1 auto !important;
+        height: auto !important;
+        min-height: 120px !important;
+        max-height: min(42dvh, 360px) !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
     }
 }
 
