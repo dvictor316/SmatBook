@@ -2472,9 +2472,61 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
         height: auto !important;
         min-height: 0 !important;
         max-height: none !important;
-        grid-auto-rows: minmax(66px, 1fr) !important;
+        grid-auto-rows: minmax(204px, 1fr) !important;
         align-content: stretch !important;
         overflow-y: auto !important;
         overscroll-behavior: contain !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 204px !important;
+        max-height: none !important;
+        padding: 10px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-img {
+        flex: 0 0 104px !important;
+        width: 100% !important;
+        height: 104px !important;
+        min-height: 104px !important;
+        max-height: 104px !important;
+        margin: 0 0 10px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-name {
+        display: -webkit-box !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        margin: 0 0 8px !important;
+        overflow: hidden !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-product-meta {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 4px !important;
+        margin-top: auto !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-stock-badge {
+        padding: 3px 5px !important;
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-product-meta strong {
+        max-width: 100% !important;
+        font-size: 12px !important;
+        line-height: 1.25 !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
     }
 }
