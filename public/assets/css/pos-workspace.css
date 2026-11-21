@@ -2173,8 +2173,8 @@ body.pos-terminal-workspace #pos-sell-screen .summary-value {
     font-weight: 700 !important;
 }
 
-/* Put the product controls and categories on one compact tablet row. */
-@media (min-width: 721px) and (max-width: 1199.98px) {
+/* Put the product controls and categories on one compact desktop row. */
+@media (min-width: 1200px) {
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
         display: grid !important;
         grid-template-columns: max-content max-content max-content minmax(0, 1fr) max-content !important;
