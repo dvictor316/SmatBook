@@ -3546,4 +3546,23 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
         pointer-events: auto !important;
         touch-action: manipulation !important;
     }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        grid-auto-rows: 70px !important;
+        grid-template-rows: repeat(2, 70px) !important;
+        gap: 0 5px !important;
+        row-gap: 0 !important;
+        align-content: start !important;
+        height: 140px !important;
+        min-height: 140px !important;
+        max-height: 140px !important;
+        margin-top: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card {
+        height: 70px !important;
+        min-height: 70px !important;
+        max-height: 70px !important;
+        margin: 0 !important;
+    }
 }
