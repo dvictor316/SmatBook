@@ -189,7 +189,7 @@
 </main>
 
 <script>
-    const printReturnUrl = @json(route('invoices.index'));
+    const printReturnUrl = @json(request()->query('return') === 'pos' ? route('sales.showPos') : route('invoices.index'));
     function closePrintPage() {
         window.close();
         window.setTimeout(() => {

@@ -707,7 +707,7 @@
 </body>
 <script>
     const autoPrintReceipt = {{ request()->boolean('autoprint') ? 'true' : 'false' }};
-    const printReturnUrl = @json(route('invoices.index'));
+    const printReturnUrl = @json(request()->query('return') === 'pos' ? route('sales.showPos') : route('invoices.index'));
     let invoiceEmailInFlight = false;
 
     function printInvoiceNow() {
