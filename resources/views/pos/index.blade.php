@@ -5812,6 +5812,14 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <div class="clock-badge" style="background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 100%); color: #0f3a8a; border-color: rgba(37, 99, 235, 0.28); box-shadow: 0 8px 18px rgba(6, 26, 68, 0.14);">
                         <i class="fas fa-code-branch me-1"></i>{{ $activeBranch['name'] ?? 'Main Workspace' }}
                     </div>
+                    <div class="product-toolbar pos-header-product-toolbar">
+                        <span class="toolbar-title">Products</span>
+                        <div class="pos-view-switch" aria-label="Product display">
+                            <button type="button" id="pos-grid-view" aria-pressed="true"><i class="fas fa-th-large"></i> Grid</button>
+                            <button type="button" id="pos-list-view" aria-pressed="false"><i class="fas fa-list"></i> List</button>
+                        </div>
+                        <span class="small text-muted" id="product-count">{{ ($products ?? collect())->count() }} item(s)</span>
+                    </div>
                 </div>
 
             <div class="d-flex align-items-center gap-3">
@@ -5837,15 +5845,6 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
     </div>
 
     <div class="card pos-card pos-product-shelf-card p-4 mb-4">
-        <div class="product-toolbar">
-            <span class="toolbar-title">Products</span>
-            <div class="pos-view-switch" aria-label="Product display">
-                <button type="button" id="pos-grid-view" aria-pressed="true"><i class="fas fa-th-large"></i> Grid</button>
-                <button type="button" id="pos-list-view" aria-pressed="false"><i class="fas fa-list"></i> List</button>
-            </div>
-            <span class="small text-muted" id="product-count">{{ ($products ?? collect())->count() }} item(s)</span>
-        </div>
-
         @php
             $shelfCategories = collect($products ?? [])->pluck('category.name')->filter()->unique()->values();
         @endphp

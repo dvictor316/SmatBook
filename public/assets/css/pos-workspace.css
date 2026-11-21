@@ -2206,3 +2206,57 @@ body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-chi
 body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):hover {
     filter: saturate(1.15) brightness(.98) !important;
 }
+
+/* Put Products/Grid/List/count in the first header line; keep search above categories. */
+body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
+    display: flex !important;
+    align-items: center !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    gap: 6px !important;
+    margin: 0 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
+    font-size: 10px !important;
+    letter-spacing: .02em !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .pos-view-switch button {
+    min-height: 28px !important;
+    padding: 4px 7px !important;
+    font-size: 9px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
+    margin-left: 0 !important;
+    font-size: 9px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .header-stage {
+    padding-bottom: 7px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-header-bar {
+    row-gap: 6px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+    padding-top: 7px !important;
+}
+
+@media (max-width: 900px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
+        display: none !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
+        gap: 4px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
+        font-size: 9px !important;
+    }
+}
