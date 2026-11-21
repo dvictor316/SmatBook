@@ -354,6 +354,15 @@ private function applyBranchScope($query, string $table = 'purchases')
         $purchaseQuery = Purchase::with(['supplier', 'items.product']);
         $this->applyTenantScope($purchaseQuery, 'purchases');
         $this->applyBranchScope($purchaseQuery, 'purchases');
+        $purchaseDateColumn = Schema::hasColumn('purchases', 'purchase_date')
+            ? DB::raw('COALESCE(purchases.purchase_date, purchases.created_at)')
+            : 'purchases.created_at';
+        if ($request->filled('date_from')) {
+            $purchaseQuery->whereDate($purchaseDateColumn, '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $purchaseQuery->whereDate($purchaseDateColumn, '<=', $request->input('date_to'));
+        }
         $purchases = $purchaseQuery->latest()->paginate(\App\Support\PageSize::resolve())->withQueryString();
         $purchases->getCollection()->transform(function (Purchase $purchase) {
             $normalizedTotalAmount = abs((float) ($purchase->total_amount ?? 0));
@@ -370,6 +379,8 @@ private function applyBranchScope($query, string $table = 'purchases')
             'products'  => $products,
             'purchases' => $purchases,
             'search'    => $search,
+            'dateFrom' => $request->input('date_from'),
+            'dateTo' => $request->input('date_to'),
             'page'      => 'products',
             'activeBranch' => $activeBranch,
         ]);

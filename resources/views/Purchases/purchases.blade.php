@@ -266,6 +266,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Purchase No</th>
+                                    <th>Date</th>
                                     <th>Supplier</th>
                                     <th>Total</th>
                                     <th>Paid</th>
@@ -278,6 +279,7 @@
                                     @forelse ($purchases as $purchase)
                                         @php
                                             $status = strtolower((string) ($purchase->status ?? 'pending'));
+                                            $displayPurchaseDate = $purchase->purchase_date ?: $purchase->created_at;
                                             $statusClass = $status === 'paid' || $status === 'completed'
                                                 ? 'bg-success'
                                                 : ($status === 'pending' ? 'bg-warning text-dark' : 'bg-secondary');
@@ -285,6 +287,9 @@
                                         <tr>
                                             <td>{{ ($purchases->currentPage() - 1) * $purchases->perPage() + $loop->iteration }}</td>
                                             <td><strong>{{ $purchase->purchase_no ?? ('PUR-' . $purchase->id) }}</strong></td>
+                                            <td class="text-nowrap" data-order="{{ $displayPurchaseDate }}">
+                                                {{ $displayPurchaseDate ? \Illuminate\Support\Carbon::parse($displayPurchaseDate)->format('d M Y') : '—' }}
+                                            </td>
                                             <td>{{ $purchase->supplier?->name ?? $purchase->vendor?->name ?? 'Supplier' }}</td>
                                             <td>{{ \App\Support\GeoCurrency::format((float) ($purchase->resolved_total_amount ?? $purchase->total_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
                                             <td>{{ \App\Support\GeoCurrency::format((float) ($purchase->paid_amount ?? 0), 'NGN', $currencyCode, $currencyLocale) }}</td>
