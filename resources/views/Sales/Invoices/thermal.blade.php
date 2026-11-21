@@ -213,11 +213,10 @@
     }
     if (@json(request()->boolean('autoprint'))) {
         const requestThermalPrint = () => {
-            const mobileDelay = window.matchMedia('(max-width: 768px)').matches ? 700 : 0;
-            window.setTimeout(() => window.requestAnimationFrame(printThermalReceipt), mobileDelay);
+            window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.setTimeout(printThermalReceipt, 50)));
         };
-        if (document.readyState === 'complete') requestThermalPrint();
-        else window.addEventListener('load', requestThermalPrint, { once: true });
+        if (document.readyState !== 'loading') requestThermalPrint();
+        else document.addEventListener('DOMContentLoaded', requestThermalPrint, { once: true });
     }
 </script>
 </body>

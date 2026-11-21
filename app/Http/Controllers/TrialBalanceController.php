@@ -166,6 +166,12 @@ class TrialBalanceController extends Controller
                 : (Schema::hasColumn('sales', 'total_amount')
                     ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
                     : 'COALESCE(sales.amount_paid, 0)');
+            $salesTaxExpr = Schema::hasColumn('sales', 'tax')
+                ? 'COALESCE(sales.tax, 0)'
+                : (Schema::hasColumn('sales', 'tax_amount') ? 'COALESCE(sales.tax_amount, 0)' : '0');
+            // Sale totals already include item and invoice discounts. Subtract
+            // output tax only; never subtract the saved discount again.
+            $salesAmountExpr = "({$salesAmountExpr} - {$salesTaxExpr})";
 
             $salesQuery = DB::table('sales')
                 ->whereBetween(DB::raw($salesDateExpr), [$startDate, $endDate]);

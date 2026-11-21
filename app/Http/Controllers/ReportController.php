@@ -3978,6 +3978,12 @@ class ReportController extends Controller
             : (Schema::hasColumn('sales', 'total_amount')
                 ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
                 : 'COALESCE(sales.amount_paid, 0)');
+        $salesTaxExpr = Schema::hasColumn('sales', 'tax')
+            ? 'COALESCE(sales.tax, 0)'
+            : (Schema::hasColumn('sales', 'tax_amount') ? 'COALESCE(sales.tax_amount, 0)' : '0');
+        // POS sale totals already include item and invoice discounts. Revenue
+        // reports remove tax only, so the discount is neither hidden nor doubled.
+        $salesAmountExpr = "({$salesAmountExpr} - {$salesTaxExpr})";
         $expensesHasStatus = Schema::hasTable('expenses') && Schema::hasColumn('expenses', 'status');
         $expenseStatusExpr = $expensesHasStatus
             ? "LOWER(COALESCE(expenses.status, 'pending'))"

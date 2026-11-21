@@ -2475,8 +2475,60 @@ $sale = Sale::create([
         $this->clearDashboardMetricsCache($activeBranch['id'] ?? null);
 
         $receiptHtml = null;
+        $receiptData = null;
         try {
             $receiptSale = $sale->fresh()->load(['items.product:id,name', 'customer', 'user:id,name']);
+            $receiptPaymentDetails = is_array($receiptSale->payment_details) ? $receiptSale->payment_details : [];
+            $receiptInvoiceDiscount = is_array($receiptPaymentDetails['invoice_discount'] ?? null)
+                ? $receiptPaymentDetails['invoice_discount']
+                : [];
+            $receiptInvoiceDiscountAmount = max(0, (float) ($receiptInvoiceDiscount['amount'] ?? 0));
+            $receiptBreakdown = is_array($receiptPaymentDetails['pos_discount_breakdown'] ?? null)
+                ? $receiptPaymentDetails['pos_discount_breakdown']
+                : [];
+            $receiptItems = $receiptSale->items->map(function ($item) use ($receiptBreakdown) {
+                $lineSubtotal = round((float) ($item->qty ?? 0) * (float) ($item->unit_price ?? 0), 2);
+                $lineBreakdown = $receiptBreakdown[(string) $item->id] ?? [];
+                $lineDiscount = array_key_exists('item_amount', $lineBreakdown) || array_key_exists('invoice_amount', $lineBreakdown)
+                    ? round((float) ($lineBreakdown['item_amount'] ?? 0) + (float) ($lineBreakdown['invoice_amount'] ?? 0), 2)
+                    : round($lineSubtotal * max(0, (float) ($item->discount ?? 0)) / 100, 2);
+                $taxPercent = max(0, (float) ($item->tax ?? 0));
+                $taxable = max(0, $lineSubtotal - $lineDiscount);
+
+                return [
+                    'id' => $item->id,
+                    'name' => $item->product?->name ?? $item->product_name ?? 'Product',
+                    'qty' => (float) ($item->qty ?? 0),
+                    'unitType' => $item->unit_type ?? 'unit',
+                    'price' => (float) ($item->unit_price ?? 0),
+                    'sub' => $lineSubtotal,
+                    'discVal' => $lineDiscount,
+                    'tax' => $taxPercent,
+                    'taxVal' => round($taxable * $taxPercent / 100, 2),
+                    'total' => (float) ($item->total_price ?? ($taxable + round($taxable * $taxPercent / 100, 2))),
+                ];
+            })->values()->all();
+            $receiptData = [
+                'receipt_no' => $receiptSale->receipt_no,
+                'invoice_no' => $receiptSale->invoice_no,
+                'created_at' => optional($receiptSale->created_at)->toIso8601String(),
+                'branch_name' => $receiptSale->branch_name,
+                'cashier_name' => $receiptSale->user?->name ?? auth()->user()?->name,
+                'customer_name' => $receiptSale->customer_name ?? $receiptSale->customer?->name ?? 'Walk-in Customer',
+                'payment_method' => $receiptSale->payment_method,
+                'payment_details' => $receiptPaymentDetails,
+                'split_details' => $receiptPaymentDetails['split'] ?? [],
+                'subtotal' => (float) ($receiptSale->subtotal ?? 0),
+                'item_discount' => max(0, (float) ($receiptSale->discount ?? 0) - $receiptInvoiceDiscountAmount),
+                'invoice_discount_amount' => $receiptInvoiceDiscountAmount,
+                'tax' => (float) ($receiptSale->tax ?? 0),
+                'total' => (float) ($receiptSale->total ?? 0),
+                'paid' => (float) ($receiptSale->amount_paid ?? $receiptSale->paid ?? 0),
+                'amount_paid' => (float) ($receiptSale->amount_paid ?? $receiptSale->paid ?? 0),
+                'balance' => (float) ($receiptSale->balance ?? 0),
+                'change_amount' => (float) ($receiptSale->change_amount ?? 0),
+                'items' => $receiptItems,
+            ];
             $receiptFormat = (string) $request->input('receipt_format', 'standard');
             $receiptFormat = in_array($receiptFormat, ['standard', 'thermal-58', 'thermal-80'], true)
                 ? $receiptFormat
@@ -2513,6 +2565,7 @@ $sale = Sale::create([
             'message' => 'Sale processed successfully',
             'sale_id' => $sale->id,
             'receipt_html' => $receiptHtml,
+            'receipt_data' => $receiptData,
         ]);
 
     } catch (\Exception $e) {

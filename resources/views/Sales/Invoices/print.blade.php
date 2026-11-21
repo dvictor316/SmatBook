@@ -827,13 +827,12 @@
 
     if (autoPrintReceipt) {
         const requestReceiptPrint = () => {
-            const mobileDelay = window.matchMedia('(max-width: 768px)').matches ? 700 : 0;
-            window.setTimeout(() => window.requestAnimationFrame(printCompactInvoice), mobileDelay);
+            window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.setTimeout(printCompactInvoice, 50)));
         };
-        if (document.readyState === 'complete') {
+        if (document.readyState !== 'loading') {
             requestReceiptPrint();
         } else {
-            window.addEventListener('load', requestReceiptPrint, { once: true });
+            document.addEventListener('DOMContentLoaded', requestReceiptPrint, { once: true });
         }
     }
 </script>

@@ -564,6 +564,12 @@ class BalanceSheetController extends Controller
                 : (Schema::hasColumn('sales', 'total_amount')
                     ? 'COALESCE(NULLIF(sales.total_amount, 0), sales.amount_paid, 0)'
                     : 'COALESCE(sales.amount_paid, 0)');
+            $salesTaxExpr = Schema::hasColumn('sales', 'tax')
+                ? 'COALESCE(sales.tax, 0)'
+                : (Schema::hasColumn('sales', 'tax_amount') ? 'COALESCE(sales.tax_amount, 0)' : '0');
+            // The stored total is already net of item and invoice discounts.
+            // Exclude sales tax from earnings without applying discounts twice.
+            $salesAmountExpr = "({$salesAmountExpr} - {$salesTaxExpr})";
 
             $salesQuery = DB::table('sales')
                 ->whereBetween(DB::raw($salesDateExpr), [$startDate, $endDate]);
