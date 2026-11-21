@@ -2326,23 +2326,33 @@ body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
     font-weight: 750 !important;
 }
 
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading {
+    padding: 8px 10px !important;
+    background: #c7a24a !important;
+    border-radius: 5px !important;
+}
+
 body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
-    color: #a77b13 !important;
+    color: #102b58 !important;
     font-weight: 800 !important;
 }
 
-/* Tablet header: keep metadata, product controls, and search in clean rows. */
+/* Keep the laptop panel arrangement on tablets; let a narrow header wrap safely. */
 @media (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-main-stage {
+        grid-template-areas: 'header receipt' 'shelf receipt' !important;
+    }
+
     body.pos-terminal-workspace #pos-sell-screen .pos-header-bar {
         display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
         gap: 8px !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:first-child {
         display: flex !important;
-        flex: 0 0 auto !important;
+        flex: 0 0 100% !important;
         flex-wrap: wrap !important;
         align-items: center !important;
         width: 100% !important;
@@ -2350,16 +2360,14 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
-        flex: 0 0 100% !important;
-        width: 100% !important;
-        margin: 0 !important;
-        justify-content: flex-end !important;
-        gap: 8px !important;
+        flex: 0 1 auto !important;
+        width: auto !important;
+        margin-left: auto !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:last-child {
         display: flex !important;
-        flex: 0 0 auto !important;
+        flex: 0 0 100% !important;
         width: 100% !important;
         min-width: 0 !important;
     }
