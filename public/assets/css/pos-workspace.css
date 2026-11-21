@@ -2156,8 +2156,8 @@ body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn:focus-visible {
 /* Use more of the available tablet height for the product tray. */
 @media (orientation: portrait) and (min-width: 721px) and (max-width: 1199.98px) {
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
-        height: calc(var(--pos-product-card-row) * 6 + 39px) !important;
-        max-height: calc(var(--pos-product-card-row) * 6 + 39px) !important;
+        height: calc(var(--pos-product-card-row) * 7 + 39px) !important;
+        max-height: calc(var(--pos-product-card-row) * 7 + 39px) !important;
     }
 }
 
