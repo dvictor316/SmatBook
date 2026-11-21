@@ -2153,21 +2153,6 @@ body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn:focus-visible {
     color: #12376f !important;
 }
 
-/* Use more of the available tablet height for the product tray. */
-@media (orientation: portrait) and (min-width: 721px) and (max-width: 1199.98px) {
-    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
-        height: calc(var(--pos-product-card-row) * 7 + 39px) !important;
-        max-height: calc(var(--pos-product-card-row) * 7 + 39px) !important;
-    }
-}
-
-@media (orientation: landscape) and (min-width: 721px) and (max-width: 1199.98px) {
-    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
-        height: calc(var(--pos-product-card-row) * 4 + 32px) !important;
-        max-height: calc(var(--pos-product-card-row) * 4 + 32px) !important;
-    }
-}
-
 body.pos-terminal-workspace #pos-sell-screen .product-toolbar,
 body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2,
 body.pos-terminal-workspace #pos-sell-screen .receipt-toolbar-label,
@@ -2463,5 +2448,27 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
         min-height: 26px !important;
         padding: 2px 4px !important;
         font-size: 9px !important;
+    }
+}
+
+/* Let tablet product rows use the available shelf height on each device. */
+@media (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        grid-auto-rows: minmax(66px, 1fr) !important;
+        align-content: stretch !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
     }
 }
