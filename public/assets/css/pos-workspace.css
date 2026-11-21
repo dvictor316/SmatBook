@@ -2107,7 +2107,8 @@ body.pos-terminal-workspace #pos-sell-screen .header-stage {
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-title,
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
-    color: #fff !important;
+    color: #ffd45a !important;
+    text-shadow: 0 1px 1px rgba(5, 20, 45, .35) !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
