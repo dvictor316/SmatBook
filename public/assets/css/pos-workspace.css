@@ -1179,6 +1179,145 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .
     }
 }
 
+/* Final small-phone refinements: two compact product rows and free touch scrolling. */
+@media (max-width: 480px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-title {
+        flex: 0 0 auto !important;
+        font-size: clamp(8px, 2.2vw, 9px) !important;
+        letter-spacing: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
+        flex: 0 0 auto !important;
+        margin-left: auto !important;
+        gap: 2px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
+        display: inline-block !important;
+        font-size: 8px !important;
+        letter-spacing: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .pos-view-switch button {
+        min-height: 23px !important;
+        padding: 2px 3px !important;
+        font-size: 7px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills-wrap {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 4px !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills {
+        order: 0 !important;
+        flex: 1 1 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        touch-action: pan-x pan-y !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
+        order: 1 !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        min-height: 30px !important;
+        margin: 0 !important;
+        padding: 4px 7px !important;
+        overflow: visible !important;
+        font-size: 9px !important;
+        white-space: nowrap !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn::after {
+        display: none !important;
+        content: none !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-auto-rows: 88px !important;
+        height: min(23dvh, 181px) !important;
+        max-height: min(23dvh, 181px) !important;
+        overflow-y: auto !important;
+        overscroll-behavior: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card {
+        height: 88px !important;
+        min-height: 88px !important;
+        max-height: 88px !important;
+        padding: 4px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-img {
+        flex-basis: 27px !important;
+        height: 27px !important;
+        min-height: 27px !important;
+        max-height: 27px !important;
+        margin-bottom: 2px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-name {
+        min-height: 19px !important;
+        max-height: 19px !important;
+        margin-bottom: 1px !important;
+        font-size: 8px !important;
+        line-height: 1.1 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-stock-badge {
+        padding: 2px 3px !important;
+        font-size: 6px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-product-meta strong {
+        font-size: 8px !important;
+        line-height: 1.05 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid,
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
+        overscroll-behavior: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
+        max-height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 360px)) !important;
+        overflow: hidden !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
+        min-height: 56px !important;
+        max-height: none !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+}
+
+@media (max-width: 359.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
+        font-size: 7px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-offline-status {
+        padding-inline: 3px !important;
+        font-size: 7px !important;
+    }
+}
+
 /* Reprint sits with customer actions; four lower actions use two equal columns. */
 body.pos-terminal-workspace #pos-sell-screen .pos-cart-action-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -3177,32 +3316,127 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
     }
 }
 
-/* Final small-phone sizing overrides follow the shared viewport rules. */
+/* Last-in-cascade mobile POS layout overrides. */
 @media (max-width: 480px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-title {
+        font-size: clamp(8px, 2.2vw, 9px) !important;
+        letter-spacing: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
+        margin-left: auto !important;
+        gap: 2px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
+        display: inline-block !important;
+        font-size: 8px !important;
+        letter-spacing: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .pos-view-switch button {
+        min-height: 23px !important;
+        padding: 2px 3px !important;
+        font-size: 7px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills-wrap {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        gap: 4px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills {
+        order: 0 !important;
+        flex: 1 1 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        touch-action: pan-x pan-y !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
+        order: 1 !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        min-height: 30px !important;
+        padding: 4px 7px !important;
+        font-size: 9px !important;
+        white-space: nowrap !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn::after {
+        display: none !important;
+        content: none !important;
+    }
+
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        grid-auto-rows: 98px !important;
-        height: min(30dvh, 250px) !important;
-        max-height: min(30dvh, 250px) !important;
+        grid-auto-rows: 88px !important;
+        height: min(23dvh, 181px) !important;
+        max-height: min(23dvh, 181px) !important;
+        overflow-y: auto !important;
+        overscroll-behavior: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card {
-        height: 98px !important;
-        min-height: 98px !important;
-        max-height: 98px !important;
+        height: 88px !important;
+        min-height: 88px !important;
+        max-height: 88px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-img {
+        flex-basis: 27px !important;
+        height: 27px !important;
+        min-height: 27px !important;
+        max-height: 27px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-name {
+        min-height: 19px !important;
+        max-height: 19px !important;
+        font-size: 8px !important;
+        line-height: 1.1 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-stock-badge {
+        padding: 2px 3px !important;
+        font-size: 6px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-product-meta strong {
+        font-size: 8px !important;
+        line-height: 1.05 !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
-        max-height: calc(100dvh - var(--sb-header-h, 76px) - 260px) !important;
+        max-height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 360px)) !important;
         overflow: hidden !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card > .cart-wrapper {
-        flex: 1 1 auto !important;
-        min-height: 72px !important;
+        min-height: 56px !important;
         max-height: none !important;
+        overscroll-behavior: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
     }
+}
 
+@media (max-width: 359.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
+        font-size: 7px !important;
+    }
+}
+
+/* Final small-phone sizing overrides follow the shared viewport rules. */
+@media (max-width: 480px) {
     body.pos-terminal-workspace #pos-checkout-screen #pos-checkout-customer > h2 {
         margin: 8px 0 5px !important;
         font-size: 14px !important;
@@ -3211,15 +3445,6 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
 }
 
 @media (max-width: 359.98px) {
-    body.pos-terminal-workspace #pos-sell-screen .pos-header-title {
-        letter-spacing: 0 !important;
-        font-size: 8px !important;
-    }
-
-    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
-        font-size: 0 !important;
-    }
-
     body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .pos-view-switch button {
         padding-inline: 3px !important;
         font-size: 7px !important;
