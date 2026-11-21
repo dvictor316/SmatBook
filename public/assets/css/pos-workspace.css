@@ -2422,6 +2422,12 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
     }
 }
 
+@media (orientation: portrait) and (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
 @media (min-width: 721px) and (max-width: 899.98px) {
     body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:first-child > .clock-badge:last-of-type {
         display: none !important;
