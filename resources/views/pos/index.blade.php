@@ -7417,6 +7417,7 @@ $(document).ready(function() {
         item.total = total;
         item.discountType = discountType;
         item.discountValue = discount;
+        item.discount = discountType === 'fixed' ? 0 : discount;
 
         return item;
     }
@@ -9674,6 +9675,7 @@ window.POS_ENABLE_FALLBACK = function () {
         item.total = afterDisc + taxVal;
         item.discountType = discountType;
         item.discountValue = discountValue;
+        item.discount = discountType === 'fixed' ? 0 : discountValue;
         item.tax = tax;
 
         return item;

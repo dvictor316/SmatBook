@@ -836,8 +836,18 @@
                         $totalTax += $taxAmount;
                     }
 
-                    // Calculate grand total
-                    $grandTotal = $calculatedSubtotal - $totalDiscount + $totalTax;
+                    // Prefer persisted sale totals, which include POS invoice-level
+                    // discounts and cent-level rounding, over rebuilding from rates.
+                    $calculatedSubtotal = (float) ($sale->subtotal ?: $calculatedSubtotal);
+                    $totalDiscount = (float) ($sale->discount ?? $totalDiscount);
+                    $totalTax = (float) ($sale->tax ?? $totalTax);
+                    $grandTotal = (float) ($sale->total ?? ($calculatedSubtotal - $totalDiscount + $totalTax));
+                    $invoicePaymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
+                    $invoiceDiscountDetails = is_array($invoicePaymentDetails['invoice_discount'] ?? null)
+                        ? $invoicePaymentDetails['invoice_discount']
+                        : [];
+                    $invoiceDiscountAmount = min($totalDiscount, max(0, (float) ($invoiceDiscountDetails['amount'] ?? 0)));
+                    $itemDiscountAmount = max(0, $totalDiscount - $invoiceDiscountAmount);
 
                     // Net amount applied to the sale
                     $appliedAmount = (float)(
@@ -880,8 +890,11 @@
                         // Calculate tax amount
                         $taxAmount = ($afterDiscount * $taxPercent) / 100;
 
-                        // Final line total
-                        $lineTotal = $afterDiscount + $taxAmount;
+                        // The saved line total includes allocated invoice discount
+                        // and the final tax calculation. Use it as the receipt value.
+                        $lineTotal = $item->total_price !== null
+                            ? (float) $item->total_price
+                            : ($afterDiscount + $taxAmount);
                     @endphp
                     <tr>
                         <td class="item-name">{{ $item->product->name ?? $item->product_name ?? 'Unknown Product' }}</td>
@@ -929,7 +942,18 @@
                             <td class="label">Subtotal</td>
                             <td class="value">₦{{ \App\Support\CompactNumber::format($calculatedSubtotal, 2) }}</td>
                         </tr>
-                        @if($totalDiscount > 0)
+                        @if($invoiceDiscountAmount > 0)
+                        @if($itemDiscountAmount > 0)
+                        <tr>
+                            <td class="label">Item discount</td>
+                            <td class="value" style="color: var(--sweet-red);">-₦{{ \App\Support\CompactNumber::format($itemDiscountAmount, 2) }}</td>
+                        </tr>
+                        @endif
+                        <tr>
+                            <td class="label">Invoice discount</td>
+                            <td class="value" style="color: var(--sweet-red);">-₦{{ \App\Support\CompactNumber::format($invoiceDiscountAmount, 2) }}</td>
+                        </tr>
+                        @elseif($totalDiscount > 0)
                         <tr>
                             <td class="label">Discount</td>
                             <td class="value" style="color: var(--sweet-red);">-₦{{ \App\Support\CompactNumber::format($totalDiscount, 2) }}</td>

@@ -447,7 +447,7 @@
         $cashierName = $sale->cashier_name ?? $sale->user?->name ?? 'System';
         $amountInWords = $sale->amount_in_words_display ?? 'Zero Naira Only';
         $customerEmail = trim((string) ($sale->customer?->email ?? ''));
-        $subtotal = (float) ($sale->items->sum('subtotal'));
+        $subtotal = (float) ($sale->subtotal ?? $sale->items->sum('subtotal'));
         $tax = (float) ($sale->tax ?? 0);
         $discount = (float) ($sale->discount ?? 0);
         $paymentDetails = $sale->payment_details;
@@ -455,6 +455,11 @@
             $paymentDetails = json_decode($paymentDetails, true);
         }
         $paymentDetails = is_array($paymentDetails) ? $paymentDetails : [];
+        $invoiceDiscountDetails = is_array($paymentDetails['invoice_discount'] ?? null)
+            ? $paymentDetails['invoice_discount']
+            : [];
+        $invoiceDiscountAmount = min($discount, max(0, (float) ($invoiceDiscountDetails['amount'] ?? 0)));
+        $itemDiscountAmount = max(0, $discount - $invoiceDiscountAmount);
         $splitDetails = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
         $splitLines = [];
 
@@ -583,10 +588,21 @@
                                 <td class="text-muted">Subtotal</td>
                                 <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($subtotal, 2) }}</td>
                             </tr>
-                            @if(abs($discount) > 0.00001)
+                            @if($invoiceDiscountAmount > 0.00001)
+                                @if($itemDiscountAmount > 0.00001)
+                                    <tr>
+                                        <td class="text-muted">Item discount</td>
+                                        <td class="text-end fw-bold">-₦{{ \App\Support\CompactNumber::format($itemDiscountAmount, 2) }}</td>
+                                    </tr>
+                                @endif
+                                <tr>
+                                    <td class="text-muted">Invoice discount</td>
+                                    <td class="text-end fw-bold">-₦{{ \App\Support\CompactNumber::format($invoiceDiscountAmount, 2) }}</td>
+                                </tr>
+                            @elseif($discount > 0.00001)
                                 <tr>
                                     <td class="text-muted">Discount</td>
-                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format($discount, 2) }}</td>
+                                    <td class="text-end fw-bold">-₦{{ \App\Support\CompactNumber::format($discount, 2) }}</td>
                                 </tr>
                             @endif
                             @if(abs($tax) > 0.00001)
@@ -673,7 +689,7 @@
                                     </td>
                                     <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($item->unit_price ?? 0), 2) }}</td>
                                     <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($item->discount ?? 0), 2) }}%</td>
-                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($item->subtotal ?? $item->total_price ?? 0), 2) }}</td>
+                                    <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($item->total_price !== null ? $item->total_price : ($item->subtotal ?? 0)), 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>

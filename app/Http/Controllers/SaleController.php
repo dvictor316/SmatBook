@@ -2159,20 +2159,22 @@ $sale = Sale::create([
                 : $this->resolvePosSystemUnitPrice($product, $itemData, $activePriceListsForPos);
             $discountType = strtolower((string) ($itemData['discountType'] ?? $itemData['discount_type'] ?? 'percent'));
             $discountValue = (float) ($itemData['discountValue'] ?? $itemData['discount_value'] ?? ($itemData['discount'] ?? 0));
-            $discPercent = (float) ($itemData['discount'] ?? 0);
             $taxPercent  = min(100, max(0, (float) ($itemData['tax'] ?? 0)));
 
-            $itemSubtotal   = $unitPrice * $qty;
+            $itemSubtotal   = round($unitPrice * $qty, 2);
             if ($discountType === 'fixed') {
-                $itemDiscAmount = min($discountValue * $qty, $itemSubtotal);
+                $itemDiscAmount = round(min($discountValue * $qty, $itemSubtotal), 2);
                 $discPercent = $itemSubtotal > 0 ? ($itemDiscAmount / $itemSubtotal) * 100 : 0;
             } else {
-                $discPercent = (float) ($itemData['discount'] ?? $discountValue);
-                $itemDiscAmount = $itemSubtotal * ($discPercent / 100);
+                // discountValue is the editable cart value. The legacy `discount`
+                // alias can be stale after editing a line in the cart, so never let
+                // it override the canonical percentage value.
+                $discPercent = min(100, max(0, $discountValue));
+                $itemDiscAmount = round($itemSubtotal * ($discPercent / 100), 2);
             }
-            $afterDisc      = $itemSubtotal - $itemDiscAmount;
-            $itemTaxAmount  = $afterDisc * ($taxPercent / 100);
-            $itemTotal      = $afterDisc + $itemTaxAmount;
+            $afterDisc      = round(max(0, $itemSubtotal - $itemDiscAmount), 2);
+            $itemTaxAmount  = round($afterDisc * ($taxPercent / 100), 2);
+            $itemTotal      = round($afterDisc + $itemTaxAmount, 2);
 
             $itemPayload = [
                 'sale_id'     => $sale->id,
@@ -2222,9 +2224,9 @@ $sale = Sale::create([
                 'tax_percent' => $taxPercent,
             ];
 
-            $runningSubtotal += $itemSubtotal;
-            $runningDiscount += $itemDiscAmount;
-            $runningTax      += $itemTaxAmount;
+            $runningSubtotal = round($runningSubtotal + $itemSubtotal, 2);
+            $runningDiscount = round($runningDiscount + $itemDiscAmount, 2);
+            $runningTax      = round($runningTax + $itemTaxAmount, 2);
 
             $this->decrementSellableStock($product, $requestedStockUnits);
             $this->branchInventory->adjustBranchStock(
@@ -2287,7 +2289,7 @@ $sale = Sale::create([
         }
 
         // --- 4. UPDATE TOTALS & LOG PAYMENT ---
-        $calculatedTotal = max(0, ($runningSubtotal - $runningDiscount) + $runningTax);
+        $calculatedTotal = round(max(0, ($runningSubtotal - $runningDiscount) + $runningTax), 2);
         if (!$isChargeToRoom && !$isCreditSale && ($amountPaid + $walletAmount) < $calculatedTotal) {
             throw new \RuntimeException('Payment is below the final POS total. Refresh the item price and try again.');
         }
@@ -2613,7 +2615,9 @@ $sale = Sale::create([
             $priceListId = (int) ($item['priceListId'] ?? $item['price_list_id'] ?? 0);
             $discountType = strtolower(trim((string) ($item['discountType'] ?? $item['discount_type'] ?? 'percent')));
             $discountValue = round((float) ($item['discountValue'] ?? $item['discount_value'] ?? ($item['discount'] ?? 0)), 2);
-            $discountPercent = round((float) ($item['discount'] ?? ($discountType === 'percent' ? $discountValue : 0)), 4);
+            $discountPercent = $discountType === 'percent'
+                ? round(min(100, max(0, $discountValue)), 4)
+                : 0.0;
             $tax = round((float) ($item['tax'] ?? 0), 4);
 
             $key = implode('|', [

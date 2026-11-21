@@ -94,6 +94,9 @@
     $previousCustomerBalance = max(0, (float) ($previousCustomerBalance ?? 0));
     $customerBalanceDue = $previousCustomerBalance + $balance;
     $paymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
+    $invoiceDiscountDetails = is_array($paymentDetails['invoice_discount'] ?? null) ? $paymentDetails['invoice_discount'] : [];
+    $invoiceDiscount = min($discount, max(0, (float) ($invoiceDiscountDetails['amount'] ?? 0)));
+    $itemDiscount = max(0, $discount - $invoiceDiscount);
     $split = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
     $receiptFooter = \App\Support\ReceiptCompanyProfile::footer($company);
     $money = fn ($amount) => $currencySymbol . \App\Support\CompactNumber::format((float) $amount, 2);
@@ -156,7 +159,12 @@
 
     <div class="double-rule"></div>
     <div class="total-row"><span>Subtotal</span><span>{{ $money($subtotal) }}</span></div>
-    @if($discount > 0)<div class="total-row"><span>Discount</span><span>-{{ $money($discount) }}</span></div>@endif
+    @if($invoiceDiscount > 0)
+        @if($itemDiscount > 0)<div class="total-row"><span>Item discount</span><span>-{{ $money($itemDiscount) }}</span></div>@endif
+        <div class="total-row"><span>Invoice discount</span><span>-{{ $money($invoiceDiscount) }}</span></div>
+    @elseif($discount > 0)
+        <div class="total-row"><span>Discount</span><span>-{{ $money($discount) }}</span></div>
+    @endif
     @if($tax > 0)<div class="total-row"><span>Tax</span><span>{{ $money($tax) }}</span></div>@endif
     <div class="total-row grand-total"><span>TOTAL</span><span>{{ $money($total) }}</span></div>
     @if($tendered > $paid)<div class="total-row"><span>Tendered</span><span>{{ $money($tendered) }}</span></div>@endif
