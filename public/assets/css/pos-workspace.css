@@ -2099,9 +2099,19 @@ body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary:focus-visible
     border-color: #c7a24a !important;
 }
 
-/* Keep the POS page light and deepen only the heading/search band. */
+/* Keep the POS page light; use the brand navy-to-gold fill only in the header band. */
 body.pos-terminal-workspace #pos-sell-screen .header-stage {
-    background: linear-gradient(110deg, #cbd9eb 0%, #d4e0ef 72%, #e2ddcc 100%) !important;
+    background: linear-gradient(110deg, #102b58 0%, #173d77 68%, #b89543 100%) !important;
+    border-bottom: 1px solid #c7a24a !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-header-title,
+body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
+    color: #fff !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
+    color: #fff8e7 !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-action-rail,
