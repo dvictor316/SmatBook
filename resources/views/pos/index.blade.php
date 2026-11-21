@@ -6257,9 +6257,30 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                         <span class="summary-value" style="color: var(--text-primary);" id="sum-subtotal">₦0.00</span>
                     </div>
                     <div class="summary-row">
-                        <span class="summary-label" style="color: var(--danger-500);">Discount</span>
+                        <span class="summary-label" style="color: var(--danger-500);">Item discount</span>
                         <span class="summary-value" style="color: var(--danger-500);" id="sum-discount">₦0.00</span>
                     </div>
+                    <div class="summary-row pos-invoice-discount-row">
+                        <span class="summary-label" style="color: var(--danger-500);">Invoice discount
+                            @if($posCanDiscount)
+                            <button type="button" id="pos-invoice-discount-toggle" class="pos-invoice-discount-toggle" aria-expanded="false">Set</button>
+                            @endif
+                        </span>
+                        <span class="summary-value" style="color: var(--danger-500);" id="sum-invoice-discount">₦0.00</span>
+                    </div>
+                    @if($posCanDiscount)
+                    <div id="pos-invoice-discount-editor" class="pos-invoice-discount-editor" hidden>
+                        <strong>Discount the entire invoice</strong>
+                        <select id="pos-invoice-discount-type" aria-label="Invoice discount type">
+                            <option value="percent">Percent (%)</option>
+                            <option value="fixed">Fixed amount (₦)</option>
+                        </select>
+                        <input id="pos-invoice-discount-value" type="number" min="0" step="0.01" inputmode="decimal" value="0" aria-label="Invoice discount value">
+                        <button type="button" id="pos-invoice-discount-apply">Apply</button>
+                        <button type="button" id="pos-invoice-discount-clear">Clear</button>
+                        <small>Applied proportionally across all items, after item discounts and before tax.</small>
+                    </div>
+                    @endif
                     <div class="summary-row pb-3 border-bottom">
                         <span class="summary-label" style="color: var(--primary-600);">Tax</span>
                         <span class="summary-value" style="color: var(--primary-600);" id="sum-tax">₦0.00</span>
@@ -6414,7 +6435,8 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
             <div id="pos-checkout-items"></div>
             <div class="pos-checkout-totals">
                 <div><span>Subtotal</span><strong data-pos-copy="sum-subtotal">₦0.00</strong></div>
-                <div><span>Discount</span><strong data-pos-copy="sum-discount">₦0.00</strong></div>
+                <div><span>Item discount</span><strong data-pos-copy="sum-discount">₦0.00</strong></div>
+                <div><span>Invoice discount</span><strong data-pos-copy="sum-invoice-discount">₦0.00</strong></div>
                 <div><span>Tax</span><strong data-pos-copy="sum-tax">₦0.00</strong></div>
                 <div class="pos-checkout-total"><span>Total</span><strong data-pos-copy="grand-total">₦0.00</strong></div>
             </div>
@@ -6604,6 +6626,7 @@ $(document).ready(function() {
     }
 
     let cart = [];
+    const invoiceDiscount = window.POS_INVOICE_DISCOUNT || (window.POS_INVOICE_DISCOUNT = { type: 'percent', value: 0 });
     let lastSelectedProductId = null;
     let isSyncingProductSearch = false;
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
@@ -7359,14 +7382,14 @@ $(document).ready(function() {
     function calculate() {
         let price = parseFloat($('#unit-price-input').val()) || 0;
         let qty = parseFloat($('#quantity').val()) || 1;
-        let disc = parseFloat($('#discount').val()) || 0;
-        let tax = parseFloat($('#tax').val()) || 0;
+        let disc = Math.max(0, parseFloat($('#discount').val()) || 0);
+        let tax = Math.min(100, Math.max(0, parseFloat($('#tax').val()) || 0));
         let discType = $('#discount-type').val() || 'percent';
 
         let sub = price * qty;
-        let discVal = discType === 'fixed' ? Math.min(disc * qty, sub) : (sub * (disc / 100));
+        let discVal = discType === 'fixed' ? Math.min(disc * qty, sub) : (sub * (Math.min(disc, 100) / 100));
         let afterDisc = sub - discVal;
-        let taxVal = afterDisc * (tax / 100);
+        let taxVal = afterDisc * (Math.min(Math.max(tax, 0), 100) / 100);
         let total = afterDisc + taxVal;
 
         $('#item-total').text(fmt.format(total));
@@ -7376,14 +7399,14 @@ $(document).ready(function() {
     function calculateCartLine(item) {
         const qty = parseFloat(item.qty) || 1;
         const price = parseFloat(item.price) || 0;
-        const discount = parseFloat(item.discountValue ?? item.discount) || 0;
+        const discount = Math.max(0, parseFloat(item.discountValue ?? item.discount) || 0);
         const discountType = item.discountType || 'percent';
-        const tax = parseFloat(item.tax) || 0;
+        const tax = Math.min(100, Math.max(0, parseFloat(item.tax) || 0));
 
         const sub = price * qty;
         const discVal = discountType === 'fixed'
             ? Math.min(discount * qty, sub)
-            : (sub * (discount / 100));
+            : (sub * (Math.min(discount, 100) / 100));
         const afterDisc = sub - discVal;
         const taxVal = afterDisc * (tax / 100);
         const total = afterDisc + taxVal;
@@ -7605,9 +7628,11 @@ $(document).ready(function() {
                 const cartThumbnail = item.imageUrl
                     ? (() => { const image = document.createElement('img'); image.src = String(item.imageUrl); image.alt = ''; image.loading = 'lazy'; return image.outerHTML; })()
                     : '<span class="cart-item-image-fallback"><i class="fas fa-box"></i></span>';
-                const discountLabel = Number(item.discountValue ?? item.discount ?? 0) > 0
-                    ? `Discount ${item.discountValue ?? item.discount}${item.discountType === 'fixed' ? ' ₦' : '%'}`
-                    : 'Discount';
+                const discountValue = Number(item.discountValue ?? item.discount ?? 0);
+                const discountLabel = item.discVal > 0 ? `Discount −${fmt.format(item.discVal)}` : 'Discount';
+                const taxRate = Math.min(100, Math.max(0, Number(item.tax) || 0));
+                const taxLabel = item.taxVal > 0 ? `Tax +${fmt.format(item.taxVal)}` : 'Tax';
+                const itemName = $('<div>').text(item.name).html();
                 html += `
                     <tr>
                         <td class="cart-line-cell" colspan="4">
@@ -7615,12 +7640,17 @@ $(document).ready(function() {
                                 <div class="cart-item-main">
                                     <div class="cart-item-image">${cartThumbnail}</div>
                                     <div class="cart-item-copy">
-                                        <div class="cart-item-name">${$('<div>').text(item.name).html()}</div>
+                                    <div class="cart-item-name">${itemName}</div>
                                         <small>Retail: ${fmt.format(item.price)}</small>
+                                    ${item.discVal > 0 ? `<small class="cart-adjustment-summary is-discount">Discount applied: −${fmt.format(item.discVal)}</small>` : ''}
+                                    ${item.taxVal > 0 ? `<small class="cart-adjustment-summary is-tax">Tax applied (${taxRate}%): +${fmt.format(item.taxVal)}</small>` : ''}
                                     </div>
                                 </div>
                                 <div class="cart-item-tools">
-                                    <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                    <div class="cart-adjustment-buttons">
+                                        <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                        <button type="button" class="cart-tax-toggle" data-index="${i}">${taxLabel}<i class="fas fa-chevron-down"></i></button>
+                                    </div>
                                     <div class="cart-quantity-controls">
                                         <button type="button" class="cart-qty-step" data-index="${i}" data-step="-1" aria-label="Decrease quantity">−</button>
                                         <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric" onchange="updateCartQty(${i}, this.value)" onblur="updateCartQty(${i}, this.value)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); updateCartQty(${i}, this.value); this.blur(); }">
@@ -7629,9 +7659,18 @@ $(document).ready(function() {
                                     </div>
                                 </div>
                                 <div class="cart-discount-editor" hidden>
+                                    <div class="cart-adjustment-target">Discount for <strong>${itemName}</strong></div>
                                     <select class="cart-discount-type" aria-label="Discount type"><option value="percent">%</option><option value="fixed">₦</option></select>
-                                    <input class="cart-discount-value" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(item.discountValue ?? item.discount ?? 0)}" aria-label="Discount amount">
+                                    <input class="cart-discount-value" type="number" min="0" step="0.01" inputmode="decimal" value="${discountValue}" aria-label="Discount amount for ${itemName}">
                                     <button type="button" class="cart-discount-apply" data-index="${i}">Apply</button>
+                                    <small class="cart-adjustment-help">${item.discountType === 'fixed' ? 'Fixed discount is applied per quantity.' : 'Percentage discount is applied to this item’s subtotal.'} Current discount: ${fmt.format(item.discVal)}</small>
+                                </div>
+                                <div class="cart-tax-editor" hidden>
+                                    <div class="cart-adjustment-target">Tax for <strong>${itemName}</strong></div>
+                                    <input class="cart-tax-value" type="number" min="0" max="100" step="0.01" inputmode="decimal" value="${taxRate}" aria-label="Tax percentage for ${itemName}">
+                                    <span class="cart-tax-suffix">%</span>
+                                    <button type="button" class="cart-tax-apply" data-index="${i}">Apply</button>
+                                    <small class="cart-adjustment-help">Tax applies after this item’s discount. Current tax: ${fmt.format(item.taxVal)}</small>
                                 </div>
                                 ${unitPicker ? `<div class="cart-item-unit-row">${unitPicker}</div>` : ''}
                                 <span class="cart-line-total visually-hidden">${fmt.format(item.total)}</span>
@@ -7688,9 +7727,12 @@ $(document).ready(function() {
         const button = document.querySelector(`.cart-discount-toggle[data-index="${i}"]`);
         const editor = button?.closest('.cart-line-card')?.querySelector('.cart-discount-editor');
         if (!item || !editor) return false;
+        const taxEditor = button?.closest('.cart-line-card')?.querySelector('.cart-tax-editor');
+        if (taxEditor) taxEditor.hidden = true;
         editor.hidden = !editor.hidden;
         if (!editor.hidden) {
             editor.querySelector('.cart-discount-type').value = item.discountType || 'percent';
+            editor.querySelector('.cart-discount-value').max = (item.discountType || 'percent') === 'fixed' ? '' : '100';
             editor.querySelector('.cart-discount-value').value = item.discountValue ?? item.discount ?? 0;
             editor.querySelector('.cart-discount-value').focus();
         }
@@ -7714,6 +7756,37 @@ $(document).ready(function() {
         return false;
     };
 
+    window.editCartTax = function(i, event) {
+        event?.stopPropagation?.();
+        const item = cart[i];
+        const button = document.querySelector(`.cart-tax-toggle[data-index="${i}"]`);
+        const line = button?.closest('.cart-line-card');
+        const editor = line?.querySelector('.cart-tax-editor');
+        if (!item || !editor) return false;
+        const discountEditor = line.querySelector('.cart-discount-editor');
+        if (discountEditor) discountEditor.hidden = true;
+        editor.hidden = !editor.hidden;
+        if (!editor.hidden) {
+            editor.querySelector('.cart-tax-value').value = Math.min(100, Math.max(0, Number(item.tax) || 0));
+            editor.querySelector('.cart-tax-value').focus();
+        }
+        return false;
+    };
+
+    window.applyCartTax = function(i, editor, event) {
+        event?.stopPropagation?.();
+        const item = cart[i];
+        const value = Number(editor?.querySelector('.cart-tax-value')?.value);
+        if (!item || !Number.isFinite(value) || value < 0 || value > 100) {
+            alert('Enter a valid tax rate from 0 to 100%.');
+            return false;
+        }
+        item.tax = value;
+        calculateCartLine(item);
+        (window.POS_VANILLA_RENDER_CART || renderCart)();
+        return false;
+    };
+
     $('#cart-body').on('click', '.cart-qty-step', function () {
         if (window.POS_VANILLA_BOUND) return;
         const index = parseInt(this.dataset.index || '-1', 10);
@@ -7728,6 +7801,18 @@ $(document).ready(function() {
     $('#cart-body').on('click', '.cart-discount-apply', function () {
         if (window.POS_VANILLA_BOUND) return;
         window.applyCartDiscount(parseInt(this.dataset.index || '-1', 10), this.closest('.cart-discount-editor'));
+    });
+    $('#cart-body').on('click', '.cart-tax-toggle', function () {
+        if (window.POS_VANILLA_BOUND) return;
+        window.editCartTax(parseInt(this.dataset.index || '-1', 10));
+    });
+    $('#cart-body').on('click', '.cart-tax-apply', function () {
+        if (window.POS_VANILLA_BOUND) return;
+        window.applyCartTax(parseInt(this.dataset.index || '-1', 10), this.closest('.cart-tax-editor'));
+    });
+    $('#cart-body').on('change', '.cart-discount-type', function () {
+        const value = this.closest('.cart-discount-editor')?.querySelector('.cart-discount-value');
+        if (value) value.max = this.value === 'fixed' ? '' : '100';
     });
 
     $('#cart-body').on('change', '.cart-unit-select', function () {
@@ -7849,7 +7934,11 @@ $(document).ready(function() {
                 customer_id: $('#customer-select').val(),
                 payment_method: $('#payment-method').val(),
                 deposit_account_id: isStarterPos ? null : ($('#deposit-account').val() || null),
-                items: cart,
+                items: cart.map((item) => ({
+                    ...item,
+                    invoiceDiscountType: invoiceDiscount.type,
+                    invoiceDiscountValue: Number(invoiceDiscount.value) || 0,
+                })),
                 subtotal: cart.reduce((s, i) => s + i.sub, 0),
                 tax: cart.reduce((s, i) => s + i.taxVal, 0),
                 discount: cart.reduce((s, i) => s + i.discVal, 0),
@@ -7960,6 +8049,10 @@ window.POS_ENABLE_FALLBACK = function () {
     const taxInput = document.getElementById('tax');
     let addBtn = document.getElementById('add-btn');
     const cartBody = document.getElementById('cart-body');
+    const invoiceDiscountToggle = document.getElementById('pos-invoice-discount-toggle');
+    const invoiceDiscountEditor = document.getElementById('pos-invoice-discount-editor');
+    const invoiceDiscountTypeInput = document.getElementById('pos-invoice-discount-type');
+    const invoiceDiscountValueInput = document.getElementById('pos-invoice-discount-value');
     const productImg = document.getElementById('product-img');
     const noImg = document.getElementById('no-img');
     const quickName = document.getElementById('quick-selected-name');
@@ -8092,10 +8185,58 @@ window.POS_ENABLE_FALLBACK = function () {
     const itemTotal = document.getElementById('item-total');
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
     const cart = [];
+    const invoiceDiscount = window.POS_INVOICE_DISCOUNT || (window.POS_INVOICE_DISCOUNT = { type: 'percent', value: 0 });
     let currentProductId = '';
     let activePaymentTab = 'Cash';
 
     const alertFallback = (message) => window.alert(message);
+    invoiceDiscountToggle?.addEventListener('click', function () {
+        if (!requirePosPermission('discount', 'You do not have permission to give discounts.')) return;
+        if (!invoiceDiscountEditor) return;
+        const open = invoiceDiscountEditor.hidden;
+        invoiceDiscountEditor.hidden = !open;
+        invoiceDiscountToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+            invoiceDiscountTypeInput.value = invoiceDiscount.type || 'percent';
+            invoiceDiscountValueInput.value = String(invoiceDiscount.value || 0);
+            invoiceDiscountValueInput.max = invoiceDiscount.type === 'percent' ? '100' : '';
+            invoiceDiscountValueInput.focus();
+        }
+    });
+    invoiceDiscountTypeInput?.addEventListener('change', function () {
+        if (invoiceDiscountValueInput) invoiceDiscountValueInput.max = this.value === 'percent' ? '100' : '';
+    });
+    document.getElementById('pos-invoice-discount-apply')?.addEventListener('click', function () {
+        if (!requirePosPermission('discount', 'You do not have permission to give discounts.')) return;
+        const type = invoiceDiscountTypeInput?.value === 'fixed' ? 'fixed' : 'percent';
+        const value = Number(invoiceDiscountValueInput?.value);
+        if (!Number.isFinite(value) || value < 0 || (type === 'percent' && value > 100)) {
+            alertFallback('Enter a valid invoice discount. Percentage discounts must be between 0 and 100.');
+            return;
+        }
+        const previousDue = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
+        invoiceDiscount.type = type;
+        invoiceDiscount.value = value;
+        invoiceDiscountEditor.hidden = true;
+        invoiceDiscountToggle?.setAttribute('aria-expanded', 'false');
+        renderCart();
+        refreshWalletApplication();
+        syncSelectedPaymentAmount(previousDue);
+        updateChange();
+    });
+    document.getElementById('pos-invoice-discount-clear')?.addEventListener('click', function () {
+        if (!requirePosPermission('discount', 'You do not have permission to give discounts.')) return;
+        const previousDue = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
+        invoiceDiscount.type = 'percent';
+        invoiceDiscount.value = 0;
+        if (invoiceDiscountValueInput) invoiceDiscountValueInput.value = '0';
+        if (invoiceDiscountEditor) invoiceDiscountEditor.hidden = true;
+        invoiceDiscountToggle?.setAttribute('aria-expanded', 'false');
+        renderCart();
+        refreshWalletApplication();
+        syncSelectedPaymentAmount(previousDue);
+        updateChange();
+    });
     const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
         '&': '&amp;',
         '<': '&lt;',
@@ -8112,7 +8253,8 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const paperWidth = receiptFormat === 'thermal-58' ? '58mm' : (receiptFormat === 'thermal-80' ? '80mm' : null);
 	        const items = Array.isArray(sale.items) ? sale.items : [];
 	        const subtotal = items.reduce((sum, item) => sum + (Number(item.sub) || 0), 0);
-	        const discount = items.reduce((sum, item) => sum + (Number(item.discVal) || 0), 0);
+	        const invoiceDiscountAmount = items.reduce((sum, item) => sum + (Number(item.invoiceDiscountShare) || 0), 0);
+	        const discount = Math.max(0, items.reduce((sum, item) => sum + (Number(item.discVal) || 0), 0) - invoiceDiscountAmount);
 	        const tax = items.reduce((sum, item) => sum + (Number(item.taxVal) || 0), 0);
 	        const total = Number(sale.total) || 0;
 	        const paid = Number(sale.paid) || 0;
@@ -8163,7 +8305,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Receipt ${offlineReference}</title><style>
 	            ${pageStyle}
 	            *{box-sizing:border-box}html,body{margin:0;padding:0;background:#edf0f4;color:#000}body{font:12px/1.35 Arial,Helvetica,sans-serif;font-weight:500}.receipt{margin:0 auto 24px;padding:4mm 3mm 6mm;background:#fff;color:#000;box-shadow:0 4px 24px rgba(15,23,42,.16);overflow:visible}.toolbar{width:min(100%,720px);margin:16px auto;padding:10px;display:flex;justify-content:center;gap:8px}.toolbar button,.toolbar a{border:1px solid #164e9b;border-radius:5px;padding:8px 12px;background:#164e9b;color:#fff;font-weight:700;cursor:pointer;text-decoration:none}.center{text-align:center}.brand{font-size:17px;font-weight:800;line-height:1.15;overflow-wrap:anywhere}.branch{margin-top:2px;font-weight:700;text-transform:uppercase}.contact{margin-top:3px;font-size:.96em;font-weight:600;overflow-wrap:anywhere}.receipt-title{margin-top:8px;font-weight:800;font-size:1.15em}.rule{border-top:1px dashed #000;margin:7px 0}.double-rule{border-top:2px solid #000;margin:7px 0}.meta-row,.total-row,.payment-row{display:flex;justify-content:space-between;gap:7px;margin:2px 0}.meta-row span:first-child,.total-row span:first-child,.payment-row span:first-child{flex:0 0 auto}.meta-row span:last-child,.total-row span:last-child,.payment-row span:last-child{min-width:0;text-align:right;overflow-wrap:anywhere}.items{width:100%;border-collapse:collapse;table-layout:fixed}.items th{padding:2px 1px 4px;border-bottom:1px solid #000;text-align:right;font-size:.92em}.items th:first-child{width:44%;text-align:left}.items th:nth-child(2){width:18%}.items th:nth-child(3){width:19%}.items th:nth-child(4){width:19%}.items td{padding:5px 1px 2px;text-align:right;vertical-align:top;overflow-wrap:anywhere}.items td:first-child{text-align:left;font-weight:700}.strong{font-weight:800}.grand{font-size:1.18em;font-weight:900;padding:3px 0}.footer{margin-top:9px;text-align:center}.reference{margin-top:7px;font-weight:700;overflow-wrap:anywhere}.powered{margin-top:5px;font-size:.85em}@media screen{body{background:#edf0f4}}@media print{html,body{margin:0!important;padding:0!important;background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}${printWidthStyle}.toolbar{display:none!important}.receipt{margin:0;padding-bottom:4mm;box-shadow:none;overflow:visible}.items tr,.meta-row,.total-row,.payment-row{break-inside:avoid}}
-	        </style></head><body><div class="toolbar"><button type="button" onclick="window.focus();window.print()">Print ${paperWidth || 'receipt'}</button><a href="${escapeHtml(posReturnUrl)}">Back to POS</a></div><main class="receipt"><header class="center"><div class="brand">${escapeHtml(businessName)}</div><div class="branch">${escapeHtml(branchName || 'Main Branch')}</div>${businessAddress ? `<div class="contact">${escapeHtml(businessAddress)}</div>` : ''}${businessPhone ? `<div class="contact">Tel: ${escapeHtml(businessPhone)}</div>` : ''}<div class="receipt-title">SALES RECEIPT</div></header><div class="rule"></div><div class="meta-row"><span>Receipt:</span><span>${escapeHtml(offlineReference)}</span></div><div class="meta-row"><span>Date:</span><span>${escapeHtml(printedAt)}</span></div><div class="meta-row"><span>Customer:</span><span>${escapeHtml(customerName || 'Walk-in Customer')}</span></div><div class="meta-row"><span>Cashier:</span><span>${escapeHtml(@json(auth()->user()->name ?? 'Cashier'))}</span></div><div class="rule"></div><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead><tbody>${itemRows || '<tr><td colspan="4" class="center">No items</td></tr>'}</tbody></table><div class="double-rule"></div><div class="total-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>${discount > 0 ? `<div class="total-row"><span>Discount</span><span>-${money(discount)}</span></div>` : ''}${tax > 0 ? `<div class="total-row"><span>Tax</span><span>${money(tax)}</span></div>` : ''}<div class="total-row grand"><span>TOTAL</span><span>${money(total)}</span></div>${paid > 0 ? `<div class="total-row strong"><span>Paid</span><span>${money(paid)}</span></div>` : ''}${balance > 0 ? `<div class="total-row strong"><span>Balance</span><span>${money(balance)}</span></div>` : ''}${change > 0 ? `<div class="total-row strong"><span>Change</span><span>${money(change)}</span></div>` : ''}<div class="rule"></div><div class="payment-row"><span>Payment:</span><span>${escapeHtml(paymentLabel)}</span></div>${paymentLines}<footer class="footer"><div class="rule"></div><div class="strong">${escapeHtml(receiptFooter)}</div><div class="reference">${escapeHtml(offlineReference)}</div><div class="powered">Powered by SmartProBook</div></footer></main><script>window.addEventListener('load',function(){window.focus();window.setTimeout(function(){window.print()},window.matchMedia('(max-width: 768px)').matches?700:0)},{once:true});<\/script></body></html>`;
+	        </style></head><body><div class="toolbar"><button type="button" onclick="window.focus();window.print()">Print ${paperWidth || 'receipt'}</button><a href="${escapeHtml(posReturnUrl)}">Back to POS</a></div><main class="receipt"><header class="center"><div class="brand">${escapeHtml(businessName)}</div><div class="branch">${escapeHtml(branchName || 'Main Branch')}</div>${businessAddress ? `<div class="contact">${escapeHtml(businessAddress)}</div>` : ''}${businessPhone ? `<div class="contact">Tel: ${escapeHtml(businessPhone)}</div>` : ''}<div class="receipt-title">SALES RECEIPT</div></header><div class="rule"></div><div class="meta-row"><span>Receipt:</span><span>${escapeHtml(offlineReference)}</span></div><div class="meta-row"><span>Date:</span><span>${escapeHtml(printedAt)}</span></div><div class="meta-row"><span>Customer:</span><span>${escapeHtml(customerName || 'Walk-in Customer')}</span></div><div class="meta-row"><span>Cashier:</span><span>${escapeHtml(@json(auth()->user()->name ?? 'Cashier'))}</span></div><div class="rule"></div><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead><tbody>${itemRows || '<tr><td colspan="4" class="center">No items</td></tr>'}</tbody></table><div class="double-rule"></div><div class="total-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>${discount > 0 ? `<div class="total-row"><span>Item discount</span><span>-${money(discount)}</span></div>` : ''}${invoiceDiscountAmount > 0 ? `<div class="total-row"><span>Invoice discount</span><span>-${money(invoiceDiscountAmount)}</span></div>` : ''}${tax > 0 ? `<div class="total-row"><span>Tax</span><span>${money(tax)}</span></div>` : ''}<div class="total-row grand"><span>TOTAL</span><span>${money(total)}</span></div>${paid > 0 ? `<div class="total-row strong"><span>Paid</span><span>${money(paid)}</span></div>` : ''}${balance > 0 ? `<div class="total-row strong"><span>Balance</span><span>${money(balance)}</span></div>` : ''}${change > 0 ? `<div class="total-row strong"><span>Change</span><span>${money(change)}</span></div>` : ''}<div class="rule"></div><div class="payment-row"><span>Payment:</span><span>${escapeHtml(paymentLabel)}</span></div>${paymentLines}<footer class="footer"><div class="rule"></div><div class="strong">${escapeHtml(receiptFooter)}</div><div class="reference">${escapeHtml(offlineReference)}</div><div class="powered">Powered by SmartProBook</div></footer></main><script>window.addEventListener('load',function(){window.focus();window.setTimeout(function(){window.print()},window.matchMedia('(max-width: 768px)').matches?700:0)},{once:true});<\/script></body></html>`;
 	        receiptWindow.document.open();
 	        receiptWindow.document.write(html);
 	        receiptWindow.document.close();
@@ -9500,11 +9642,11 @@ window.POS_ENABLE_FALLBACK = function () {
     function updateItemTotal() {
         const price = parseFloat(priceInput?.value || '0') || 0;
         const qty = parseFloat(qtyInput?.value || '1') || 1;
-        const discount = parseFloat(discountInput?.value || '0') || 0;
+        const discount = Math.max(0, parseFloat(discountInput?.value || '0') || 0);
         const discountType = discountTypeInput?.value || 'percent';
-        const tax = parseFloat(taxInput?.value || '0') || 0;
+        const tax = Math.min(100, Math.max(0, parseFloat(taxInput?.value || '0') || 0));
         const sub = price * qty;
-        const discVal = discountType === 'fixed' ? Math.min(discount * qty, sub) : (sub * (discount / 100));
+        const discVal = discountType === 'fixed' ? Math.min(discount * qty, sub) : (sub * (Math.min(discount, 100) / 100));
         const afterDisc = sub - discVal;
         const taxVal = afterDisc * (tax / 100);
         const total = afterDisc + taxVal;
@@ -9517,10 +9659,10 @@ window.POS_ENABLE_FALLBACK = function () {
         const price = Math.max(0, parseFloat(item.price || '0') || 0);
         const discountValue = Math.max(0, parseFloat(item.discountValue ?? item.discount ?? '0') || 0);
         const discountType = item.discountType || 'percent';
-        const tax = Math.max(0, parseFloat(item.tax || '0') || 0);
+        const tax = Math.min(100, Math.max(0, parseFloat(item.tax || '0') || 0));
         const multiplier = Math.max(0.01, parseFloat(item.unitMultiplier || '1') || 1);
         const sub = price * qty;
-        const discVal = discountType === 'fixed' ? Math.min(discountValue * qty, sub) : (sub * (discountValue / 100));
+        const discVal = discountType === 'fixed' ? Math.min(discountValue * qty, sub) : (sub * (Math.min(discountValue, 100) / 100));
         const afterDisc = Math.max(0, sub - discVal);
         const taxVal = afterDisc * (tax / 100);
 
@@ -9532,8 +9674,66 @@ window.POS_ENABLE_FALLBACK = function () {
         item.total = afterDisc + taxVal;
         item.discountType = discountType;
         item.discountValue = discountValue;
+        item.tax = tax;
 
         return item;
+    }
+
+    function roundPosMoney(value) {
+        return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+    }
+
+    function calculateInvoiceDiscount(items = cart) {
+        const bases = items.map((item) => Math.max(0, (Number(item.sub) || 0) - (Number(item.discVal) || 0)));
+        const baseTotal = bases.reduce((sum, value) => sum + value, 0);
+        const requestedValue = Math.max(0, Number(invoiceDiscount.value) || 0);
+        const amount = invoiceDiscount.type === 'fixed'
+            ? Math.min(baseTotal, roundPosMoney(requestedValue))
+            : Math.min(baseTotal, roundPosMoney(baseTotal * (Math.min(requestedValue, 100) / 100)));
+        const shares = bases.map(() => 0);
+        if (amount > 0 && baseTotal > 0) {
+            const lastEligible = bases.reduce((last, value, index) => value > 0 ? index : last, -1);
+            let allocated = 0;
+            bases.forEach((base, index) => {
+                if (base <= 0) return;
+                const share = index === lastEligible
+                    ? roundPosMoney(amount - allocated)
+                    : roundPosMoney(amount * (base / baseTotal));
+                shares[index] = Math.min(base, Math.max(0, share));
+                allocated = roundPosMoney(allocated + shares[index]);
+            });
+        }
+        return { amount: roundPosMoney(amount), bases, shares, baseTotal };
+    }
+
+    function prepareCartForSale() {
+        const invoice = calculateInvoiceDiscount();
+        return cart.map((item, index) => {
+            const invoiceShare = invoice.shares[index] || 0;
+            const taxable = Math.max(0, invoice.bases[index] - invoiceShare);
+            const taxVal = roundPosMoney(taxable * (Math.min(100, Math.max(0, Number(item.tax) || 0)) / 100));
+            return {
+                ...item,
+                invoiceDiscountShare: invoiceShare,
+                invoiceDiscountType: invoiceDiscount.type,
+                invoiceDiscountValue: Number(invoiceDiscount.value) || 0,
+                discVal: roundPosMoney((Number(item.discVal) || 0) + invoiceShare),
+                taxVal,
+                total: roundPosMoney(taxable + taxVal),
+            };
+        });
+    }
+
+    function updateInvoiceDiscountControls(invoiceAmount = calculateInvoiceDiscount().amount) {
+        const value = roundPosMoney(invoiceAmount);
+        const label = fmt.format(value);
+        const amountNode = document.getElementById('sum-invoice-discount');
+        const toggle = document.getElementById('pos-invoice-discount-toggle');
+        if (amountNode) amountNode.textContent = value > 0 ? `- ${label}` : fmt.format(0);
+        if (toggle) toggle.textContent = value > 0 ? `Edit ${label}` : 'Set';
+        document.querySelectorAll('[data-pos-copy="sum-invoice-discount"]').forEach((node) => {
+            node.textContent = value > 0 ? `- ${label}` : fmt.format(0);
+        });
     }
 
     function cartMergeKey(item) {
@@ -9716,6 +9916,8 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function resetVanillaPosWorkspace() {
         cart.length = 0;
+        invoiceDiscount.type = 'percent';
+        invoiceDiscount.value = 0;
         currentProductId = '';
 
         renderCart();
@@ -9948,7 +10150,13 @@ window.POS_ENABLE_FALLBACK = function () {
                 claim_token: posSuspenseClaimToken,
                 customer_id: customerSelect?.value || null,
                 customer_name: customerOption?.textContent?.trim() || 'Walk-in Customer',
-                items: cart,
+                invoice_discount_type: invoiceDiscount.type,
+                invoice_discount_value: Number(invoiceDiscount.value) || 0,
+                items: cart.map((item) => ({
+                    ...item,
+                    invoiceDiscountType: invoiceDiscount.type,
+                    invoiceDiscountValue: Number(invoiceDiscount.value) || 0,
+                })),
             });
             currentSuspendedSaleId = null;
             window.clearInterval(suspenseClaimHeartbeat);
@@ -9999,7 +10207,14 @@ window.POS_ENABLE_FALLBACK = function () {
             }
 
             cart.length = 0;
+            invoiceDiscount.type = 'percent';
+            invoiceDiscount.value = 0;
             sale.items.forEach((item) => cart.push(calculateCartItem(item)));
+            const savedInvoiceDiscount = sale.items.find((item) => item.invoiceDiscountType || Number(item.invoiceDiscountValue) > 0);
+            if (savedInvoiceDiscount) {
+                invoiceDiscount.type = savedInvoiceDiscount.invoiceDiscountType === 'fixed' ? 'fixed' : 'percent';
+                invoiceDiscount.value = Math.max(0, Number(savedInvoiceDiscount.invoiceDiscountValue) || 0);
+            }
             if (customerSelect) {
                 customerSelect.value = sale.customer_id ? String(sale.customer_id) : '';
                 customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -10040,18 +10255,27 @@ window.POS_ENABLE_FALLBACK = function () {
 
     function renderCart() {
         if (!cartBody) return;
+        if (!cart.length) {
+            invoiceDiscount.type = 'percent';
+            invoiceDiscount.value = 0;
+        }
         const previousDue = Math.max(0, cartGrandTotalValue() - moneyValue(walletAmount));
         let html = '';
         let totSub = 0;
         let totDisc = 0;
         let totTax = 0;
         let totGrand = 0;
+        const invoiceAdjustment = calculateInvoiceDiscount();
 
         cart.forEach((item, i) => {
             totSub += item.sub;
             totDisc += item.discVal;
-            totTax += item.taxVal;
-            totGrand += item.total;
+            const invoiceShare = invoiceAdjustment.shares[i] || 0;
+            const taxableAfterInvoiceDiscount = Math.max(0, invoiceAdjustment.bases[i] - invoiceShare);
+            const lineTax = roundPosMoney(taxableAfterInvoiceDiscount * (Math.min(100, Math.max(0, Number(item.tax) || 0)) / 100));
+            const lineTotal = roundPosMoney(taxableAfterInvoiceDiscount + lineTax);
+            totTax += lineTax;
+            totGrand += lineTotal;
 
             const unitChoices = Array.isArray(item.unitOptions) ? item.unitOptions : [];
             const unitPicker = unitChoices.length > 1
@@ -10066,8 +10290,10 @@ window.POS_ENABLE_FALLBACK = function () {
                 : '<span class="cart-item-image-fallback"><i class="fas fa-box"></i></span>';
             const discountValue = Number(item.discountValue ?? item.discount ?? 0);
             const discountLabel = discountValue > 0
-                ? `Discount ${escapeHtml(discountValue)}${item.discountType === 'fixed' ? ' ₦' : '%'}`
+                ? `Discount −${fmt.format(item.discVal)}`
                 : 'Discount';
+            const taxRate = Math.min(100, Math.max(0, Number(item.tax) || 0));
+            const taxLabel = item.taxVal > 0 ? `Tax +${fmt.format(item.taxVal)}` : 'Tax';
             html += `
                 <tr>
                     <td class="cart-line-cell" colspan="4">
@@ -10077,10 +10303,16 @@ window.POS_ENABLE_FALLBACK = function () {
                                 <div class="cart-item-copy">
                                     <div class="cart-item-name">${escapeHtml(item.name)}</div>
                                     <small>Retail: ${fmt.format(item.price)}</small>
+                                    ${item.discVal > 0 ? `<small class="cart-adjustment-summary is-discount">Discount applied: −${fmt.format(item.discVal)}</small>` : ''}
+                                    ${invoiceShare > 0 ? `<small class="cart-adjustment-summary is-discount">Invoice discount share: −${fmt.format(invoiceShare)}</small>` : ''}
+                                    ${lineTax > 0 ? `<small class="cart-adjustment-summary is-tax">Tax applied (${taxRate}%): +${fmt.format(lineTax)}</small>` : ''}
                                 </div>
                             </div>
                             <div class="cart-item-tools">
-                                <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                <div class="cart-adjustment-buttons">
+                                    <button type="button" class="cart-discount-toggle" data-index="${i}">${discountLabel}<i class="fas fa-chevron-down"></i></button>
+                                    <button type="button" class="cart-tax-toggle" data-index="${i}">${taxLabel}<i class="fas fa-chevron-down"></i></button>
+                                </div>
                                 <div class="cart-quantity-controls">
                                     <button type="button" class="cart-qty-step" data-index="${i}" data-step="-1" aria-label="Decrease quantity">−</button>
                                     <input type="number" min="1" step="1" value="${Math.max(1, Math.round(parseFloat(item.qty) || 1))}" class="cart-qty-input" data-index="${i}" inputmode="numeric">
@@ -10089,9 +10321,18 @@ window.POS_ENABLE_FALLBACK = function () {
                                 </div>
                             </div>
                             <div class="cart-discount-editor" hidden>
+                                <div class="cart-adjustment-target">Discount for <strong>${escapeHtml(item.name)}</strong></div>
                                 <select class="cart-discount-type" aria-label="Discount type"><option value="percent">%</option><option value="fixed">₦</option></select>
-                                <input class="cart-discount-value" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(item.discountValue ?? item.discount ?? 0)}" aria-label="Discount amount">
+                                <input class="cart-discount-value" type="number" min="0" step="0.01" inputmode="decimal" value="${discountValue}" aria-label="Discount amount for ${escapeHtml(item.name)}">
                                 <button type="button" class="cart-discount-apply" data-index="${i}">Apply</button>
+                                <small class="cart-adjustment-help">${item.discountType === 'fixed' ? 'Fixed discount is applied per quantity.' : 'Percentage discount is applied to this item’s subtotal.'} Current discount: ${fmt.format(item.discVal)}</small>
+                            </div>
+                            <div class="cart-tax-editor" hidden>
+                                <div class="cart-adjustment-target">Tax for <strong>${escapeHtml(item.name)}</strong></div>
+                                <input class="cart-tax-value" type="number" min="0" max="100" step="0.01" inputmode="decimal" value="${taxRate}" aria-label="Tax percentage for ${escapeHtml(item.name)}">
+                                <span class="cart-tax-suffix">%</span>
+                                <button type="button" class="cart-tax-apply" data-index="${i}">Apply</button>
+                                <small class="cart-adjustment-help">Tax applies after this item’s discount. Current tax: ${fmt.format(item.taxVal)}</small>
                             </div>
                             ${unitPicker ? `<div class="cart-item-unit-row">${unitPicker}</div>` : ''}
                             <span class="cart-line-total visually-hidden">${fmt.format(item.total)}</span>
@@ -10117,9 +10358,15 @@ window.POS_ENABLE_FALLBACK = function () {
 
         if (sumSubtotal) sumSubtotal.textContent = fmt.format(totSub);
         if (sumDiscount) sumDiscount.textContent = totDisc > 0 ? '- ' + fmt.format(totDisc) : fmt.format(0);
+        updateInvoiceDiscountControls(invoiceAdjustment.amount);
         if (sumTax) sumTax.textContent = totTax > 0 ? '+ ' + fmt.format(totTax) : fmt.format(0);
         if (grandTotal) grandTotal.textContent = fmt.format(totGrand);
         if (hdrCartCount) hdrCartCount.textContent = String(cart.length);
+        document.querySelectorAll('[data-pos-copy="sum-subtotal"]').forEach((node) => { node.textContent = fmt.format(totSub); });
+        document.querySelectorAll('[data-pos-copy="sum-discount"]').forEach((node) => { node.textContent = totDisc > 0 ? `- ${fmt.format(totDisc)}` : fmt.format(0); });
+        document.querySelectorAll('[data-pos-copy="sum-tax"]').forEach((node) => { node.textContent = totTax > 0 ? `+ ${fmt.format(totTax)}` : fmt.format(0); });
+        document.querySelectorAll('[data-pos-copy="grand-total"]').forEach((node) => { node.textContent = fmt.format(totGrand); });
+        document.querySelectorAll('[data-pos-copy="hdr-cart-count"]').forEach((node) => { node.textContent = String(cart.length); });
 	        if (paymentMethod?.value === 'Split') {
 	            if (amountPaid && !amountPaid.value) {
 	                amountPaid.value = '0.00';
@@ -10287,11 +10534,15 @@ window.POS_ENABLE_FALLBACK = function () {
             if (discountButton) {
                 const index = parseInt(discountButton.dataset.index || '-1', 10);
                 const item = cart[index];
-                const editor = discountButton.closest('.cart-line-card')?.querySelector('.cart-discount-editor');
+                const line = discountButton.closest('.cart-line-card');
+                const editor = line?.querySelector('.cart-discount-editor');
                 if (!item || !editor) return;
+                const taxEditor = line.querySelector('.cart-tax-editor');
+                if (taxEditor) taxEditor.hidden = true;
                 editor.hidden = !editor.hidden;
                 if (!editor.hidden) {
                     editor.querySelector('.cart-discount-type').value = item.discountType || 'percent';
+                    editor.querySelector('.cart-discount-value').max = (item.discountType || 'percent') === 'fixed' ? '' : '100';
                     editor.querySelector('.cart-discount-value').value = item.discountValue ?? item.discount ?? 0;
                     editor.querySelector('.cart-discount-value').focus();
                 }
@@ -10311,6 +10562,37 @@ window.POS_ENABLE_FALLBACK = function () {
                 }
                 item.discountType = type;
                 item.discountValue = value;
+                calculateCartItem(item);
+                renderCart();
+                return;
+            }
+            const taxButton = e.target.closest('.cart-tax-toggle');
+            if (taxButton) {
+                const index = parseInt(taxButton.dataset.index || '-1', 10);
+                const item = cart[index];
+                const line = taxButton.closest('.cart-line-card');
+                const editor = line?.querySelector('.cart-tax-editor');
+                if (!item || !editor) return;
+                const discountEditor = line.querySelector('.cart-discount-editor');
+                if (discountEditor) discountEditor.hidden = true;
+                editor.hidden = !editor.hidden;
+                if (!editor.hidden) {
+                    editor.querySelector('.cart-tax-value').value = Math.min(100, Math.max(0, Number(item.tax) || 0));
+                    editor.querySelector('.cart-tax-value').focus();
+                }
+                return;
+            }
+            const applyTaxButton = e.target.closest('.cart-tax-apply');
+            if (applyTaxButton) {
+                const index = parseInt(applyTaxButton.dataset.index || '-1', 10);
+                const item = cart[index];
+                const editor = applyTaxButton.closest('.cart-tax-editor');
+                const value = Number(editor?.querySelector('.cart-tax-value')?.value);
+                if (!item || !Number.isFinite(value) || value < 0 || value > 100) {
+                    alertFallback('Enter a valid tax rate from 0 to 100%.');
+                    return;
+                }
+                item.tax = value;
                 calculateCartItem(item);
                 renderCart();
                 return;
@@ -10338,6 +10620,11 @@ window.POS_ENABLE_FALLBACK = function () {
             if (Number.isNaN(index)) return;
             cart.splice(index, 1);
             renderCart();
+        });
+        cartBody.addEventListener('change', function (e) {
+            if (!e.target.classList.contains('cart-discount-type')) return;
+            const value = e.target.closest('.cart-discount-editor')?.querySelector('.cart-discount-value');
+            if (value) value.max = e.target.value === 'fixed' ? '' : '100';
         });
     }
 
@@ -10643,6 +10930,7 @@ window.POS_ENABLE_FALLBACK = function () {
         if (btnLoading) btnLoading.style.display = '';
 
         try {
+            const preparedSaleItems = prepareCartForSale();
             const payload = {
                     customer_id: customerSelect?.value || null,
                     customer_name: customerSelect?.selectedOptions?.[0]?.textContent?.trim() || 'Walk-in Customer',
@@ -10650,10 +10938,13 @@ window.POS_ENABLE_FALLBACK = function () {
                     source: posSourceContext?.source || null,
                     source_id: posSourceContext?.source_id || null,
                     source_reference: posSourceContext?.reference || null,
-                    items: cart,
+                    items: preparedSaleItems,
                     subtotal: cart.reduce((sum, item) => sum + item.sub, 0),
-                    tax: cart.reduce((sum, item) => sum + item.taxVal, 0),
-                    discount: cart.reduce((sum, item) => sum + item.discVal, 0),
+                    tax: preparedSaleItems.reduce((sum, item) => sum + item.taxVal, 0),
+                    discount: preparedSaleItems.reduce((sum, item) => sum + item.discVal, 0),
+                    invoice_discount_type: invoiceDiscount.type,
+                    invoice_discount_value: Number(invoiceDiscount.value) || 0,
+                    invoice_discount_amount: calculateInvoiceDiscount().amount,
                     total,
                     deposit_account_id: depositAccount?.value || null,
 	                    paid: externalPaid,

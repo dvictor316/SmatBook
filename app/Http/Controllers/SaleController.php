@@ -1448,6 +1448,8 @@ public function storePosSuspendedSale(Request $request)
         'items.*.discountValue' => 'nullable|numeric|gte:0',
         'items.*.discount' => 'nullable|numeric|gte:0',
         'items.*.tax' => 'nullable|numeric|gte:0|lte:100',
+        'invoice_discount_type' => 'nullable|in:percent,fixed',
+        'invoice_discount_value' => 'nullable|numeric|min:0',
     ]);
 
     $validator->after(function ($validator) use ($request) {
@@ -1526,6 +1528,9 @@ public function storePosSuspendedSale(Request $request)
             'discountType' => $discountType,
             'discountValue' => $discountValue,
             'discount' => $discountType === 'fixed' ? 0 : $discountValue,
+            'invoiceDiscountType' => $item['invoiceDiscountType'] ?? 'percent',
+            'invoiceDiscountValue' => (float) ($item['invoiceDiscountValue'] ?? 0),
+            'invoiceDiscountShare' => (float) ($item['invoiceDiscountShare'] ?? 0),
             'tax' => $tax,
             'sub' => round($subtotal, 2),
             'discVal' => round($discount, 2),
@@ -1533,6 +1538,41 @@ public function storePosSuspendedSale(Request $request)
             'total' => round(max(0, $subtotal - $discount) + $taxAmount, 2),
         ];
     })->values()->all();
+    $invoiceDiscountType = $request->input('invoice_discount_type') === 'fixed' ? 'fixed' : 'percent';
+    $invoiceDiscountValue = max(0, (float) $request->input('invoice_discount_value', 0));
+    if ($invoiceDiscountType === 'percent') {
+        $invoiceDiscountValue = min(100, $invoiceDiscountValue);
+    }
+    $invoiceDiscountBase = array_sum(array_map(fn ($item) => max(0, (float) $item['sub'] - (float) $item['discVal']), $items));
+    $invoiceDiscountAmount = $invoiceDiscountType === 'fixed'
+        ? min($invoiceDiscountValue, $invoiceDiscountBase)
+        : min($invoiceDiscountBase, round($invoiceDiscountBase * ($invoiceDiscountValue / 100), 2));
+    $lastDiscountableItem = null;
+    foreach ($items as $index => $item) {
+        if (((float) $item['sub'] - (float) $item['discVal']) > 0) {
+            $lastDiscountableItem = $index;
+        }
+    }
+    $allocatedInvoiceDiscount = 0.0;
+    foreach ($items as $index => &$item) {
+        $lineBase = max(0, (float) $item['sub'] - (float) $item['discVal']);
+        $share = 0.0;
+        if ($invoiceDiscountAmount > 0 && $lineBase > 0 && $invoiceDiscountBase > 0) {
+            $share = $index === $lastDiscountableItem
+                ? round($invoiceDiscountAmount - $allocatedInvoiceDiscount, 2)
+                : round($invoiceDiscountAmount * ($lineBase / $invoiceDiscountBase), 2);
+            $share = min($lineBase, max(0, $share));
+            $allocatedInvoiceDiscount += $share;
+        }
+        $taxable = max(0, $lineBase - $share);
+        $item['invoiceDiscountType'] = $invoiceDiscountType;
+        $item['invoiceDiscountValue'] = $invoiceDiscountValue;
+        $item['invoiceDiscountShare'] = $share;
+        $item['discVal'] = round((float) $item['discVal'] + $share, 2);
+        $item['taxVal'] = round($taxable * ((float) $item['tax'] / 100), 2);
+        $item['total'] = round($taxable + (float) $item['taxVal'], 2);
+    }
+    unset($item);
     $customerName = trim((string) $request->input('customer_name', ''));
     if ($customerId) {
         $customer = $this->scopedCustomers()->whereKey($customerId)->first();
@@ -1755,6 +1795,8 @@ public function store(Request $request)
         'customer_id'    => 'nullable|integer',
         'payment_method' => 'required|string|in:Cash,cash,Split,split,Credit,credit,ChargeToRoom,charge_to_room,charge-room',
         'total'          => 'required|numeric|min:0',
+	    'invoice_discount_type' => 'nullable|in:percent,fixed',
+	    'invoice_discount_value' => 'nullable|numeric|min:0',
 	        'paid'           => 'required|numeric|min:0',
 	        'wallet_amount'  => 'nullable|numeric|min:0',
 	        'items'          => 'required|array|min:1',
@@ -1851,6 +1893,11 @@ public function store(Request $request)
 
 	    $paidAmount = (float) $request->paid;
 	    $totalAmount = (float) $request->total;
+        $invoiceDiscountType = $request->input('invoice_discount_type') === 'fixed' ? 'fixed' : 'percent';
+        $invoiceDiscountValue = max(0, (float) $request->input('invoice_discount_value', 0));
+        if ($invoiceDiscountType === 'percent') {
+            $invoiceDiscountValue = min(100, $invoiceDiscountValue);
+        }
         $saleItems = $this->mergeMatchingPosSaleItems($request->input('items', []));
         $posCanEditPrices = $this->userCanEditPosPrices();
         $activePriceListsForPos = $this->priceListUsage
@@ -2058,6 +2105,10 @@ $sale = Sale::create([
     'payment_status' => $paymentStatus,
         'payment_details' => [
         'source' => 'pos',
+        'invoice_discount' => [
+            'type' => $invoiceDiscountType,
+            'value' => $invoiceDiscountValue,
+        ],
         'offline_sync' => $clientSaleId !== '' ? [
             'client_sale_id' => $clientSaleId,
             'recorded_at' => $request->input('client_recorded_at'),
@@ -2082,6 +2133,7 @@ $sale = Sale::create([
         $runningSubtotal = 0;
         $runningTax = 0;
         $runningDiscount = 0;
+        $saleLineAdjustments = [];
 
         // --- 3. PROCESS ITEMS ---
         foreach ($saleItems as $itemData) {
@@ -2108,7 +2160,7 @@ $sale = Sale::create([
             $discountType = strtolower((string) ($itemData['discountType'] ?? $itemData['discount_type'] ?? 'percent'));
             $discountValue = (float) ($itemData['discountValue'] ?? $itemData['discount_value'] ?? ($itemData['discount'] ?? 0));
             $discPercent = (float) ($itemData['discount'] ?? 0);
-            $taxPercent  = (float) ($itemData['tax'] ?? 0);
+            $taxPercent  = min(100, max(0, (float) ($itemData['tax'] ?? 0)));
 
             $itemSubtotal   = $unitPrice * $qty;
             if ($discountType === 'fixed') {
@@ -2162,7 +2214,13 @@ $sale = Sale::create([
                 $itemPayload['branch_name'] = $sale->branch_name ?? $activeBranch['name'];
             }
 
-            SaleItem::create($itemPayload);
+            $saleItem = SaleItem::create($itemPayload);
+            $saleLineAdjustments[] = [
+                'model' => $saleItem,
+                'subtotal' => $itemSubtotal,
+                'item_discount' => $itemDiscAmount,
+                'tax_percent' => $taxPercent,
+            ];
 
             $runningSubtotal += $itemSubtotal;
             $runningDiscount += $itemDiscAmount;
@@ -2175,6 +2233,57 @@ $sale = Sale::create([
                 $activeBranch,
                 (int) ($product->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0)
             );
+        }
+
+        // Apply an optional invoice-wide discount proportionally across the remaining
+        // taxable value of each line, keeping item discounts as a separate adjustment.
+        $invoiceDiscountBase = max(0, $runningSubtotal - $runningDiscount);
+        $invoiceDiscountAmount = $invoiceDiscountType === 'fixed'
+            ? min($invoiceDiscountValue, $invoiceDiscountBase)
+            : min($invoiceDiscountBase, round($invoiceDiscountBase * ($invoiceDiscountValue / 100), 2));
+        if ($invoiceDiscountAmount > 0 && $invoiceDiscountBase > 0) {
+            $adjustedTax = 0.0;
+            $allocatedDiscount = 0.0;
+            $lastEligibleIndex = null;
+            foreach ($saleLineAdjustments as $index => $line) {
+                if (($line['subtotal'] - $line['item_discount']) > 0) {
+                    $lastEligibleIndex = $index;
+                }
+            }
+
+            foreach ($saleLineAdjustments as $index => $line) {
+                $lineBase = max(0, $line['subtotal'] - $line['item_discount']);
+                if ($lineBase <= 0) {
+                    continue;
+                }
+                $discountShare = $index === $lastEligibleIndex
+                    ? round($invoiceDiscountAmount - $allocatedDiscount, 2)
+                    : round($invoiceDiscountAmount * ($lineBase / $invoiceDiscountBase), 2);
+                $discountShare = min($lineBase, max(0, $discountShare));
+                $allocatedDiscount += $discountShare;
+                $taxableAmount = max(0, $lineBase - $discountShare);
+                $lineTax = round($taxableAmount * ($line['tax_percent'] / 100), 2);
+                $lineDiscount = min($line['subtotal'], $line['item_discount'] + $discountShare);
+                $effectiveDiscountPercent = $line['subtotal'] > 0
+                    ? ($lineDiscount / $line['subtotal']) * 100
+                    : 0;
+
+                $updates = [
+                    'discount' => $effectiveDiscountPercent,
+                    'total_price' => round($taxableAmount + $lineTax, 2),
+                ];
+                if (Schema::hasColumn('sale_items', 'discount_type')) {
+                    $updates['discount_type'] = 'percent';
+                }
+                if (Schema::hasColumn('sale_items', 'discount_value')) {
+                    $updates['discount_value'] = $effectiveDiscountPercent;
+                }
+                $line['model']->forceFill($updates)->save();
+                $adjustedTax += $lineTax;
+            }
+
+            $runningDiscount += $invoiceDiscountAmount;
+            $runningTax = $adjustedTax;
         }
 
         // --- 4. UPDATE TOTALS & LOG PAYMENT ---
@@ -2215,6 +2324,11 @@ $sale = Sale::create([
             'payment_status' => $finalPaymentStatus,
             'payment_details' => [
                 'source' => 'pos',
+                'invoice_discount' => [
+                    'type' => $invoiceDiscountType,
+                    'value' => $invoiceDiscountValue,
+                    'amount' => $invoiceDiscountAmount,
+                ],
                 'offline_sync' => $clientSaleId !== '' ? [
                     'client_sale_id' => $clientSaleId,
                     'recorded_at' => $request->input('client_recorded_at'),
