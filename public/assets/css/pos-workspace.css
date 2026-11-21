@@ -3678,3 +3678,33 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
         margin: 0 !important;
     }
 }
+
+/* Keep the POS totals compact so the cart item list gets more vertical room. */
+body.pos-terminal-workspace #pos-sell-screen .summary-panel {
+    padding: 4px 8px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .summary-panel > .summary-row {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 1px 0 !important;
+    line-height: 1.15 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .summary-panel > .summary-row .summary-label,
+body.pos-terminal-workspace #pos-sell-screen .summary-panel > .summary-row .summary-value {
+    font-size: 0.72rem !important;
+    line-height: 1.15 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .summary-panel > .summary-row.pb-3 {
+    padding-bottom: 3px !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-invoice-discount-toggle {
+    min-height: 20px !important;
+    margin-left: 4px !important;
+    padding: 1px 7px !important;
+    font-size: 0.68rem !important;
+    line-height: 1.1 !important;
+}
