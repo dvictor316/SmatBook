@@ -2133,3 +2133,42 @@ body.pos-terminal-workspace #pos-sell-screen #rail-checkout-btn:focus-visible {
     background: linear-gradient(145deg, #fff7e4, #efdfb2) !important;
     color: #12376f !important;
 }
+
+/* Use more of the available tablet height for the product tray. */
+@media (orientation: portrait) and (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        height: calc(var(--pos-product-card-row) * 6 + 39px) !important;
+        max-height: calc(var(--pos-product-card-row) * 6 + 39px) !important;
+    }
+}
+
+@media (orientation: landscape) and (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
+        height: calc(var(--pos-product-card-row) * 4 + 32px) !important;
+        max-height: calc(var(--pos-product-card-row) * 4 + 32px) !important;
+    }
+}
+
+body.pos-terminal-workspace #pos-sell-screen .product-toolbar,
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2,
+body.pos-terminal-workspace #pos-sell-screen .receipt-toolbar-label,
+body.pos-terminal-workspace #pos-sell-screen .pos-customer-compact,
+body.pos-terminal-workspace #pos-sell-screen .cart-item-name,
+body.pos-terminal-workspace #pos-sell-screen .product-card-name {
+    color: #17365f !important;
+    font-weight: 650 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill,
+body.pos-terminal-workspace #pos-sell-screen .pos-view-switch button,
+body.pos-terminal-workspace #pos-sell-screen .pos-secondary-action {
+    color: #17365f !important;
+    font-weight: 650 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .pos-product-meta strong,
+body.pos-terminal-workspace #pos-sell-screen .cart-item-price,
+body.pos-terminal-workspace #pos-sell-screen .summary-value {
+    color: #123b7a !important;
+    font-weight: 700 !important;
+}
