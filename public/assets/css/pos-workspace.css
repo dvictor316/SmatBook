@@ -1245,9 +1245,9 @@ body.pos-terminal-workspace #pos-checkout-screen .pos-cashier-suspense-actions .
 
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        grid-auto-rows: 88px !important;
-        height: min(23dvh, 181px) !important;
-        max-height: min(23dvh, 181px) !important;
+        grid-auto-rows: 70px !important;
+        height: 145px !important;
+        max-height: 145px !important;
         overflow-y: auto !important;
         overscroll-behavior: auto !important;
         -webkit-overflow-scrolling: touch !important;
@@ -3386,37 +3386,41 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card {
-        height: 88px !important;
-        min-height: 88px !important;
-        max-height: 88px !important;
+        height: 70px !important;
+        min-height: 70px !important;
+        max-height: 70px !important;
+        padding: 4px !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-img {
-        flex-basis: 27px !important;
-        height: 27px !important;
-        min-height: 27px !important;
-        max-height: 27px !important;
+        flex-basis: 21px !important;
+        height: 21px !important;
+        min-height: 21px !important;
+        max-height: 21px !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .product-card-name {
-        min-height: 19px !important;
-        max-height: 19px !important;
-        font-size: 8px !important;
+        min-height: 14px !important;
+        max-height: 14px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        font-size: 7px !important;
         line-height: 1.1 !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-stock-badge {
-        padding: 2px 3px !important;
+        padding: 1px 3px !important;
         font-size: 6px !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card .pos-product-meta strong {
-        font-size: 8px !important;
+        font-size: 7px !important;
         line-height: 1.05 !important;
     }
 
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
-        max-height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 360px)) !important;
+        max-height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 320px)) !important;
         overflow: hidden !important;
     }
 
