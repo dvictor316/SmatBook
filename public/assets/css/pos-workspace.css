@@ -2233,28 +2233,28 @@ body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
     flex: 0 1 auto !important;
     min-width: 0 !important;
     width: auto !important;
-    gap: 6px !important;
-    margin: 0 0 0 14px !important;
+    gap: 8px !important;
+    margin: 0 0 0 6px !important;
     white-space: nowrap !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .toolbar-title {
-    font-size: 11px !important;
+    font-size: 13px !important;
     letter-spacing: .02em !important;
     font-weight: 800 !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .pos-view-switch button {
-    min-height: 28px !important;
-    padding: 4px 7px !important;
-    font-size: 10px !important;
+    min-height: 32px !important;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
     font-weight: 750 !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
-    margin-left: 8px !important;
+    margin-left: 10px !important;
     color: #526985 !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
 }
 
@@ -2324,4 +2324,43 @@ body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
     background: #e9eef6 !important;
     color: #17365f !important;
     font-weight: 750 !important;
+}
+
+/* Tablet header: keep metadata, product controls, and search in clean rows. */
+@media (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-bar {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:first-child {
+        display: flex !important;
+        flex: 0 0 auto !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        gap: 8px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:last-child {
+        display: flex !important;
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:last-child .search-wrapper {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
 }
