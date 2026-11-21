@@ -2099,9 +2099,9 @@ body.pos-terminal-workspace #pos-sell-screen .pos-rail-btn-primary:focus-visible
     border-color: #c7a24a !important;
 }
 
-/* Lighten the heading and rail slightly; keep Checkout styled like its peers. */
+/* Keep the POS page light and deepen only the heading/search band. */
 body.pos-terminal-workspace #pos-sell-screen .header-stage {
-    background: linear-gradient(110deg, #dce6f3 0%, #e5edf7 72%, #f0ebdc 100%) !important;
+    background: linear-gradient(110deg, #cbd9eb 0%, #d4e0ef 72%, #e2ddcc 100%) !important;
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-action-rail,
