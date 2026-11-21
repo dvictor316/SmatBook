@@ -2172,3 +2172,121 @@ body.pos-terminal-workspace #pos-sell-screen .summary-value {
     color: #123b7a !important;
     font-weight: 700 !important;
 }
+
+/* Put the product controls and categories on one compact tablet row. */
+@media (min-width: 721px) and (max-width: 1199.98px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card {
+        display: grid !important;
+        grid-template-columns: max-content max-content max-content minmax(0, 1fr) max-content !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        align-content: start !important;
+        align-items: center !important;
+        column-gap: 7px !important;
+        row-gap: 7px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card > .product-toolbar,
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card > .category-pills-wrap {
+        display: contents !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .product-toolbar > .toolbar-title {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        white-space: nowrap !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .product-toolbar > .pos-view-switch {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        white-space: nowrap !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .product-toolbar > #product-count {
+        grid-column: 3 !important;
+        grid-row: 1 !important;
+        white-space: nowrap !important;
+        font-size: 9px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills {
+        grid-column: 4 !important;
+        grid-row: 1 !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-height: none !important;
+        margin: 0 !important;
+        gap: 5px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scrollbar-width: thin;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills.collapsed .category-pill:nth-child(n + 8) {
+        display: inline-flex !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
+        grid-column: 5 !important;
+        grid-row: 1 !important;
+        min-height: 30px !important;
+        padding: 4px 8px !important;
+        font-size: 9px !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pill {
+        flex: 0 0 auto !important;
+        min-height: 30px !important;
+        padding: 5px 10px !important;
+        font-size: 9px !important;
+        white-space: nowrap !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card > .product-grid {
+        grid-column: 1 / -1 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-product-shelf-card > #pos-no-products {
+        grid-column: 1 / -1 !important;
+    }
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(2) {
+    background: #edf5e9 !important;
+    border-color: #cfdfc5 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(3) {
+    background: #fbf2df !important;
+    border-color: #e9d9ae !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(4) {
+    background: #e9f1fc !important;
+    border-color: #cbd9ec !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(5) {
+    background: #f1ebf8 !important;
+    border-color: #d8c9e8 !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(6) {
+    background: #faecec !important;
+    border-color: #e8cccc !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):nth-child(7) {
+    background: #e6f3f2 !important;
+    border-color: #c1dfdb !important;
+}
+
+body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):hover {
+    filter: saturate(1.15) brightness(.98) !important;
+}
