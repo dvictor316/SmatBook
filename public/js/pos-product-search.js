@@ -57,21 +57,21 @@
     function filterShelf(cards, query, category) {
         const queryText = String(query ?? '').trim();
         const hasQuery = queryText.length > 0;
+        let activeCategory = normalize(category || 'all');
         if (queryText !== pinnedShelfQuery) {
             pinnedShelfQuery = queryText;
             pinnedShelfIds = null;
-        }
-        let activeCategory = normalize(category || 'all');
-        // Product search should span every category. Keeping the old category
-        // active made a valid match elsewhere disappear as soon as it was typed.
-        if (hasQuery) {
-            activeCategory = 'all';
-            if (typeof document !== 'undefined') {
+            // A newly changed search starts across all categories. Once the
+            // results are shown, an explicit category tap can narrow them.
+            if (hasQuery && typeof document !== 'undefined') {
+                activeCategory = 'all';
                 document.querySelectorAll('.category-pill').forEach((pill) => {
                     const active = normalize(pill.dataset.category || 'all') === 'all';
                     pill.classList.toggle('active', active);
                     pill.setAttribute('aria-pressed', String(active));
                 });
+            } else if (hasQuery) {
+                activeCategory = 'all';
             }
         }
         const entries = Array.from(cards).map((card) => ({ card, score: score(card.dataset, queryText) }));

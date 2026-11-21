@@ -3501,3 +3501,49 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
         font-size: 7px !important;
     }
 }
+
+/* Keep phone search and category controls in the same usable layout as larger POS screens. */
+@media (max-width: 480px) {
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:last-child,
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:last-child .search-wrapper {
+        display: flex !important;
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .pos-header-bar > .d-flex:last-child .search-wrapper .search-input {
+        width: 100% !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 5px 58px 5px 36px !important;
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills-wrap {
+        position: relative !important;
+        z-index: 5 !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        overflow: visible !important;
+        touch-action: pan-x !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pills {
+        position: relative !important;
+        z-index: 6 !important;
+        pointer-events: auto !important;
+        touch-action: pan-x !important;
+    }
+
+    body.pos-terminal-workspace #pos-sell-screen .category-pill,
+    body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
+        position: relative !important;
+        z-index: 7 !important;
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+    }
+}
