@@ -458,8 +458,13 @@
         $invoiceDiscountDetails = is_array($paymentDetails['invoice_discount'] ?? null)
             ? $paymentDetails['invoice_discount']
             : [];
+        $invoiceDiscountType = strtolower((string) ($invoiceDiscountDetails['type'] ?? 'percent'));
+        $invoiceDiscountValue = max(0, (float) ($invoiceDiscountDetails['value'] ?? 0));
         $invoiceDiscountAmount = min($discount, max(0, (float) ($invoiceDiscountDetails['amount'] ?? 0)));
         $itemDiscountAmount = max(0, $discount - $invoiceDiscountAmount);
+        $posDiscountBreakdown = is_array($paymentDetails['pos_discount_breakdown'] ?? null)
+            ? $paymentDetails['pos_discount_breakdown']
+            : [];
         $splitDetails = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
         $splitLines = [];
 
@@ -660,7 +665,8 @@
                                 <th>Description</th>
                                 <th class="text-center">Qty</th>
                                 <th class="text-end">Unit Price</th>
-                                <th class="text-end">Discount</th>
+                                <th class="text-end">Item Discount</th>
+                                <th class="text-end">Invoice Discount</th>
                                 <th class="text-end">Total</th>
                             </tr>
                         </thead>
@@ -676,6 +682,25 @@
                                         default => $soldUnitType !== '' ? $soldUnitType : 'pcs',
                                     };
                                     $soldQuantity = rtrim(rtrim(\App\Support\CompactNumber::format($qty, 2), '0'), '.');
+                                    $lineDiscount = $posDiscountBreakdown[(string) $item->id] ?? null;
+                                    $itemDiscountLabel = '-';
+                                    if (is_array($lineDiscount)) {
+                                        $itemDiscountLabel = ($lineDiscount['item_type'] ?? 'percent') === 'fixed'
+                                            ? '₦' . \App\Support\CompactNumber::format((float) ($lineDiscount['item_amount'] ?? 0), 2)
+                                            : \App\Support\CompactNumber::format((float) ($lineDiscount['item_value'] ?? 0), 2) . '%';
+                                    } elseif ($invoiceDiscountType === 'percent' && $invoiceDiscountValue > 0 && $invoiceDiscountValue < 100) {
+                                        $effectivePercent = (float) ($item->discount ?? 0);
+                                        $originalPercent = max(0, min(100, ($effectivePercent - $invoiceDiscountValue) / (1 - $invoiceDiscountValue / 100)));
+                                        $itemDiscountLabel = \App\Support\CompactNumber::format($originalPercent, 2) . '%';
+                                    } elseif ((float) ($item->discount ?? 0) > 0) {
+                                        $itemDiscountLabel = \App\Support\CompactNumber::format((float) $item->discount, 2) . '%';
+                                    }
+                                    $invoiceDiscountLabel = '-';
+                                    if ($invoiceDiscountType === 'percent' && $invoiceDiscountValue > 0) {
+                                        $invoiceDiscountLabel = \App\Support\CompactNumber::format($invoiceDiscountValue, 2) . '%';
+                                    } elseif (is_array($lineDiscount) && (float) ($lineDiscount['invoice_amount'] ?? 0) > 0) {
+                                        $invoiceDiscountLabel = '₦' . \App\Support\CompactNumber::format((float) $lineDiscount['invoice_amount'], 2);
+                                    }
                                 @endphp
                                 <tr>
                                     <td>
@@ -688,12 +713,13 @@
                                         </span>
                                     </td>
                                     <td class="text-end">₦{{ \App\Support\CompactNumber::format((float) ($item->unit_price ?? 0), 2) }}</td>
-                                    <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($item->discount ?? 0), 2) }}%</td>
+                                    <td class="text-end">{{ $itemDiscountLabel }}</td>
+                                    <td class="text-end">{{ $invoiceDiscountLabel }}</td>
                                     <td class="text-end fw-bold">₦{{ \App\Support\CompactNumber::format((float) ($item->total_price !== null ? $item->total_price : ($item->subtotal ?? 0)), 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">No items listed.</td>
+                                    <td colspan="6" class="text-center text-muted py-4">No items listed.</td>
                                 </tr>
                             @endforelse
                         </tbody>

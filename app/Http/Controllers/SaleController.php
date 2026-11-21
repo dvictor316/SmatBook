@@ -2221,6 +2221,8 @@ $sale = Sale::create([
                 'model' => $saleItem,
                 'subtotal' => $itemSubtotal,
                 'item_discount' => $itemDiscAmount,
+                'item_discount_type' => $discountType === 'fixed' ? 'fixed' : 'percent',
+                'item_discount_value' => $discountValue,
                 'tax_percent' => $taxPercent,
             ];
 
@@ -2243,6 +2245,16 @@ $sale = Sale::create([
         $invoiceDiscountAmount = $invoiceDiscountType === 'fixed'
             ? min($invoiceDiscountValue, $invoiceDiscountBase)
             : min($invoiceDiscountBase, round($invoiceDiscountBase * ($invoiceDiscountValue / 100), 2));
+        $posDiscountBreakdown = [];
+        foreach ($saleLineAdjustments as $line) {
+            $saleItemId = (string) $line['model']->id;
+            $posDiscountBreakdown[$saleItemId] = [
+                'item_type' => $line['item_discount_type'],
+                'item_value' => (float) $line['item_discount_value'],
+                'item_amount' => round((float) $line['item_discount'], 2),
+                'invoice_amount' => 0.0,
+            ];
+        }
         if ($invoiceDiscountAmount > 0 && $invoiceDiscountBase > 0) {
             $adjustedTax = 0.0;
             $allocatedDiscount = 0.0;
@@ -2263,6 +2275,7 @@ $sale = Sale::create([
                     : round($invoiceDiscountAmount * ($lineBase / $invoiceDiscountBase), 2);
                 $discountShare = min($lineBase, max(0, $discountShare));
                 $allocatedDiscount += $discountShare;
+                $posDiscountBreakdown[(string) $line['model']->id]['invoice_amount'] = round($discountShare, 2);
                 $taxableAmount = max(0, $lineBase - $discountShare);
                 $lineTax = round($taxableAmount * ($line['tax_percent'] / 100), 2);
                 $lineDiscount = min($line['subtotal'], $line['item_discount'] + $discountShare);
@@ -2331,6 +2344,7 @@ $sale = Sale::create([
                     'value' => $invoiceDiscountValue,
                     'amount' => $invoiceDiscountAmount,
                 ],
+                'pos_discount_breakdown' => $posDiscountBreakdown,
                 'offline_sync' => $clientSaleId !== '' ? [
                     'client_sale_id' => $clientSaleId,
                     'recorded_at' => $request->input('client_recorded_at'),
