@@ -2460,10 +2460,45 @@ $sale = Sale::create([
 
         $this->clearDashboardMetricsCache($activeBranch['id'] ?? null);
 
+        $receiptHtml = null;
+        try {
+            $receiptSale = $sale->fresh()->load(['items.product:id,name', 'customer', 'user:id,name']);
+            $receiptFormat = (string) $request->input('receipt_format', 'standard');
+            $receiptFormat = in_array($receiptFormat, ['standard', 'thermal-58', 'thermal-80'], true)
+                ? $receiptFormat
+                : 'standard';
+            $paperWidth = $receiptFormat === 'thermal-58' ? 58 : 80;
+            $previousCustomerBalance = 0.0;
+            if ($receiptSale->customer_id) {
+                $balanceQuery = Sale::query();
+                $this->applyTenantScope($balanceQuery, 'sales');
+                $previousCustomerBalance = app(\App\Support\CustomerReceivables::class)->outstandingBalance(
+                    (int) $receiptSale->customer_id,
+                    $receiptSale->customer,
+                    $balanceQuery,
+                    (int) $receiptSale->id
+                );
+            }
+            $receiptCompany = Company::find($receiptSale->company_id) ?? auth()->user()?->company;
+            $receiptHtml = view($receiptFormat === 'standard' ? 'Sales.Invoices.print' : 'Sales.Invoices.thermal', [
+                'sale' => $receiptSale,
+                'company' => $receiptCompany,
+                'paperWidth' => $paperWidth,
+                'previousCustomerBalance' => $previousCustomerBalance,
+                'backUrl' => route('sales.invoice.show', $receiptSale->id),
+            ])->render();
+        } catch (\Throwable $receiptError) {
+            \Log::warning('POS sale saved but immediate receipt rendering failed.', [
+                'sale_id' => $sale->id,
+                'error' => $receiptError->getMessage(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Sale processed successfully',
-            'sale_id' => $sale->id
+            'sale_id' => $sale->id,
+            'receipt_html' => $receiptHtml,
         ]);
 
     } catch (\Exception $e) {

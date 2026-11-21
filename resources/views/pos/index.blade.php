@@ -8246,23 +8246,24 @@ window.POS_ENABLE_FALLBACK = function () {
         "'": '&#039;',
     })[char]);
 	    const posReturnUrl = @json(route('sales.showPos'));
-	    const printOfflineReceipt = (receiptWindow, sale, receiptFormat, customerName) => {
+	    const printPosReceipt = (receiptWindow, sale, receiptFormat, customerName) => {
 	        if (!receiptWindow || receiptWindow.closed) return false;
 
 	        const money = (value) => fmt.format(Number(value || 0));
-	        const offlineReference = `OFF-${String(sale.client_sale_id || Date.now()).replace(/[^a-z0-9]/gi, '').slice(-12).toUpperCase()}`;
+	        const receiptReference = sale.receipt_no || sale.invoice_no || `OFF-${String(sale.client_sale_id || Date.now()).replace(/[^a-z0-9]/gi, '').slice(-12).toUpperCase()}`;
 	        const paperWidth = receiptFormat === 'thermal-58' ? '58mm' : (receiptFormat === 'thermal-80' ? '80mm' : null);
 	        const items = Array.isArray(sale.items) ? sale.items : [];
-	        const subtotal = items.reduce((sum, item) => sum + (Number(item.sub) || 0), 0);
-	        const invoiceDiscountAmount = items.reduce((sum, item) => sum + (Number(item.invoiceDiscountShare) || 0), 0);
-	        const discount = Math.max(0, items.reduce((sum, item) => sum + (Number(item.discVal) || 0), 0) - invoiceDiscountAmount);
-	        const tax = items.reduce((sum, item) => sum + (Number(item.taxVal) || 0), 0);
+	        const paymentDetails = sale.payment_details || {};
+	        const subtotal = Number(sale.subtotal ?? items.reduce((sum, item) => sum + (Number(item.sub) || 0), 0)) || 0;
+	        const invoiceDiscountAmount = Number(sale.invoice_discount_amount ?? items.reduce((sum, item) => sum + (Number(item.invoiceDiscountShare) || 0), 0)) || 0;
+	        const discount = Number(sale.item_discount ?? Math.max(0, items.reduce((sum, item) => sum + (Number(item.discVal) || 0), 0) - invoiceDiscountAmount)) || 0;
+	        const tax = Number(sale.tax ?? items.reduce((sum, item) => sum + (Number(item.taxVal) || 0), 0)) || 0;
 	        const total = Number(sale.total) || 0;
-	        const paid = Number(sale.paid) || 0;
+	        const paid = Number(sale.amount_paid ?? sale.paid) || 0;
 	        const wallet = Number(sale.wallet_amount) || 0;
-	        const balance = Math.max(0, total - paid - wallet);
-	        const change = Math.max(0, paid + wallet - total);
-	        const split = sale.split_details || {};
+	        const balance = Number(sale.balance ?? Math.max(0, total - paid - wallet)) || 0;
+	        const change = Number(sale.change_amount ?? Math.max(0, paid + wallet - total)) || 0;
+	        const split = sale.split_details || paymentDetails.split || {};
 	        const paymentLabel = String(sale.payment_method || 'Cash');
 	        const accountLabel = (selectId, accountId, fallback) => {
 	            const option = Array.from(document.getElementById(selectId)?.options || [])
@@ -8272,14 +8273,14 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const paymentRows = [];
 	        if (paymentLabel.toLowerCase() === 'split') {
 	            if (Number(split.cash) > 0) paymentRows.push(['Cash', split.cash]);
-	            if (Number(split.transfer) > 0) paymentRows.push([accountLabel('transfer-account', split.transfer_account_id, 'Transfer'), split.transfer]);
-	            if (Number(split.card) > 0) paymentRows.push([accountLabel('card-account', split.card_account_id, 'POS/Card'), split.card]);
+	            if (Number(split.transfer) > 0) paymentRows.push([paymentDetails.transfer_account_name || accountLabel('transfer-account', split.transfer_account_id, 'Transfer'), split.transfer]);
+	            if (Number(split.card) > 0) paymentRows.push([paymentDetails.card_account_name || accountLabel('card-account', split.card_account_id, 'POS/Card'), split.card]);
 	        } else {
 	            const selectedAccountId = split.card_account_id || split.transfer_account_id || sale.deposit_account_id;
 	            const accountName = paymentLabel.toLowerCase().includes('transfer')
-	                ? accountLabel('transfer-account', selectedAccountId, paymentLabel)
+	                ? (paymentDetails.transfer_account_name || accountLabel('transfer-account', selectedAccountId, paymentLabel))
 	                : (paymentLabel.toLowerCase().includes('card') || paymentLabel.toLowerCase().includes('pos')
-	                    ? accountLabel('card-account', selectedAccountId, paymentLabel)
+	                    ? (paymentDetails.card_account_name || accountLabel('card-account', selectedAccountId, paymentLabel))
 	                    : paymentLabel);
 	            paymentRows.push([accountName, paid]);
 	        }
@@ -8288,11 +8289,13 @@ window.POS_ENABLE_FALLBACK = function () {
 	            const quantity = Number(item.qty) || 0;
 	            const rawUnit = String(item.unitLabel || item.unitType || 'unit').toLowerCase();
 	            const unit = ({carton: 'ctn', cartons: 'ctn', piece: 'pcs', pieces: 'pcs', unit: 'pcs', kilogram: 'kg', kilograms: 'kg'})[rawUnit] || rawUnit;
-	            const lineTotal = Number(item.total) || 0;
-	            return `<tr><td>${escapeHtml(item.name || 'Product')}</td><td>${quantity.toLocaleString('en-NG')} ${escapeHtml(unit)}</td><td>${Number(item.price || 0).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td><td>${Number(lineTotal).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>`;
+	            const lineTotal = Number(item.total ?? item.total_price) || 0;
+	            return `<tr><td>${escapeHtml(item.name || item.product_name || item.product?.name || 'Product')}</td><td>${quantity.toLocaleString('en-NG')} ${escapeHtml(unit)}</td><td>${Number(item.price ?? item.unit_price ?? 0).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td><td>${Number(lineTotal).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>`;
 	        }).join('');
-	        const printedAt = new Date(sale.client_recorded_at || Date.now()).toLocaleString('en-NG');
-	        const branchName = sale.offline_branch_name || @json($activeBranch['name'] ?? '');
+	        const printedAt = new Date(sale.created_at || sale.client_recorded_at || Date.now()).toLocaleString('en-NG');
+	        const branchName = sale.branch_name || sale.offline_branch_name || @json($activeBranch['name'] ?? '');
+	        const cashierName = sale.cashier_name || @json(auth()->user()->name ?? 'Cashier');
+	        const displayCustomerName = customerName || sale.customer_name || 'Walk-in Customer';
 	        const businessAddress = @json(\App\Support\ReceiptCompanyProfile::address(auth()->user()?->company));
 	        const businessPhone = @json(auth()->user()?->company?->phone ?: (\App\Models\Setting::businessProfile()['company_phone'] ?? ''));
 	        const receiptFooter = @json(\App\Support\ReceiptCompanyProfile::footer(auth()->user()?->company));
@@ -8303,12 +8306,25 @@ window.POS_ENABLE_FALLBACK = function () {
 	        const printWidthStyle = paperWidth
 	            ? `html,body{width:${paperWidth}}.receipt{width:${paperWidth}}`
 	            : 'html,body{width:auto}.receipt{width:100%;max-width:720px}';
-	        const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Receipt ${offlineReference}</title><style>
+	        const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Receipt ${escapeHtml(receiptReference)}</title><style>
 	            ${pageStyle}
 	            *{box-sizing:border-box}html,body{margin:0;padding:0;background:#edf0f4;color:#000}body{font:12px/1.35 Arial,Helvetica,sans-serif;font-weight:500}.receipt{margin:0 auto 24px;padding:4mm 3mm 6mm;background:#fff;color:#000;box-shadow:0 4px 24px rgba(15,23,42,.16);overflow:visible}.toolbar{width:min(100%,720px);margin:16px auto;padding:10px;display:flex;justify-content:center;gap:8px}.toolbar button,.toolbar a{border:1px solid #164e9b;border-radius:5px;padding:8px 12px;background:#164e9b;color:#fff;font-weight:700;cursor:pointer;text-decoration:none}.center{text-align:center}.brand{font-size:17px;font-weight:800;line-height:1.15;overflow-wrap:anywhere}.branch{margin-top:2px;font-weight:700;text-transform:uppercase}.contact{margin-top:3px;font-size:.96em;font-weight:600;overflow-wrap:anywhere}.receipt-title{margin-top:8px;font-weight:800;font-size:1.15em}.rule{border-top:1px dashed #000;margin:7px 0}.double-rule{border-top:2px solid #000;margin:7px 0}.meta-row,.total-row,.payment-row{display:flex;justify-content:space-between;gap:7px;margin:2px 0}.meta-row span:first-child,.total-row span:first-child,.payment-row span:first-child{flex:0 0 auto}.meta-row span:last-child,.total-row span:last-child,.payment-row span:last-child{min-width:0;text-align:right;overflow-wrap:anywhere}.items{width:100%;border-collapse:collapse;table-layout:fixed}.items th{padding:2px 1px 4px;border-bottom:1px solid #000;text-align:right;font-size:.92em}.items th:first-child{width:44%;text-align:left}.items th:nth-child(2){width:18%}.items th:nth-child(3){width:19%}.items th:nth-child(4){width:19%}.items td{padding:5px 1px 2px;text-align:right;vertical-align:top;overflow-wrap:anywhere}.items td:first-child{text-align:left;font-weight:700}.strong{font-weight:800}.grand{font-size:1.18em;font-weight:900;padding:3px 0}.footer{margin-top:9px;text-align:center}.reference{margin-top:7px;font-weight:700;overflow-wrap:anywhere}.powered{margin-top:5px;font-size:.85em}@media screen{body{background:#edf0f4}}@media print{html,body{margin:0!important;padding:0!important;background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}${printWidthStyle}.toolbar{display:none!important}.receipt{margin:0;padding-bottom:4mm;box-shadow:none;overflow:visible}.items tr,.meta-row,.total-row,.payment-row{break-inside:avoid}}
-	        </style></head><body><div class="toolbar"><button type="button" onclick="window.focus();window.print()">Print ${paperWidth || 'receipt'}</button><a href="${escapeHtml(posReturnUrl)}">Back to POS</a></div><main class="receipt"><header class="center"><div class="brand">${escapeHtml(businessName)}</div><div class="branch">${escapeHtml(branchName || 'Main Branch')}</div>${businessAddress ? `<div class="contact">${escapeHtml(businessAddress)}</div>` : ''}${businessPhone ? `<div class="contact">Tel: ${escapeHtml(businessPhone)}</div>` : ''}<div class="receipt-title">SALES RECEIPT</div></header><div class="rule"></div><div class="meta-row"><span>Receipt:</span><span>${escapeHtml(offlineReference)}</span></div><div class="meta-row"><span>Date:</span><span>${escapeHtml(printedAt)}</span></div><div class="meta-row"><span>Customer:</span><span>${escapeHtml(customerName || 'Walk-in Customer')}</span></div><div class="meta-row"><span>Cashier:</span><span>${escapeHtml(@json(auth()->user()->name ?? 'Cashier'))}</span></div><div class="rule"></div><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead><tbody>${itemRows || '<tr><td colspan="4" class="center">No items</td></tr>'}</tbody></table><div class="double-rule"></div><div class="total-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>${discount > 0 ? `<div class="total-row"><span>Item discount</span><span>-${money(discount)}</span></div>` : ''}${invoiceDiscountAmount > 0 ? `<div class="total-row"><span>Invoice discount</span><span>-${money(invoiceDiscountAmount)}</span></div>` : ''}${tax > 0 ? `<div class="total-row"><span>Tax</span><span>${money(tax)}</span></div>` : ''}<div class="total-row grand"><span>TOTAL</span><span>${money(total)}</span></div>${paid > 0 ? `<div class="total-row strong"><span>Paid</span><span>${money(paid)}</span></div>` : ''}${balance > 0 ? `<div class="total-row strong"><span>Balance</span><span>${money(balance)}</span></div>` : ''}${change > 0 ? `<div class="total-row strong"><span>Change</span><span>${money(change)}</span></div>` : ''}<div class="rule"></div><div class="payment-row"><span>Payment:</span><span>${escapeHtml(paymentLabel)}</span></div>${paymentLines}<footer class="footer"><div class="rule"></div><div class="strong">${escapeHtml(receiptFooter)}</div><div class="reference">${escapeHtml(offlineReference)}</div><div class="powered">Powered by SmartProBook</div></footer></main><script>window.addEventListener('load',function(){window.focus();window.setTimeout(function(){window.print()},window.matchMedia('(max-width: 768px)').matches?700:0)},{once:true});<\/script></body></html>`;
+	        </style></head><body><div class="toolbar"><button type="button" onclick="window.focus();window.print()">Print ${paperWidth || 'receipt'}</button><a href="${escapeHtml(posReturnUrl)}">Back to POS</a></div><main class="receipt"><header class="center"><div class="brand">${escapeHtml(businessName)}</div><div class="branch">${escapeHtml(branchName || 'Main Branch')}</div>${businessAddress ? `<div class="contact">${escapeHtml(businessAddress)}</div>` : ''}${businessPhone ? `<div class="contact">Tel: ${escapeHtml(businessPhone)}</div>` : ''}<div class="receipt-title">SALES RECEIPT</div></header><div class="rule"></div><div class="meta-row"><span>Receipt:</span><span>${escapeHtml(receiptReference)}</span></div>${sale.invoice_no ? `<div class="meta-row"><span>Invoice:</span><span>${escapeHtml(sale.invoice_no)}</span></div>` : ''}<div class="meta-row"><span>Date:</span><span>${escapeHtml(printedAt)}</span></div><div class="meta-row"><span>Customer:</span><span>${escapeHtml(displayCustomerName)}</span></div><div class="meta-row"><span>Cashier:</span><span>${escapeHtml(cashierName)}</span></div><div class="rule"></div><table class="items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead><tbody>${itemRows || '<tr><td colspan="4" class="center">No items</td></tr>'}</tbody></table><div class="double-rule"></div><div class="total-row"><span>Subtotal</span><span>${money(subtotal)}</span></div>${discount > 0 ? `<div class="total-row"><span>Item discount</span><span>-${money(discount)}</span></div>` : ''}${invoiceDiscountAmount > 0 ? `<div class="total-row"><span>Invoice discount</span><span>-${money(invoiceDiscountAmount)}</span></div>` : ''}${tax > 0 ? `<div class="total-row"><span>Tax</span><span>${money(tax)}</span></div>` : ''}<div class="total-row grand"><span>TOTAL</span><span>${money(total)}</span></div>${paid > 0 ? `<div class="total-row strong"><span>Paid</span><span>${money(paid)}</span></div>` : ''}${balance > 0 ? `<div class="total-row strong"><span>Balance</span><span>${money(balance)}</span></div>` : ''}${change > 0 ? `<div class="total-row strong"><span>Change</span><span>${money(change)}</span></div>` : ''}<div class="rule"></div><div class="payment-row"><span>Payment:</span><span>${escapeHtml(paymentLabel)}</span></div>${paymentLines}<footer class="footer"><div class="rule"></div><div class="strong">${escapeHtml(receiptFooter)}</div><div class="reference">${escapeHtml(receiptReference)}</div><div class="powered">Powered by SmartProBook</div></footer></main><script>window.addEventListener('load',function(){window.focus();window.setTimeout(function(){window.print()},window.matchMedia('(max-width: 768px)').matches?700:0)},{once:true});<\/script></body></html>`;
 	        receiptWindow.document.open();
 	        receiptWindow.document.write(html);
+	        receiptWindow.document.close();
+	        return true;
+	    };
+	    const showReceiptPreparing = (receiptWindow) => {
+	        if (!receiptWindow || receiptWindow.closed) return;
+	        receiptWindow.document.open();
+	        receiptWindow.document.write('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preparing receipt</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f3f6fb;color:#12366b;font:600 16px Arial,sans-serif}.card{padding:28px 34px;border:1px solid #d7e0ed;border-radius:14px;background:#fff;text-align:center;box-shadow:0 12px 36px #12366b18}.spinner{width:28px;height:28px;margin:0 auto 14px;border:3px solid #d9e4f4;border-top-color:#17498a;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><main class="card"><div class="spinner"></div><div>Saving sale and preparing receipt…</div></main></body></html>');
+	        receiptWindow.document.close();
+	    };
+	    const writeReceiptHtml = (receiptWindow, receiptHtml) => {
+	        if (!receiptWindow || receiptWindow.closed || typeof receiptHtml !== 'string' || !receiptHtml.trim()) return false;
+	        receiptWindow.document.open();
+	        receiptWindow.document.write(receiptHtml);
 	        receiptWindow.document.close();
 	        return true;
 	    };
@@ -9010,7 +9026,7 @@ window.POS_ENABLE_FALLBACK = function () {
                         const customerOption = Array.from(customerSelect?.options || []).find((option) => String(option.value) === String(sale.customer_id || ''));
                         const customerName = sale.customer_name || customerOption?.textContent?.trim() || 'Walk-in Customer';
                         const format = document.getElementById('receipt-format')?.value || 'standard';
-                        if (!printOfflineReceipt(receiptWindow, sale, format, customerName)) {
+                        if (!printPosReceipt(receiptWindow, sale, format, customerName)) {
                             receiptWindow?.close();
                             alertFallback('Allow pop-ups on this device to reprint the offline receipt.');
                         }
@@ -10925,6 +10941,7 @@ window.POS_ENABLE_FALLBACK = function () {
         // Open the receipt tab during the user gesture so browsers do not block it
         // after the asynchronous sale request completes.
         const receiptWindow = window.open('about:blank', '_blank');
+        showReceiptPreparing(receiptWindow);
 
         processBtn.disabled = true;
         processBtn.classList.add('processing');
@@ -10947,6 +10964,7 @@ window.POS_ENABLE_FALLBACK = function () {
                     invoice_discount_type: invoiceDiscount.type,
                     invoice_discount_value: Number(invoiceDiscount.value) || 0,
                     invoice_discount_amount: calculateInvoiceDiscount().amount,
+                    receipt_format: document.getElementById('receipt-format')?.value || 'standard',
                     total,
                     deposit_account_id: depositAccount?.value || null,
 	                    paid: externalPaid,
@@ -10971,7 +10989,10 @@ window.POS_ENABLE_FALLBACK = function () {
             const submission = currentSuspendedSaleId === null && window.SmartProBookOffline
                 ? await window.SmartProBookOffline.submit(payload)
                 : { queued: false, result: await (async () => {
-                    const response = await fetch(saleStoreUrl, {
+                    const saleRequestUrl = new URL(saleStoreUrl, window.location.href);
+                    saleRequestUrl.searchParams.set('autoprint', '1');
+                    saleRequestUrl.searchParams.set('return', 'pos');
+                    const response = await fetch(saleRequestUrl.toString(), {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -10991,7 +11012,7 @@ window.POS_ENABLE_FALLBACK = function () {
 	                const customerName = customerSelect?.selectedOptions?.[0]?.textContent?.trim() || 'Walk-in Customer';
 	                const mobileReceipt = window.matchMedia('(max-width: 768px)').matches;
 	                if (mobileReceipt) receiptWindow?.close();
-	                const localReceiptOpened = printOfflineReceipt(mobileReceipt ? window : receiptWindow, submission.sale, receiptFormat, customerName);
+	                const localReceiptOpened = printPosReceipt(mobileReceipt ? window : receiptWindow, submission.sale, receiptFormat, customerName);
                 resetVanillaPosWorkspace();
 	                if (!localReceiptOpened) {
 	                    alertFallback('Sale saved offline and will synchronize when internet returns. Allow pop-ups to print its local receipt.');
@@ -11014,13 +11035,20 @@ window.POS_ENABLE_FALLBACK = function () {
             suspenseClaimHeartbeat = null;
             updateSuspenseStatus();
             resetVanillaPosWorkspace();
-            if (mobileReceipt) {
-                receiptWindow?.close();
-                window.location.assign(invoiceUrl);
-            } else if (receiptWindow) {
-                receiptWindow.location.replace(invoiceUrl);
-            } else {
-                window.location.assign(invoiceUrl);
+            let receiptOpened = false;
+            if (result.receipt_html) {
+                if (mobileReceipt) receiptWindow?.close();
+                receiptOpened = writeReceiptHtml(mobileReceipt ? window : receiptWindow, result.receipt_html);
+            }
+            if (!receiptOpened) {
+                if (mobileReceipt) {
+                    receiptWindow?.close();
+                    window.location.assign(invoiceUrl);
+                } else if (receiptWindow && !receiptWindow.closed) {
+                    receiptWindow.location.replace(invoiceUrl);
+                } else {
+                    window.location.assign(invoiceUrl);
+                }
             }
         } catch (error) {
             receiptWindow?.close();
