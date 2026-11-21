@@ -2230,7 +2230,7 @@ body.pos-terminal-workspace #pos-sell-screen .category-pill:not(.active):hover {
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
     display: flex !important;
     align-items: center !important;
-    flex: 1 1 auto !important;
+    flex: 0 1 auto !important;
     min-width: 0 !important;
     width: auto !important;
     gap: 6px !important;
@@ -2252,7 +2252,7 @@ body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar .pos-vi
 }
 
 body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar #product-count {
-    margin-left: auto !important;
+    margin-left: 8px !important;
     color: #526985 !important;
     font-size: 10px !important;
     font-weight: 700 !important;
