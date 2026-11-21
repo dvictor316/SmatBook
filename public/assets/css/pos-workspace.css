@@ -3423,9 +3423,9 @@ body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
     body.pos-terminal-workspace #pos-sell-screen .pos-cart-column > .pos-card {
         display: flex !important;
         flex-direction: column !important;
-        height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 320px)) !important;
+        height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 260px)) !important;
         min-height: 300px !important;
-        max-height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 320px)) !important;
+        max-height: max(300px, calc(100dvh - var(--sb-header-h, 76px) - 260px)) !important;
         padding: 6px !important;
         overflow: hidden !important;
     }
