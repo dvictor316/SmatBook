@@ -2234,7 +2234,7 @@ body.pos-terminal-workspace #pos-sell-screen .pos-header-product-toolbar {
     min-width: 0 !important;
     width: auto !important;
     gap: 8px !important;
-    margin: 0 0 0 6px !important;
+    margin: 0 0 0 auto !important;
     white-space: nowrap !important;
 }
 
@@ -2326,6 +2326,11 @@ body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
     font-weight: 750 !important;
 }
 
+body.pos-terminal-workspace #pos-sell-screen .pos-cart-heading h2 {
+    color: #a77b13 !important;
+    font-weight: 800 !important;
+}
+
 /* Tablet header: keep metadata, product controls, and search in clean rows. */
 @media (min-width: 721px) and (max-width: 1199.98px) {
     body.pos-terminal-workspace #pos-sell-screen .pos-header-bar {
@@ -2348,6 +2353,7 @@ body.pos-terminal-workspace #pos-sell-screen .category-toggle-btn {
         flex: 0 0 100% !important;
         width: 100% !important;
         margin: 0 !important;
+        justify-content: flex-end !important;
         gap: 8px !important;
     }
 
