@@ -120,17 +120,37 @@ class SaleController extends Controller
     private function posSalesPaymentBreakdown(Collection $sales): array
     {
         $summary = [];
-        $add = static function (string $key, string $label, float $amount) use (&$summary): void {
+        $countedGroups = [];
+        $add = static function (string $key, string $label, float $amount) use (&$summary, &$countedGroups): void {
             $amount = round($amount, 2);
             if ($amount <= 0) {
                 return;
             }
             $summary[$key] ??= ['label' => $label, 'amount' => 0.0, 'count' => 0];
             $summary[$key]['amount'] += $amount;
-            $summary[$key]['count']++;
+            if (!isset($countedGroups[$key])) {
+                $summary[$key]['count']++;
+                $countedGroups[$key] = true;
+            }
+        };
+        $addChannel = static function (string $channel, array $account, float $amount) use ($add): void {
+            if ($channel === 'cash') {
+                // Historic sales can refer to multiple cash accounts or have no account ID.
+                $add('cash', 'Cash', $amount);
+
+                return;
+            }
+
+            $label = match (strtolower($account['name'])) {
+                '' => 'Account not recorded',
+                'cash' => $account['name'].' (Transfer / POS)',
+                default => $account['name'],
+            };
+            $add(!empty($account['id']) ? 'account:'.$account['id'] : $channel, $label, $amount);
         };
 
         foreach ($sales as $sale) {
+            $countedGroups = [];
             $method = strtolower((string) ($sale->payment_method ?? 'cash'));
             $details = $sale->payment_details;
 
@@ -143,20 +163,14 @@ class SaleController extends Controller
             $wallet = (float) ($details['wallet_applied'] ?? $details['wallet_requested'] ?? 0);
             $splitTotal = (float) $split['cash'] + (float) $split['transfer'] + (float) $split['card'];
             $channelAccounts = [
-                'cash' => ['id' => $details['payment_account_id'] ?? null, 'name' => 'Cash'],
+                'cash' => [],
                 'transfer' => ['id' => $details['transfer_account_id'] ?? null, 'name' => trim((string) ($details['transfer_account_name'] ?? ''))],
                 'card' => ['id' => $details['card_account_id'] ?? null, 'name' => trim((string) ($details['card_account_name'] ?? ''))],
             ];
 
             if ($splitTotal > 0 && ($method === 'split' || ($details['source'] ?? null) === 'pos')) {
                 foreach (['cash', 'transfer', 'card'] as $key) {
-                    $amount = round((float) ($split[$key] ?? 0), 2);
-                    if ($amount > 0) {
-                        $account = $channelAccounts[$key];
-                        $label = $key === 'cash' ? 'Cash' : ($account['name'] !== '' ? $account['name'] : 'Account not recorded');
-                        $summaryKey = !empty($account['id']) ? 'account:'.$account['id'] : $key;
-                        $add($summaryKey, $label, $amount);
-                    }
+                    $addChannel($key, $channelAccounts[$key], (float) $split[$key]);
                 }
             } elseif (in_array($method, ['charge_to_room', 'chargetoroom', 'charge-room'], true)) {
                 $add('charge_to_room', 'Charge to Room', (float) ($sale->total ?? 0));
@@ -168,10 +182,7 @@ class SaleController extends Controller
                     default => 'cash',
                 };
                 if ($amount > 0 || $method !== 'split') {
-                    $account = $channelAccounts[$channel];
-                    $label = $channel === 'cash' ? 'Cash' : ($account['name'] !== '' ? $account['name'] : 'Account not recorded');
-                    $summaryKey = !empty($account['id']) ? 'account:'.$account['id'] : $channel;
-                    $add($summaryKey, $label, $amount);
+                    $addChannel($channel, $channelAccounts[$channel], $amount);
                 }
             }
 
@@ -382,7 +393,7 @@ class SaleController extends Controller
         return round(max(0, $basePrice * $multiplier), 2);
     }
 
-    private function decrementSellableStock(Product $product, float $quantity): void
+    private function decrementSellableStock(Product $product, float $quantity, SaleItem $saleItem, string $invoiceNumber): void
     {
         if ($quantity <= 0) {
             return;
@@ -420,6 +431,13 @@ class SaleController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+            if (Schema::hasColumn('inventory_history', 'remarks')) {
+                $row['remarks'] = json_encode([
+                    'sale_item_id' => $saleItem->id,
+                    'sale_id' => $saleItem->sale_id,
+                    'invoice_no' => $invoiceNumber,
+                ], JSON_THROW_ON_ERROR);
+            }
             if (Schema::hasColumn('inventory_history', 'company_id') && $companyId > 0) {
                 $row['company_id'] = $companyId;
             }
@@ -628,30 +646,15 @@ class SaleController extends Controller
 
     private function scopedCashDepositAccount(): ?Account
     {
-        $accounts = $this->scopedDepositAccounts();
+        $branch = $this->getActiveBranchContext();
+        $cashAccounts = $this->scopedDepositAccounts()->get()
+            ->filter(fn (Account $account) => $account->cashOrBankType() === 'Cash'
+                && $account->matchesAccountingBranch($branch['id'] ?? '', $branch['name'] ?? ''))
+            ->sortBy(fn (Account $account) => $account->isCompanyWide() ? 1 : 0);
 
-        if (Schema::hasColumn('accounts', 'sub_type')) {
-            $cash = (clone $accounts)
-                ->whereIn(DB::raw('LOWER(accounts.sub_type)'), ['cash', 'cash account'])
-                ->whereRaw('LOWER(accounts.name) NOT LIKE ?', ['%bank%'])
-                ->first();
-            if ($cash) {
-                return $cash;
-            }
-        }
-
-        $legacyCash = (clone $accounts);
-        if (Schema::hasColumn('accounts', 'sub_type')) {
-            $legacyCash->where(function ($sub) {
-                $sub->whereNull('accounts.sub_type')
-                    ->orWhere('accounts.sub_type', '');
-            });
-        }
-
-        return $legacyCash
-            ->whereRaw('LOWER(accounts.name) LIKE ?', ['%cash%'])
-            ->whereRaw('LOWER(accounts.name) NOT LIKE ?', ['%bank%'])
-            ->first();
+        return $cashAccounts->first(fn (Account $account) => in_array(
+            strtolower(trim((string) $account->sub_type)), ['cash', 'cash account'], true
+        )) ?? $cashAccounts->first();
     }
 
     private function clearDashboardMetricsCache(?string $branchId = null): void
@@ -2230,7 +2233,7 @@ $sale = Sale::create([
             $runningDiscount = round($runningDiscount + $itemDiscAmount, 2);
             $runningTax      = round($runningTax + $itemTaxAmount, 2);
 
-            $this->decrementSellableStock($product, $requestedStockUnits);
+            $this->decrementSellableStock($product, $requestedStockUnits, $saleItem, $invoiceNo);
             $this->branchInventory->adjustBranchStock(
                 $product,
                 -$requestedStockUnits,

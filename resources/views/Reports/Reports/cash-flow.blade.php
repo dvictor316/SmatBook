@@ -116,16 +116,25 @@
             <div>
                 <div class="text-primary fw-bold small text-uppercase cash-report-kicker">Statement of Cash Flows</div>
                 <h1 class="cash-report-company m-0">{{ $cashFlowCompanyName }}</h1>
+                <div class="text-muted small">{{ $accountLabel }}</div>
                 <div class="text-muted small" style="font-size: 0.82rem;">Period: <strong>{{ $start->format('d M Y') }}</strong> to <strong>{{ $end->format('d M Y') }}</strong></div>
             </div>
 
-            <div class="d-flex gap-2 no-print">
-                <form action="" method="GET" class="d-flex gap-2 align-items-center me-3">
-                    <input type="date" name="start_date" value="{{ $start->toDateString() }}" class="form-control form-control-sm">
-                    <input type="date" name="end_date" value="{{ $end->toDateString() }}" class="form-control form-control-sm">
+            <div class="d-flex flex-wrap gap-2 no-print">
+                <form action="{{ route('reports.cash-flow') }}" method="GET" class="d-flex flex-wrap gap-2 align-items-center">
+                    <select name="account" class="form-select form-select-sm w-auto" aria-label="Cash or bank account">
+                        <option value="">All Cash &amp; Bank Accounts</option>
+                        <option value="cash" @selected($accountFilter === 'cash')>Cash Accounts</option>
+                        <option value="bank" @selected($accountFilter === 'bank')>Bank &amp; Clearing Accounts</option>
+                        @foreach($accounts as $account)
+                            <option value="{{ $account->id }}" @selected($accountFilter === (string) $account->id)>{{ $account->name }} ({{ $account->code }})</option>
+                        @endforeach
+                    </select>
+                    <input type="date" name="start_date" aria-label="Start date" value="{{ $start->toDateString() }}" class="form-control form-control-sm">
+                    <input type="date" name="end_date" aria-label="End date" value="{{ $end->toDateString() }}" class="form-control form-control-sm">
                     <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                 </form>
-                <a href="{{ route('reports.cash-flow.export', ['start_date' => $start->toDateString(), 'end_date' => $end->toDateString()]) }}" class="btn btn-outline-success btn-sm fw-bold">
+                <a href="{{ route('reports.cash-flow.export', ['start_date' => $start->toDateString(), 'end_date' => $end->toDateString(), 'account' => $accountFilter]) }}" class="btn btn-outline-success btn-sm fw-bold">
                     EXPORT CSV
                 </a>
                 <button onclick="window.print()" class="btn btn-outline-dark btn-sm fw-bold">PRINT</button>
@@ -162,8 +171,11 @@
             @forelse($inflows as $inflow)
             <tr>
                 <td>{{ \Carbon\Carbon::parse($inflow->transaction_date)->format('d M Y') }}</td>
-                <td>{{ $inflow->description ?? $inflow->account->name }}</td>
-                <td class="amt-col text-success">+{{ \App\Support\CompactNumber::format($inflow->debit, 2) }}</td>
+                <td>{{ $inflow->description ?? '' }}
+                    @if($inflow->account ?? null)
+                        <div class="small text-muted">{{ $inflow->account->name }}</div>
+                    @endif</td>
+                <td class="amt-col text-success">+{{ \App\Support\CompactNumber::format($inflow->flow_amount ?? $inflow->debit, 2) }}</td>
             </tr>
             @empty
             <tr><td colspan="3" class="text-center text-muted py-3">No inflows recorded for this period.</td></tr>
@@ -184,8 +196,11 @@
             @forelse($outflows as $outflow)
             <tr>
                 <td>{{ \Carbon\Carbon::parse($outflow->transaction_date)->format('d M Y') }}</td>
-                <td>{{ $outflow->description ?? $outflow->account->name }}</td>
-                <td class="amt-col text-danger">-{{ \App\Support\CompactNumber::format($outflow->credit, 2) }}</td>
+                <td>{{ $outflow->description ?? '' }}
+                    @if($outflow->account ?? null)
+                        <div class="small text-muted">{{ $outflow->account->name }}</div>
+                    @endif</td>
+                <td class="amt-col text-danger">-{{ \App\Support\CompactNumber::format($outflow->flow_amount ?? $outflow->credit, 2) }}</td>
             </tr>
             @empty
             <tr><td colspan="3" class="text-center text-muted py-3">No outflows recorded for this period.</td></tr>

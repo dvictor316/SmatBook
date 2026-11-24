@@ -479,7 +479,7 @@
                             <select class="form-select border-success" name="payment_account_id">
                                 <option value="">-- Choose Bank/Cash --</option>
                                 @foreach($assetAccounts as $acc)
-                                    <option value="{{ $acc->id }}" {{ strtolower((string) $expense->payment_mode) === strtolower((string) $acc->name) ? 'selected' : '' }}>
+                                    <option value="{{ $acc->id }}" @selected($expense->payment_account_id ? (int) $expense->payment_account_id === (int) $acc->id : strcasecmp((string) $expense->payment_mode, (string) $acc->name) === 0)>
                                         {{ $acc->name }} ({{ $acc->code }}) — Bal: ₦{{ \App\Support\CompactNumber::format((float) ($acc->current_balance ?? 0), 2) }}
                                     </option>
                                 @endforeach
@@ -546,7 +546,7 @@
                         <select class="form-select" name="payment_account_id" required>
                             <option value="">-- Choose Bank / Cash Account --</option>
                             @foreach($assetAccounts as $acc)
-                                <option value="{{ $acc->id }}" {{ strtolower((string) $expense->payment_mode) === strtolower((string) $acc->name) ? 'selected' : '' }}>
+                                <option value="{{ $acc->id }}" @selected($expense->payment_account_id ? (int) $expense->payment_account_id === (int) $acc->id : strcasecmp((string) $expense->payment_mode, (string) $acc->name) === 0)>
                                     {{ $acc->name }} ({{ $acc->code }}) &mdash; Bal: &#8358;{{ \App\Support\CompactNumber::format((float) ($acc->current_balance ?? 0), 2) }}
                                 </option>
                             @endforeach

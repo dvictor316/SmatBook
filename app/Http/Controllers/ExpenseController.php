@@ -315,7 +315,7 @@ class ExpenseController extends Controller
         try {
             return DB::transaction(function () use ($request, $sessionBranch) {
                 [$expenseAccount, $categoryId] = $this->resolveExpenseAccountFromSelector((string) $request->account_id);
-                $paymentAccount = Account::findOrFail($request->payment_account_id);
+                $paymentAccount = $this->paymentSourceAccountsQuery()->findOrFail($request->payment_account_id);
                 $nextId = (int) Expense::max('id') + 1;
                 $expenseId = 'EXP-' . date('Y') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
                 $payload = [
@@ -325,6 +325,7 @@ class ExpenseController extends Controller
                     'email'          => $request->email,
                     'amount'         => $request->amount,
                     'payment_mode'   => $paymentAccount->name,
+                    'payment_account_id' => $paymentAccount->id,
                     'payment_status' => strtolower($request->status) === 'paid' ? 'paid' : 'pending',
                     'category'       => $expenseAccount->name,
                     'category_id'    => Schema::hasColumn('expenses', 'category_id') ? $categoryId : null,
@@ -457,6 +458,7 @@ class ExpenseController extends Controller
                         'email' => trim((string) ($row['email'] ?? '')) ?: null,
                         'amount' => $amount,
                         'payment_mode' => $paymentAccount?->name ?? ($paymentSource ?: null),
+                        'payment_account_id' => $paymentAccount?->id,
                         'payment_status' => $status === 'Paid' ? 'paid' : 'pending',
                         'category' => $expenseAccount->name,
                         'notes' => trim((string) ($row['notes'] ?? $row['description'] ?? '')) ?: null,
@@ -740,7 +742,7 @@ class ExpenseController extends Controller
             }
             $paymentAccount = null;
             if (!empty($validated['payment_account_id'])) {
-                $paymentAccount = Account::findOrFail((int) $validated['payment_account_id']);
+                $paymentAccount = $this->paymentSourceAccountsQuery()->findOrFail((int) $validated['payment_account_id']);
             } elseif ($validated['status'] === 'Paid' && empty($expense->payment_mode)) {
                 Log::warning('Expense update blocked: paid status without payment source', [
                     'expense_id' => $expense->id,
@@ -772,6 +774,7 @@ class ExpenseController extends Controller
 
             if ($paymentAccount) {
                 $updatePayload['payment_mode'] = $paymentAccount->name;
+                $updatePayload['payment_account_id'] = $paymentAccount->id;
             }
 
             $expense->update($updatePayload);
@@ -856,30 +859,34 @@ class ExpenseController extends Controller
         }
 
         try {
-            $paymentAccount = null;
-            if ($request->filled('payment_account_id')) {
-                $paymentAccount = Account::findOrFail((int) $request->input('payment_account_id'));
-                $expense->payment_mode = $paymentAccount->name;
-            }
+            return DB::transaction(function () use ($request, $expense) {
+                $expense = $expense->newQuery()->lockForUpdate()->findOrFail($expense->id);
 
-            if (empty($expense->payment_mode)) {
-                return redirect()
-                    ->route('expenses.index')
-                    ->with('error', 'Select a Paid From (Credit Account) before marking this expense as Paid.');
-            }
+                if ($request->filled('payment_account_id')) {
+                    $paymentAccount = $this->paymentSourceAccountsQuery()->findOrFail((int) $request->input('payment_account_id'));
+                    $expense->payment_mode = $paymentAccount->name;
+                    $expense->payment_account_id = $paymentAccount->id;
+                }
 
-            $expense->status = 'Paid';
-            $expense->payment_status = 'paid';
-            $expense->save();
+                if (empty($expense->payment_mode)) {
+                    return redirect()
+                        ->route('expenses.index')
+                        ->with('error', 'Select a Paid From (Credit Account) before marking this expense as Paid.');
+                }
 
-            Transaction::where('related_id', $expense->id)
-                ->where('related_type', Expense::class)
-                ->where('transaction_type', 'Expense')
-                ->delete();
+                $expense->status = 'Paid';
+                $expense->payment_status = 'paid';
+                $expense->save();
 
-            \App\Support\LedgerService::postExpense($expense->fresh());
+                Transaction::where('related_id', $expense->id)
+                    ->where('related_type', Expense::class)
+                    ->where('transaction_type', 'Expense')
+                    ->delete();
 
-            return redirect()->route('expenses.index')->with('success', 'Expense marked as Paid and posted to the ledger.');
+                \App\Support\LedgerService::postExpense($expense->fresh());
+
+                return redirect()->route('expenses.index')->with('success', 'Expense marked as Paid and posted to the ledger.');
+            });
         } catch (\Throwable $e) {
             Log::error('Expense markPaid failed', [
                 'expense_id' => $expense->id ?? null,

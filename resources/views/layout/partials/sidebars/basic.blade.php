@@ -130,9 +130,6 @@
                 <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'pro']) : url('/membership-plans?plan=pro') }}">Supplier Analytics <span class="badge bg-info">Pro</span></a>
             </li>
             <li>
-                <a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Cash Flow Reports <span class="badge bg-warning">Enterprise</span></a>
-            </li>
-            <li>
                 <a href="javascript:void(0);" onclick="showUpgradeModal('Pro', 'Advanced procurement & supplier analytics')">Why Upgrade? <span class="badge bg-light text-dark">Info</span></a>
             </li>
         </ul>

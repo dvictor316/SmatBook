@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\PurchaseReturn;
 use App\Models\Sale;
 use App\Models\Setting;
+use App\Models\Transaction;
 use App\Support\AppMailer;
 // 2. Third Party Packages
 use App\Support\BranchInventoryService;
@@ -588,33 +589,47 @@ class ReportController extends Controller
         }
 
         $ignoredStatuses = $this->ignoredAppliedPaymentStatuses();
-
-        if ($sale->relationLoaded('payments')) {
-            $payments = collect($sale->payments)->filter(function ($payment) use ($ignoredStatuses) {
-                $status = strtolower(trim((string) ($payment->status ?? '')));
-
-                return ! in_array($status, $ignoredStatuses, true);
-            });
-
-            if ($payments->isEmpty()) {
-                return null;
-            }
-
-            return (float) $payments->sum(fn ($payment) => (float) ($payment->amount ?? 0));
-        }
-
         $paymentQuery = DB::table('payments')->where('sale_id', $sale->id);
-        $this->applyTenantScope($paymentQuery, 'payments');
+        $payments = $sale->relationLoaded('payments')
+            ? $sale->payments
+            : $this->applyTenantScope($paymentQuery, 'payments')->get();
+        $pending = $payments->filter(fn ($payment) => strtolower(trim((string) ($payment->status ?? ''))) === 'pending'
+            && !str_starts_with((string) ($payment->note ?? ''), 'Initial POS payment via '));
 
-        if (Schema::hasColumn('payments', 'status')) {
-            foreach ($ignoredStatuses as $ignoredStatus) {
-                $paymentQuery->whereRaw('LOWER(COALESCE(status, "")) <> ?', [$ignoredStatus]);
-            }
+        $postedPendingIds = collect();
+        if ($pending->isNotEmpty() && Schema::hasTable('transactions')) {
+            $postedPendingIds = Transaction::withoutGlobalScope('tenant')
+                ->where('related_type', Payment::class)
+                ->where('transaction_type', Transaction::TYPE_RECEIPT)
+                ->whereIn('related_id', $pending->pluck('id')->all())
+                ->where('debit', '>', 0)
+                ->distinct()->pluck('related_id')->flip();
         }
 
-        $paymentSum = (float) $paymentQuery->sum('amount');
+        $applied = $payments->filter(function ($payment) use ($ignoredStatuses, $postedPendingIds) {
+            $status = strtolower(trim((string) ($payment->status ?? '')));
+            if ($status === 'pending') {
+                return $postedPendingIds->has($payment->id)
+                    || str_starts_with((string) ($payment->note ?? ''), 'Initial POS payment via ');
+            }
 
-        return $paymentSum > 0 ? $paymentSum : null;
+            return !in_array($status, $ignoredStatuses, true);
+        });
+
+        $appliedAmount = (float) $applied->sum('amount');
+        $storedPaid = (float) ($sale->amount_paid ?? $sale->paid ?? 0);
+        if ($storedPaid > $appliedAmount && Schema::hasTable('transactions')) {
+            $postedAmount = Transaction::withoutGlobalScope('tenant')
+                ->where('transaction_type', Transaction::TYPE_RECEIPT)
+                ->where(function ($receipts) use ($sale, $payments) {
+                    $receipts->where(fn ($initial) => $initial->where('related_type', Sale::class)->where('related_id', $sale->id))
+                        ->orWhere(fn ($followUp) => $followUp->where('related_type', Payment::class)
+                            ->whereIn('related_id', $payments->pluck('id')->all()));
+                })->sum('credit');
+            $appliedAmount = max($appliedAmount, min($storedPaid, (float) $postedAmount));
+        }
+
+        return $appliedAmount > 0 ? $appliedAmount : null;
     }
 
     private function normalizeInvoiceFinancials(Sale $sale): array
@@ -1226,8 +1241,16 @@ class ReportController extends Controller
 
     public function chartOfAccountsReport(Request $request)
     {
+        $dates = $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', ...($request->filled('start_date') ? ['after_or_equal:start_date'] : [])],
+        ]);
+        $start = $dates['start_date'] ?? null;
+        $endExclusive = isset($dates['end_date'])
+            ? Carbon::parse($dates['end_date'])->addDay()->toDateString()
+            : null;
+
         $accountsQuery = Account::query()
-            ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
             ->orderByRaw("CASE LOWER(type)
                     WHEN 'asset' THEN 1
                     WHEN 'liability' THEN 2
@@ -1271,32 +1294,38 @@ class ReportController extends Controller
         $accounts = $accountsQuery->get();
 
         if (Schema::hasTable('transactions') && $accounts->isNotEmpty()) {
-            $transactionTotals = \App\Models\Transaction::query()
-                ->selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-                ->whereIn('account_id', $accounts->pluck('id')->all())
-                ->when(
-                    $request->filled('start_date') && $request->filled('end_date'),
-                    fn ($query) => $query->whereBetween('transaction_date', [
-                        Carbon::parse($request->input('start_date'))->startOfDay(),
-                        Carbon::parse($request->input('end_date'))->endOfDay(),
-                    ])
+            $ledger = Transaction::query()->whereIn('account_id', $accounts->modelKeys());
+            $this->applyTenantScope($ledger, 'transactions');
+            $this->applyGenericBranchFilter($ledger, 'transactions');
+
+            $postedOpeningIds = (clone $ledger)->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                ->where('related_type', Account::class)->whereColumn('account_id', 'related_id')
+                ->distinct()->pluck('account_id')->flip();
+
+            $transactionTotals = $ledger
+                ->when($endExclusive, fn ($query) => $query->where('transaction_date', '<', $endExclusive))
+                ->selectRaw('account_id, SUM(debit - credit) as closing_movement')
+                ->when($start,
+                    fn ($query) => $query->selectRaw(
+                        'SUM(CASE WHEN transaction_date < ? THEN debit - credit ELSE 0 END) as prior_movement,
+                         SUM(CASE WHEN transaction_date >= ? THEN 1 ELSE 0 END) as transaction_count',
+                        [$start, $start]
+                    ),
+                    fn ($query) => $query->selectRaw('COUNT(*) as transaction_count')
                 )
-                ->groupBy('account_id')
-                ->get()
-                ->keyBy('account_id');
+                ->groupBy('account_id')->toBase()->get()->keyBy('account_id');
 
-            $accounts = $accounts->map(function (Account $account) use ($transactionTotals) {
+            foreach ($accounts as $account) {
                 $totals = $transactionTotals->get($account->id);
-                $debits = (float) ($totals->total_debit ?? 0);
-                $credits = (float) ($totals->total_credit ?? 0);
-                $openingBalance = (float) ($account->opening_balance ?? 0);
-                $isDebitNormal = in_array($account->type, [Account::TYPE_ASSET, Account::TYPE_EXPENSE], true);
-                $account->current_balance = $isDebitNormal
-                    ? ($openingBalance + $debits) - $credits
-                    : ($openingBalance + $credits) - $debits;
+                $sign = $account->isDebitAccount() ? 1 : -1;
+                $unpostedOpening = $postedOpeningIds->has($account->id) ? 0.0 : (float) $account->opening_balance;
 
-                return $account;
-            });
+                if ($start) {
+                    $account->opening_balance = $unpostedOpening + $sign * (float) ($totals->prior_movement ?? 0);
+                }
+                $account->current_balance = $unpostedOpening + $sign * (float) ($totals->closing_movement ?? 0);
+                $account->transactions_count = (int) ($totals->transaction_count ?? 0);
+            }
         }
 
         $accountTypes = Account::typeOptions();
@@ -1304,7 +1333,8 @@ class ReportController extends Controller
             'total_accounts' => $accounts->count(),
             'active_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', true)->count() : $accounts->count(),
             'inactive_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', false)->count() : 0,
-            'total_balance' => (float) $accounts->sum(fn ($account) => (float) ($account->current_balance ?? $account->opening_balance ?? 0)),
+            'cash_balance' => $accounts->filter(fn (Account $account) => $account->cashOrBankType() === 'Cash')->sum('current_balance'),
+            'bank_balance' => $accounts->filter(fn (Account $account) => in_array($account->cashOrBankType(), ['Bank', 'Cash & Bank'], true))->sum('current_balance'),
         ];
 
         return $this->renderReportView('chart-of-accounts-report', compact('accounts', 'accountTypes', 'summary'));

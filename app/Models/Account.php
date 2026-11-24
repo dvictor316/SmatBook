@@ -127,6 +127,54 @@ class Account extends Model
         return self::subtypeOptionsByType()[$type] ?? [];
     }
 
+    public function cashOrBankType(): ?string
+    {
+        if (strcasecmp((string) $this->type, self::TYPE_ASSET) !== 0) {
+            return null;
+        }
+
+        $subtype = strtolower(trim((string) $this->sub_type));
+
+        return match ($subtype) {
+            'cash', 'cash account' => 'Cash',
+            'bank', 'bank account' => 'Bank',
+            'cash & bank', 'cash and bank', 'cash/bank' => 'Cash & Bank',
+            '', 'current asset', 'other asset' => $this->legacyCashOrBankType(),
+            default => null,
+        };
+    }
+
+    private function legacyCashOrBankType(): ?string
+    {
+        $name = strtolower((string) $this->name);
+
+        if (str_starts_with((string) $this->description, 'Auto-backfilled bank ledger account')
+            || preg_match('/\b(bank|wallet|moniepoint|opay|palmpay|kuda)\b/i', $name)) {
+            return 'Bank';
+        }
+
+        return preg_match('/\b(cash|petty)\b/i', $name) ? 'Cash' : null;
+    }
+
+    public function isCompanyWide(): bool
+    {
+        return trim((string) $this->branch_id) === '' && trim((string) $this->branch_name) === '';
+    }
+
+    public function matchesAccountingBranch(string $branchId, string $branchName): bool
+    {
+        if ($this->isCompanyWide()) {
+            return true;
+        }
+
+        $accountBranchId = trim((string) $this->branch_id);
+        if ($branchId !== '' && $accountBranchId !== '') {
+            return $accountBranchId === $branchId;
+        }
+
+        return $branchName !== '' && strcasecmp(trim((string) $this->branch_name), $branchName) === 0;
+    }
+
     /**
      * Get all transactions for this account
      */

@@ -463,11 +463,26 @@
                         <div class="coa-stat">
                             <div class="coa-stat-label">
                                 <span class="coa-stat-dot" style="background:{{ $tc['dot'] }}"></span>
-                                {{ $summary['type'] }}
+                                {{ $summary['type'] === 'Revenue' ? 'Revenue Earned' : $summary['type'] }}
                             </div>
                             <div class="coa-stat-value">{{ \App\Support\CompactNumber::format($summary['balance'], 2) }}</div>
                             <div class="coa-stat-sub">{{ $summary['count'] }} account{{ $summary['count'] != 1 ? 's' : '' }}</div>
                         </div>
+                    @endforeach
+                    @foreach(['cash' => 'Cash on Hand', 'bank' => 'Bank & Clearing'] as $filter => $label)
+                        @if($cashAccountSummary->has($filter))
+                            @php $summary = $cashAccountSummary->get($filter); @endphp
+                            <a class="coa-stat text-decoration-none" href="{{ route('reports.cash-flow', ['account' => $filter]) }}">
+                                <div class="coa-stat-label">
+                                    <span class="coa-stat-dot" style="background:#0ea5e9;"></span>
+                                    {{ $label }}
+                                </div>
+                                <div class="coa-stat-value {{ $summary['balance'] < 0 ? 'text-danger' : '' }}">
+                                    {{ \App\Support\CompactNumber::format($summary['balance'], 2) }}
+                                </div>
+                                <div class="coa-stat-sub">{{ $summary['count'] }} account{{ $summary['count'] !== 1 ? 's' : '' }} &middot; View cash flow</div>
+                            </a>
+                        @endif
                     @endforeach
                 </div>
 
@@ -532,14 +547,23 @@
                                                     data-status="{{ $account->is_active ? 'active' : 'inactive' }}">
                                                     <td><span class="coa-code">{{ $account->code }}</span></td>
                                                     <td>
-                                                        <div class="coa-acc-name">{{ $account->name }}</div>
+                                                        <div class="coa-acc-name">
+                                                            @if($account->cashOrBankType())
+                                                                <a href="{{ route('reports.cash-flow', ['account' => $account->id]) }}">{{ $account->name }}</a>
+                                                            @else
+                                                                {{ $account->name }}
+                                                            @endif
+                                                        </div>
+                                                        @if($account->type === \App\Models\Account::TYPE_REVENUE && str_starts_with($account->code, 'AUTO-REV-SALES-'))
+                                                            <div class="coa-acc-desc">Automatically created to record sales earnings, including unpaid invoices.</div>
+                                                        @endif
                                                         @if(!empty($account->description))
                                                             <div class="coa-acc-desc">{{ $account->description }}</div>
                                                         @endif
                                                     </td>
                                                     <td><span class="coa-subtype">{{ $account->sub_type ?: 'General' }}</span></td>
                                                     <td class="coa-balance">{{ \App\Support\CompactNumber::format((float)($account->opening_balance ?? 0), 2) }}</td>
-                                                    <td class="coa-balance">{{ \App\Support\CompactNumber::format((float)($account->current_balance ?? 0), 2) }}</td>
+                                                    <td class="coa-balance {{ $account->cashOrBankType() && $account->current_balance < 0 ? 'text-danger' : '' }}">{{ \App\Support\CompactNumber::format((float)($account->current_balance ?? 0), 2) }}</td>
                                                     <td><span class="coa-txn">{{ $account->transactions_count ?? 0 }}</span></td>
                                                     <td>
                                                         @if($account->is_active)

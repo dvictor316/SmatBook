@@ -20,6 +20,7 @@ protected $fillable = [
     'email', 
     'amount', 
     'payment_mode', 
+    'payment_account_id',
     'payment_status', 
     'category_id',
     'category', 

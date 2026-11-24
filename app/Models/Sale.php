@@ -159,10 +159,8 @@ class Sale extends Model
                         return $accountName;
                     }
 
-                    return match (strtolower(trim((string) $payment->method))) {
-                        'cash' => 'Cash',
-                        default => 'Account not recorded',
-                    };
+                    $method = $this->labelForPaymentMethod($payment->method);
+                    return $method === 'Cash' ? $method : ($method ? $method.' · Account not recorded' : 'Account not recorded');
                 })
                 ->filter()
                 ->unique()
@@ -176,13 +174,13 @@ class Sale extends Model
         $split = is_array($details['split'] ?? null) ? $details['split'] : [];
         $channels = [
             'cash' => ['Cash', 'payment_account_name'],
-            'transfer' => ['Account not recorded', 'transfer_account_name'],
-            'card' => ['Account not recorded', 'card_account_name'],
+            'transfer' => ['Bank Transfer · Account not recorded', 'transfer_account_name'],
+            'card' => ['POS/Card · Account not recorded', 'card_account_name'],
         ];
         $labels = [];
-        foreach ($channels as $channel => [$mode, $accountKey]) {
+        foreach ($channels as $channel => [$channelLabel, $accountKey]) {
             if ((float) ($split[$channel] ?? 0) > 0) {
-                $labels[] = trim((string) ($details[$accountKey] ?? '')) ?: $mode;
+                $labels[] = trim((string) ($details[$accountKey] ?? '')) ?: $channelLabel;
             }
         }
         if ($labels !== []) {
@@ -195,7 +193,7 @@ class Sale extends Model
             default => 'payment_account_name',
         };
         return $prefix.(trim((string) ($details[$accountKey] ?? $details['payment_account_name'] ?? '')) ?: match ($method) {
-            'transfer', 'bank_transfer', 'bank transfer', 'card', 'pos', 'pos/card' => 'Account not recorded',
+            'transfer', 'bank_transfer', 'bank transfer', 'card', 'pos', 'pos/card' => $mode.' · Account not recorded',
             'split' => 'Split Payment',
             'charge_to_room' => 'Charge to Room',
             default => $mode,

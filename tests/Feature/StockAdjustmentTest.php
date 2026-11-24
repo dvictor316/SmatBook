@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Company;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -303,6 +304,50 @@ class StockAdjustmentTest extends TestCase
                 && $rows->last()->stock_value === -470.0);
         $this->assertDatabaseHas('inventory_history', ['id' => $historyId, 'quantity' => 60]);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 20, 'stock_quantity' => 20]);
+    }
+
+    public function test_history_keeps_recorded_sale_outflows_after_returns_and_deleted_sale_items(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $company = Company::create(['name' => 'Stock Sale History']);
+        $user->update(['company_id' => $company->id]);
+        $category = DB::table('categories')->insertGetId(['name' => 'Stock Sales']);
+        $product = Product::create([
+            'company_id' => $company->id, 'user_id' => $user->id, 'category_id' => $category,
+            'name' => 'Sale stock', 'sku' => 'IMMUTABLE-STOCK', 'stock' => 30, 'stock_quantity' => 30,
+            'purchase_price' => 10, 'price' => 15, 'status' => 'active',
+        ]);
+        DB::table('inventory_history')->where('product_id', $product->id)->update(['created_at' => now()->subDays(4)]);
+        $sale = Sale::create([
+            'company_id' => $company->id, 'user_id' => $user->id, 'terminal_id' => 'POS1',
+            'invoice_no' => 'INV-STOCK-RETURN', 'total' => 90, 'created_at' => now()->subDays(3),
+        ]);
+        $item = $sale->items()->create([
+            'product_id' => $product->id, 'qty' => 6, 'stock_units' => 6, 'unit_price' => 15,
+        ]);
+        DB::table('sale_items')->where('id', $item->id)->update(['created_at' => now()->subDays(3)]);
+        foreach ([
+            ['Sales', 'out', 10, 3, null],
+            ['Stock Return', 'in', 4, 2, null],
+            ['Sales', 'out', 3, 1, json_encode(['sale_id' => 999, 'sale_item_id' => 999, 'invoice_no' => 'INV-DELETED'])],
+            ['Sale Deletion', 'in', 3, 0, null],
+        ] as [$reference, $type, $quantity, $daysAgo, $remarks]) {
+            DB::table('inventory_history')->insert([
+                'product_id' => $product->id, 'company_id' => $company->id, 'user_id' => $user->id,
+                'reference' => $reference, 'type' => $type, 'quantity' => $quantity,
+                'created_at' => now()->subDays($daysAgo), 'remarks' => $remarks,
+            ]);
+        }
+        DB::table('products')->where('id', $product->id)->update(['stock' => 24, 'stock_quantity' => 24]);
+
+        $this->actingAs($user)->withoutMiddleware()->withSession([
+            'current_tenant_id' => $company->id, 'active_branch_scope' => 'all',
+        ])->get(route('inventory.history', $product->id))->assertOk()
+            ->assertViewHas('openingBalance', 0.0)
+            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->count() === 5
+                && (float) $rows->firstWhere('reference', 'INV-STOCK-RETURN')->running_balance === 20.0
+                && (float) $rows->firstWhere('reference', 'INV-DELETED')->running_balance === 21.0
+                && (float) $rows->first()->running_balance === 24.0);
     }
 
     public function test_manual_stock_in_saves_stock_and_inventory_history(): void

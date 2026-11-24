@@ -300,7 +300,7 @@ class BankBalanceManagementService
 
     public function findLinkedBank(Account $account): ?Bank
     {
-        if (!Schema::hasTable('banks')) {
+        if (!Schema::hasTable('banks') || !in_array($account->cashOrBankType(), ['Bank', 'Cash & Bank'], true)) {
             return null;
         }
 
@@ -328,14 +328,9 @@ class BankBalanceManagementService
             return true;
         });
 
-        return $filtered->first(function (Bank $bank) use ($accountName) {
-            $bankName = strtolower(trim((string) ($bank->name ?? '')));
-            return $bankName !== '' && (
-                $bankName === $accountName
-                || str_contains($bankName, $accountName)
-                || str_contains($accountName, $bankName)
-            );
-        });
+        $matches = $filtered->filter(fn (Bank $bank) => strtolower(trim((string) $bank->name)) === $accountName);
+
+        return $matches->count() === 1 ? $matches->first() : null;
     }
 
     private function signedBalanceForAccountType(Account $account, float $debit, float $credit): float

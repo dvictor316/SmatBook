@@ -12,6 +12,7 @@
     $canUseProfitLossReports = $canUseProReports;
     $canUseMidTierFinancialReports = $canUseProReports;
     $canUseCoreStatements = $canUseEnterpriseReports;
+    $canUseCashFlow = $reportAccess === 'basic' || $canUseMidTierFinancialReports;
     $visibleSections = collect($tabSections)->flatten()->unique()->values()->all();
     $isStarterReportAccess = $reportAccess === 'starter';
 @endphp
@@ -252,11 +253,10 @@
                         </div>
                     @endif
 
-                    @if($canUseMidTierFinancialReports)
-                        <div class="rl-row" data-section="overview" data-tab="overview" data-id="cash-flow" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow liquidity inflows outflows">
+                    @if($canUseCashFlow)
+                        <div class="rl-row" data-section="overview" data-tab="overview" data-id="cash-flow" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow cash account bank report balance inflows outflows">
                             <button class="rl-star" data-id="cash-flow" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
-                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
                             <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
                     @endif
@@ -595,7 +595,6 @@
                         <div class="rl-row" data-section="financial" data-tab="financial" data-id="cf-financial" data-url="{{ route('reports.cash-flow') }}" data-keywords="cash flow statement liquidity operating">
                             <button class="rl-star" data-id="cf-financial" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('reports.cash-flow') }}" class="rl-name">Cash Flow</a>
-                            <span class="rl-badge rl-badge-pro"><i class="fas fa-star" style="font-size:7px;"></i> Pro</span>
                             <a href="{{ route('reports.cash-flow') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
 

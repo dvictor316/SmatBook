@@ -41,6 +41,10 @@
     </li>
 @endif
 
+@if(Route::has('reports.cash-flow') && ($reportAccess === 'basic' || $canManagement))
+    <li><a href="{{ route('reports.cash-flow') }}" class="{{ request()->routeIs('reports.cash-flow') ? 'active' : '' }}">Cash Flow</a></li>
+@endif
+
 @if($canManagement)
     <li class="reports-group-header">Management</li>
     @if(Route::has('reports.hub'))

@@ -1376,8 +1376,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     });
 
     // Financial Reports
-    Route::get('/cash-flow', [CashFlowController::class, 'cashFlow'])->middleware('plan.access:pro,enterprise')->name('reports.cash-flow');
-    Route::get('/cash-flow/export', [CashFlowController::class, 'exportCashFlow'])->middleware('plan.access:pro,enterprise')->name('reports.cash-flow.export');
+    Route::get('/cash-flow', [CashFlowController::class, 'cashFlow'])->middleware('plan.access:basic,pro,enterprise')->name('reports.cash-flow');
+    Route::get('/cash-flow/export', [CashFlowController::class, 'exportCashFlow'])->middleware('plan.access:basic,pro,enterprise')->name('reports.cash-flow.export');
     Route::get('/balance-sheet', [BalanceSheetController::class, 'index'])->middleware('plan.access:enterprise')->name('balance-sheet');
     Route::get('/balance-sheet/export', [BalanceSheetController::class, 'export'])->middleware('plan.access:enterprise')->name('balance-sheet.export');
     Route::get('/balance-sheet-summary', [BalanceSheetController::class, 'summary'])->middleware('plan.access:enterprise')->name('balance-sheet-summary');

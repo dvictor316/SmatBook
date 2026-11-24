@@ -45,9 +45,12 @@
 
         @include('Reports.partials.context-strip', [
             'reportLabel' => 'Chart of Accounts Report',
-            'periodLabel' => request('start_date') && request('end_date')
-                ? 'Period: ' . request('start_date') . ' to ' . request('end_date')
-                : 'Current account register',
+            'periodLabel' => match (true) {
+                request()->filled(['start_date', 'end_date']) => request('start_date') . ' to ' . request('end_date'),
+                request()->filled('end_date') => 'As of ' . request('end_date'),
+                request()->filled('start_date') => 'From ' . request('start_date'),
+                default => 'Current account register',
+            },
         ])
 
         <div class="coa-report-shell">
@@ -76,8 +79,12 @@
                     <div class="coa-summary-value">{{ number_format($summary['inactive_accounts'] ?? 0) }}</div>
                 </div>
                 <div class="coa-summary-card">
-                    <span class="coa-summary-label">Combined Balance</span>
-                    <div class="coa-summary-value">{{ \App\Support\GeoCurrency::format($summary['total_balance'] ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</div>
+                    <span class="coa-summary-label">Cash on Hand</span>
+                    <div class="coa-summary-value">{{ \App\Support\GeoCurrency::format($summary['cash_balance'], 'NGN', $currencyCode, $currencyLocale) }}</div>
+                </div>
+                <div class="coa-summary-card">
+                    <span class="coa-summary-label">Bank &amp; Clearing</span>
+                    <div class="coa-summary-value">{{ \App\Support\GeoCurrency::format($summary['bank_balance'], 'NGN', $currencyCode, $currencyLocale) }}</div>
                 </div>
             </div>
 
@@ -131,7 +138,7 @@
                                 <th>Subtype</th>
                                 <th>Status</th>
                                 <th class="text-end">Opening ({{ $currencySymbol }})</th>
-                                <th class="text-end">Current ({{ $currencySymbol }})</th>
+                                <th class="text-end">{{ request()->filled('end_date') ? 'Closing' : 'Current' }} ({{ $currencySymbol }})</th>
                                 <th class="text-end">Transactions</th>
                             </tr>
                         </thead>

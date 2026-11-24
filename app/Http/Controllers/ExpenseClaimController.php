@@ -187,7 +187,7 @@ class ExpenseClaimController extends Controller
             return back()->with('info', 'This claim has already been reimbursed.');
         }
 
-        $account = Account::query()->findOrFail((int) $data['payment_account_id']);
+        $account = Account::query()->ofType(Account::TYPE_ASSET)->active()->findOrFail((int) $data['payment_account_id']);
 
         DB::transaction(function () use ($expenseClaim, $account) {
             $claimantName = trim((string) ($expenseClaim->claimant?->name ?? 'Staff'));
@@ -198,6 +198,7 @@ class ExpenseClaimController extends Controller
                 'email' => $expenseClaim->claimant?->email,
                 'amount' => (float) $expenseClaim->amount,
                 'payment_mode' => $account->name,
+                'payment_account_id' => $account->id,
                 'payment_status' => 'paid',
                 'category' => $expenseClaim->category,
                 'notes' => trim('Expense claim reimbursement: ' . $expenseClaim->title . "\n" . (string) $expenseClaim->notes),

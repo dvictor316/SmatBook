@@ -4167,15 +4167,11 @@ public function inventory(Request $request)
                 ->where('inventory_history.product_id', $id)
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'products'));
 
-            if (
-                Schema::hasTable('sale_items')
-                && Schema::hasTable('sales')
-                && Schema::hasColumn('inventory_history', 'reference')
-            ) {
-                $historyQuery->where(function ($query) {
-                    $query->whereNull('inventory_history.reference')
-                        ->orWhereRaw("LOWER(TRIM(inventory_history.reference)) <> 'sales'");
-                });
+            if (Schema::hasColumn('inventory_history', 'branch_id')) {
+                $historyQuery->addSelect('inventory_history.branch_id as movement_branch_id');
+            }
+            if (Schema::hasColumn('inventory_history', 'remarks')) {
+                $historyQuery->addSelect('inventory_history.remarks');
             }
 
             if ($branchId !== '' || $branchName !== '') {
@@ -4412,6 +4408,9 @@ public function inventory(Request $request)
                     ->join('products', 'sale_items.product_id', '=', 'products.id')
                     ->selectRaw("
                         {$saleIdExpression} as id,
+                        sale_items.id as sale_item_id,
+                        sales.id as sale_id,
+                        sale_items.created_at as item_created_at,
                         sales.created_at as created_at,
                         'out' as type,
                         COALESCE(" . ($saleReferenceColumn ? "sales.{$saleReferenceColumn}" : 'NULL') . ", {$saleFallbackReference}) as reference,
@@ -4424,6 +4423,13 @@ public function inventory(Request $request)
                     ->where('sale_items.product_id', $id)
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'products'))
                     ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'));
+
+                if (Schema::hasColumn('sales', 'branch_id')) {
+                    $saleHistoryQuery->addSelect('sales.branch_id as movement_branch_id');
+                }
+                if (Schema::hasColumn('sales', 'deleted_at')) {
+                    $saleHistoryQuery->whereNull('sales.deleted_at');
+                }
 
                 if (Schema::hasColumn('sales', 'source_type')) {
                     $saleHistoryQuery->where(function ($query) {
@@ -4494,7 +4500,7 @@ public function inventory(Request $request)
                     });
                 }
 
-                $inventoryHistories = $inventoryHistories->merge($saleHistoryQuery->get());
+                $inventoryHistories = $this->mergeInventorySaleMovements($inventoryHistories, $saleHistoryQuery->get());
             }
         }
 
@@ -4706,6 +4712,59 @@ public function inventory(Request $request)
             'totalDamaged',
             'stockUnitLabel'
         ));
+    }
+
+    private function mergeInventorySaleMovements(\Illuminate\Support\Collection $histories, \Illuminate\Support\Collection $saleEvents): \Illuminate\Support\Collection
+    {
+        $legacy = collect();
+        $linked = [];
+        $recordedSales = [];
+
+        foreach ($histories as $movement) {
+            if (strtolower(trim((string) $movement->reference)) !== 'sales' || strtolower($movement->type) !== 'out') {
+                continue;
+            }
+
+            $details = json_decode((string) ($movement->remarks ?? ''), true);
+            if (is_array($details) && !empty($details['sale_item_id'])) {
+                $linked[(int) $details['sale_item_id']] = true;
+                if (!empty($details['sale_id'])) {
+                    $recordedSales[(int) $details['sale_id']] = true;
+                }
+                $movement->reference = $details['invoice_no'] ?? $movement->reference;
+            } else {
+                $legacy->put($movement->id, $movement);
+            }
+        }
+
+        foreach ($saleEvents as $saleEvent) {
+            if (isset($linked[$saleEvent->sale_item_id]) || isset($recordedSales[$saleEvent->sale_id])) {
+                continue;
+            }
+
+            $saleTime = strtotime((string) ($saleEvent->item_created_at ?? $saleEvent->created_at));
+            $quantity = round((float) $saleEvent->quantity, 2);
+            $matching = $legacy->filter(function ($row) use ($saleEvent, $saleTime, $quantity) {
+                $time = strtotime((string) $row->created_at);
+                $movementBranch = (string) ($row->movement_branch_id ?? '');
+                $saleBranch = (string) ($saleEvent->movement_branch_id ?? '');
+
+                return $saleTime !== false && $time !== false
+                    && ($movementBranch === '' || $saleBranch === '' || $movementBranch === $saleBranch)
+                    && abs($saleTime - $time) <= 5
+                    && (float) $row->quantity >= $quantity;
+            });
+            $exact = $matching->first(fn ($row) => (float) $row->quantity === $quantity);
+            $recorded = $exact ?? ($matching->count() === 1 ? $matching->first() : null);
+            if ($recorded) {
+                $recorded->reference = $saleEvent->reference;
+                $legacy->forget($recorded->id);
+            } else {
+                $histories->push($saleEvent);
+            }
+        }
+
+        return $histories;
     }
 
     public function update_history(Request $request)

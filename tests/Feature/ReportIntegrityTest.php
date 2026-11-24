@@ -9,12 +9,16 @@ use App\Http\Middleware\RequireActiveBranch;
 use App\Http\Middleware\SubscriptionActive;
 use App\Http\Middleware\VerifyTenantSession;
 use App\Models\Account;
+use App\Models\Bank;
 use App\Models\Company;
+use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\Sale;
+use App\Models\Transaction;
 use App\Models\User;
+use App\Support\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -403,8 +407,8 @@ class ReportIntegrityTest extends TestCase
         $this->assertEquals(300.0, (float) $payments['Bank Transfer']->amount);
         $this->assertEquals($transferAccount->id, (int) $payments['Bank Transfer']->account_id);
         $this->assertEquals(600.0, (float) $payments['POS/Card']->amount);
-        $this->assertEquals($transferAccount->id, (int) $payments['POS/Card']->account_id);
-        $this->assertSame($transferAccount->id, (int) $sale->payment_details['card_account_id']);
+        $this->assertEquals($cardAccount->id, (int) $payments['POS/Card']->account_id);
+        $this->assertSame($cardAccount->id, (int) $sale->payment_details['card_account_id']);
 
         $cashResponse = $this->postJson(route('sales.store'), [
             'payment_method' => 'Cash',
@@ -734,6 +738,229 @@ class ReportIntegrityTest extends TestCase
 
         $this->withSession($session)->get(route('balance-sheet.export'))->assertDownload();
         $this->withSession($session)->get(route('trial-balance.export'))->assertDownload();
+    }
+
+    public function test_cash_flow_and_chart_show_cash_accounts_and_use_the_same_ledger_balances(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $cash = $this->account($company, 'Alh Cash Account', 'Asset', 'Current Asset');
+        $cash->update(['opening_balance' => 30]);
+        $bank = $this->account($company, 'Operating Account', 'Asset', 'Bank');
+        $bank->update(['opening_balance' => 50, 'branch_id' => 'hq', 'branch_name' => 'Headquarters']);
+        $inventory = $this->account($company, 'Inventory', 'Asset', '');
+        $revenue = $this->account($company, 'Sales Revenue', 'Revenue', 'Sales Revenue');
+        $revenue->update(['code' => 'AUTO-REV-SALES-12345']);
+        $otherBranch = $this->account($company, 'Other Branch Cash', 'Asset', 'Cash');
+        $otherBranch->update(['branch_id' => 'other', 'branch_name' => 'Other']);
+        LedgerService::postAccountOpeningBalance($bank);
+        $this->assertDatabaseHas('transactions', [
+            'account_id' => $bank->id,
+            'transaction_type' => Transaction::TYPE_OPENING_BALANCE,
+            'company_id' => $company->id,
+            'branch_id' => 'hq',
+            'debit' => 50,
+        ]);
+        $this->ledgerEntry($company, $cash, 10, 0);
+        $this->ledgerEntry($company, $cash, 0, 15);
+        $this->ledgerEntry($company, $inventory, 900, 0);
+        $this->ledgerEntry($company, $revenue, 0, 1000);
+        $this->ledgerEntry($company, $otherBranch, 700, 0);
+        DB::table('transactions')->where('account_id', $cash->id)->where('credit', 15)
+            ->update(['branch_id' => 'other']);
+        $this->ledgerEntry($company, $cash, 0, 45);
+
+        $this->withoutMiddleware([
+            SubscriptionActive::class,
+            RequireActiveBranch::class,
+            ForceLogoutExpiredSession::class,
+            EnforceDeviceSessionLimit::class,
+            VerifyTenantSession::class,
+        ])->actingAs($user)->withSession($this->branchSession($company));
+        config(['tenancy.enforce_scopes_in_console' => true]);
+
+        $this->get(route('reports.hub'))->assertOk()->assertSee('Cash Flow');
+        $this->get(route('chart-of-accounts'))->assertOk()
+            ->assertSee('Cash on Hand')
+            ->assertSee('Revenue Earned')
+            ->assertSee('Automatically created to record sales earnings')
+            ->assertViewHas('cashAccountSummary', fn ($summary) => $summary->get('cash')['balance'] === -5.0);
+
+        $this->get(route('reports.cash-flow', ['account' => 'cash']))->assertOk()
+            ->assertViewHas('openingBalance', 30.0)
+            ->assertViewHas('totalInflow', 10.0)
+            ->assertViewHas('totalOutflow', 45.0)
+            ->assertViewHas('closingBalance', -5.0)
+            ->assertDontSee('Other Branch Cash');
+
+        $this->get(route('reports.cash-flow'))->assertOk()
+            ->assertViewHas('accounts', fn ($accounts) => $accounts->contains('id', $bank->id))
+            ->assertViewHas('totalInflow', 60.0)
+            ->assertViewHas('closingBalance', 45.0);
+        $this->get(route('reports.cash-flow', ['account' => $otherBranch->id]))->assertNotFound();
+        $this->withSession($this->branchSession($company))->get(route('reports.cash-flow', [
+            'account' => $cash->id,
+            'start_date' => now()->addDay()->toDateString(),
+            'end_date' => now()->addDay()->toDateString(),
+        ]))->assertOk()->assertViewHas('closingBalance', -5.0);
+
+        $csv = $this->get(route('reports.cash-flow.export', ['account' => $cash->id]))->assertOk()->streamedContent();
+        $this->assertStringContainsString('Alh Cash Account', $csv);
+        $this->assertStringContainsString('"Closing Balance",-5', $csv);
+        $this->assertStringNotContainsString('Operating Account', $csv);
+    }
+
+    public function test_chart_report_counts_posted_openings_once_and_matches_cash_flow_at_period_end(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $cash = $this->account($company, 'Cash Drawer', 'Asset', 'Cash');
+        $cash->update(['opening_balance' => 50, 'branch_id' => 'hq', 'branch_name' => 'Headquarters']);
+        LedgerService::postAccountOpeningBalance($cash);
+        DB::table('transactions')->where('account_id', $cash->id)->update([
+            'transaction_date' => now()->subDay()->toDateString(),
+        ]);
+        $this->ledgerEntry($company, $cash, 0, 15);
+        $revenue = $this->account($company, 'Sales Revenue', 'Revenue', 'Sales Revenue');
+        $this->ledgerEntry($company, $revenue, 0, 600);
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $this->get(route('reports.chart-of-accounts'))->assertOk()
+            ->assertViewHas('summary', fn ($summary) => (float) $summary['cash_balance'] === 35.0);
+        $dates = ['start_date' => now()->toDateString(), 'end_date' => now()->toDateString()];
+        $this->get(route('reports.chart-of-accounts', $dates))->assertOk()
+            ->assertViewHas('accounts', function ($accounts) use ($cash) {
+                $row = $accounts->firstWhere('id', $cash->id);
+
+                return (float) $row->opening_balance === 50.0
+                    && (float) $row->current_balance === 35.0
+                    && $row->transactions_count === 1;
+            });
+        $this->get(route('reports.cash-flow', $dates + ['account' => $cash->id]))->assertOk()
+            ->assertViewHas('openingBalance', 50.0)->assertViewHas('closingBalance', 35.0);
+    }
+
+    public function test_bank_settings_keep_a_same_named_cash_till_and_its_ledger_separate(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $cash = $this->account($company, 'Cash', 'Asset', 'Cash');
+        $cash->update(['opening_balance' => 20, 'current_balance' => 20, 'branch_id' => 'hq', 'branch_name' => 'Headquarters']);
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $this->post(route('settings.bank-account.store'), [
+            'bank_name' => 'Cash',
+            'account_number' => '1000001234',
+            'opening_balance' => 100,
+        ])->assertRedirect(route('bank-account'));
+
+        $bank = Bank::where('company_id', $company->id)->where('name', 'Cash')->sole();
+        $bankLedger = Account::where('company_id', $company->id)->where('sub_type', 'Bank')->where('name', 'Cash')->sole();
+        $this->assertEquals(20, $cash->fresh()->opening_balance);
+        $this->assertEquals(100, $bankLedger->opening_balance);
+        $this->assertNull(app(\App\Services\BankBalanceManagementService::class)->findLinkedBank($cash));
+        $this->ledgerEntry($company, $bankLedger, 25, 0);
+
+        $this->withSession($this->branchSession($company))
+            ->delete(route('settings.bank-account.destroy', $bank))->assertRedirect(route('bank-account'));
+        $this->assertFalse($bankLedger->fresh()->is_active);
+        $this->assertTrue($cash->fresh()->is_active);
+        $this->assertEquals(125, $bankLedger->fresh()->calculateBalance());
+    }
+
+    public function test_paying_a_sale_uses_its_cash_or_selected_bank_while_unpaid_sales_only_add_revenue(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $mainBank = $this->account($company, 'Cash at Bank', 'Asset', 'Bank');
+        $cash = $this->account($company, 'Till', 'Asset', 'Cash');
+        $bank = $this->account($company, 'Collection Account', 'Asset', 'Bank');
+
+        $cashSale = $this->sale($user, $company, 'CASH-RECEIPT-1', 100, 'completed');
+        $cashSale->forceFill(['payment_method' => 'cash', 'paid' => 100, 'amount_paid' => 100])->saveQuietly();
+        $bankSale = $this->sale($user, $company, 'BANK-RECEIPT-1', 200, 'completed');
+        $bankSale->forceFill([
+            'payment_method' => 'transfer',
+            'payment_details' => ['transfer_account_id' => $bank->id],
+            'paid' => 200,
+            'amount_paid' => 200,
+        ])->saveQuietly();
+        $unpaidSale = $this->sale($user, $company, 'UNPAID-SALE-1', 50, 'completed');
+
+        LedgerService::postSale($cashSale);
+        LedgerService::postSale($bankSale);
+        LedgerService::postSale($bankSale);
+        LedgerService::postSale($unpaidSale);
+
+        $this->assertEquals(100, $cash->calculateBalance());
+        $this->assertEquals(200, $bank->calculateBalance());
+        $this->assertEquals(0, $mainBank->calculateBalance());
+        $revenue = Account::where('company_id', $company->id)->where('name', 'Sales Revenue')->sole();
+        $this->assertEquals(350, $revenue->calculateBalance());
+    }
+
+    public function test_reposting_a_sale_preserves_receipts_already_posted_from_follow_up_payments(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $cash = $this->account($company, 'Till', 'Asset', 'Cash');
+        $bank = $this->account($company, 'Collection Account', 'Asset', 'Bank');
+        $sale = $this->sale($user, $company, 'PARTIAL-CASH-RECEIPT', 100, 'completed');
+        $sale->forceFill(['payment_method' => 'cash', 'paid' => 30, 'amount_paid' => 30])->saveQuietly();
+        LedgerService::postSale($sale);
+        $payment = Payment::create([
+            'sale_id' => $sale->id, 'company_id' => $company->id, 'created_by' => $user->id,
+            'branch_id' => 'hq', 'branch_name' => 'Headquarters',
+            'method' => 'Bank Transfer', 'account_id' => $bank->id, 'amount' => 40, 'status' => 'Pending',
+        ]);
+        LedgerService::postSalePayment($sale, $payment);
+        $sale->forceFill(['paid' => 70, 'amount_paid' => 70])->saveQuietly();
+        LedgerService::postSale($sale);
+
+        $this->assertEquals(30, $cash->calculateBalance());
+        $this->assertEquals(40, $bank->calculateBalance());
+        $this->assertEquals(30, Account::where('company_id', $company->id)->where('name', 'Accounts Receivable')->sole()->calculateBalance());
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company))
+            ->get(route('reports.sales-summary'))->assertOk()->assertViewHas('totalPaid', 70.0);
+    }
+
+    public function test_expense_posting_honors_the_selected_asset_and_legacy_credits_can_be_repaired(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $cash = $this->account($company, 'Cash Account', 'Asset', 'Cash');
+        $bank = $this->account($company, 'Operating Account', 'Asset', 'Bank');
+        $this->account($company, 'Office Supplies', 'Expense', 'Operating Expense');
+
+        $expense = Expense::create([
+            'company_id' => $company->id,
+            'created_by' => $user->id,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'expense_id' => 'EXP-CASH-REPORT',
+            'company_name' => 'Office Supplier',
+            'category' => 'Office Supplies',
+            'amount' => 125,
+            'status' => 'Paid',
+            'payment_status' => 'paid',
+            'payment_mode' => $bank->name,
+            'payment_account_id' => $bank->id,
+        ]);
+
+        LedgerService::postExpense($expense);
+        $credit = Transaction::query()->where('related_type', Expense::class)
+            ->where('related_id', $expense->id)->where('credit', 125)->sole();
+        $this->assertEquals($bank->id, $credit->account_id);
+
+        $expense->update(['payment_account_id' => null]);
+        $credit->update(['account_id' => $cash->id]);
+
+        $this->artisan('ledger:repair-expense-payment-accounts', ['company_id' => (string) $company->id])
+            ->expectsOutput('Found 1 expense credits eligible for correction.')->assertSuccessful();
+        $this->assertEquals($cash->id, $credit->fresh()->account_id);
+
+        $apply = ['company_id' => (string) $company->id, '--apply' => true];
+        $this->artisan('ledger:repair-expense-payment-accounts', $apply)
+            ->expectsOutput('Corrected 1 expense credits.')->assertSuccessful();
+        $this->assertEquals($bank->id, $credit->fresh()->account_id);
+        $this->assertEquals($bank->id, $expense->fresh()->payment_account_id);
+        $this->artisan('ledger:repair-expense-payment-accounts', $apply)
+            ->expectsOutput('Corrected 0 expense credits.')->assertSuccessful();
     }
 
     private function businessUser(): array

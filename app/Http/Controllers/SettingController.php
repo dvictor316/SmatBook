@@ -647,6 +647,7 @@ class SettingController extends Controller
         $accounts = collect();
         $accountGroups = collect();
         $accountSummary = collect();
+        $cashAccountSummary = collect();
         $bankBalanceDiagnostics = [];
         $accountTypes = Account::typeOptions();
         $subtypeOptionsByType = Account::subtypeOptionsByType();
@@ -654,7 +655,7 @@ class SettingController extends Controller
         if (Schema::hasTable('accounts')) {
             $accounts = Account::query()
                 ->when(Schema::hasTable('transactions'), fn ($query) => $query->withCount('transactions'))
-                ->orderByRaw("FIELD(type, 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense')")
+                ->orderBy('type')
                 ->orderBy('code')
                 ->get();
 
@@ -692,7 +693,14 @@ class SettingController extends Controller
                 });
             }
 
-            $accountGroups = $accounts->groupBy('type');
+            $accountGroups = $accounts->groupBy('type')->sortBy(fn ($group, $type) => array_search($type, $accountTypes, true));
+            $paymentAccounts = $accounts->filter(fn (Account $account) => $account->cashOrBankType() !== null);
+            $cashAccountSummary = $paymentAccounts->groupBy(
+                fn (Account $account) => $account->cashOrBankType() === 'Cash' ? 'cash' : 'bank'
+            )->map(fn ($group) => [
+                'count' => $group->count(),
+                'balance' => (float) $group->sum('current_balance'),
+            ]);
 
             $typeOrder = $accountTypes;
 
@@ -715,6 +723,7 @@ class SettingController extends Controller
             'accounts',
             'accountGroups',
             'accountSummary',
+            'cashAccountSummary',
             'accountTypes',
             'subtypeOptionsByType',
             'bankBalanceDiagnostics'
@@ -1439,38 +1448,32 @@ class SettingController extends Controller
 
     private function resolveBankLedgerAccount(Bank $bank, $accounts = null): ?Account
     {
-        $accounts = $accounts instanceof \Illuminate\Support\Collection
-            ? $accounts
-            : (Schema::hasTable('accounts')
-                ? Account::query()
-                    ->where('is_active', true)
-                    ->where('type', Account::TYPE_ASSET)
-                    ->orderBy('name')
-                    ->get()
-                : collect());
-
-        $account = $accounts->first(function (Account $account) use ($bank) {
-            $bankName = strtolower(trim((string) $bank->name));
-            $accountName = strtolower(trim((string) $account->name));
-
-            return $bankName !== '' && (
-                $accountName === $bankName
-                || str_contains($accountName, $bankName)
-                || str_contains($bankName, $accountName)
-            );
-        });
-
-        if ($account) {
-            return $account;
+        if (!Schema::hasTable('accounts')) {
+            return null;
         }
 
-        return $accounts->first(function (Account $account) {
-            $name = strtolower((string) $account->name);
-            return str_contains($name, 'bank') || str_contains($name, 'cash');
-        });
+        $name = strtolower(trim((string) $bank->name));
+        if ($name === '') {
+            return null;
+        }
+
+        $companyId = (int) ($bank->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id);
+        $branchId = trim((string) ($bank->branch_id ?? session('active_branch_id')));
+        $branchName = trim((string) ($bank->branch_name ?? session('active_branch_name')));
+        $accounts ??= Account::withoutGlobalScope('tenant')->ofType(Account::TYPE_ASSET)->active()
+            ->where('company_id', $companyId)->whereRaw('LOWER(TRIM(name)) = ?', [$name])->get();
+
+        $matches = $accounts->filter(fn (Account $account) => (int) $account->company_id === $companyId
+            && strtolower(trim($account->name)) === $name
+            && in_array($account->cashOrBankType(), ['Bank', 'Cash & Bank'], true)
+            && $account->matchesAccountingBranch($branchId, $branchName));
+        $branchMatches = $matches->reject(fn (Account $account) => $account->isCompanyWide());
+        $matches = $branchMatches->isNotEmpty() ? $branchMatches : $matches;
+
+        return $matches->count() === 1 ? $matches->first() : null;
     }
 
-    private function syncBankLedgerAccount(Bank $bank, ?string $previousBankName = null, ?float $previousBankBalance = null): void
+    private function syncBankLedgerAccount(Bank $bank, ?string $previousBankName = null): void
     {
         if (!Schema::hasTable('accounts')) {
             return;
@@ -1486,33 +1489,21 @@ class SettingController extends Controller
         $branchId = trim((string) ($bank->branch_id ?? session('active_branch_id', '')));
         $branchName = trim((string) ($bank->branch_name ?? session('active_branch_name', '')));
         $newOpening = (float) ($bank->balance ?? 0);
-        $oldOpening = $previousBankBalance !== null ? (float) $previousBankBalance : $newOpening;
 
-        $account = Account::withoutGlobalScopes()
-            ->when($companyId > 0 && Schema::hasColumn('accounts', 'company_id'), fn ($query) => $query->where('company_id', $companyId))
-            ->where('name', $bankName)
-            ->where('type', Account::TYPE_ASSET)
-            ->first();
-
-        if (!$account && $previousBankName !== null && trim($previousBankName) !== '') {
-            $account = Account::withoutGlobalScopes()
-                ->when($companyId > 0 && Schema::hasColumn('accounts', 'company_id'), fn ($query) => $query->where('company_id', $companyId))
-                ->where('name', trim($previousBankName))
-                ->where('type', Account::TYPE_ASSET)
-                ->first();
-        }
+        $lookup = clone $bank;
+        $lookup->name = $previousBankName ?: $bankName;
+        $account = $this->resolveBankLedgerAccount($lookup);
 
         if (!$account) {
             $this->createBankLedgerAccount($bankName, $companyId, $userId, $branchId, $branchName, $newOpening);
             return;
         }
 
-        $currentBalance = (float) ($account->current_balance ?? 0);
-        $payload = [
-            'name' => $bankName,
-            'opening_balance' => $newOpening,
-            'current_balance' => $currentBalance - $oldOpening + $newOpening,
-        ];
+        $payload = ['name' => $bankName];
+        if (!Transaction::withoutGlobalScope('tenant')->where('account_id', $account->id)->exists()) {
+            $payload['opening_balance'] = $newOpening;
+            $payload['current_balance'] = $newOpening;
+        }
 
         if (Schema::hasColumn('accounts', 'sub_type') && empty($account->sub_type)) {
             $payload['sub_type'] = 'Bank';
@@ -2265,8 +2256,9 @@ class SettingController extends Controller
             $payload['branch_name'] = session('active_branch_name');
         }
 
-        $bank = Bank::create($payload);
-        $this->syncBankLedgerAccount($bank, null, (float) ($payload['balance'] ?? 0));
+        DB::transaction(function () use ($payload) {
+            $this->syncBankLedgerAccount(Bank::create($payload));
+        });
 
         return redirect()->route('bank-account')->with('success', 'Bank account added successfully.');
     }
@@ -2321,15 +2313,29 @@ class SettingController extends Controller
             }
         }
 
-        $bank->update($payload);
-        $this->syncBankLedgerAccount($bank->fresh(), $oldBankName, $oldBankBalance);
+        DB::transaction(function () use ($bank, $payload, $oldBankName) {
+            $bank->update($payload);
+            $this->syncBankLedgerAccount($bank->fresh(), $oldBankName);
+        });
 
         return redirect()->route('bank-account')->with('success', 'Bank account updated successfully.');
     }
 
     public function destroyBankAccount(Bank $bank)
     {
-        $bank->delete();
+        DB::transaction(function () use ($bank) {
+            $account = $this->resolveBankLedgerAccount($bank);
+            $shared = Bank::withoutGlobalScope('tenant')
+                ->where('company_id', $bank->company_id)
+                ->where('id', '<>', $bank->id)
+                ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($bank->name))])
+                ->exists();
+            $bank->delete();
+
+            if (!$shared && $account?->description === 'Auto-created bank ledger account for bank settings sync.') {
+                $account->update(['is_active' => false]);
+            }
+        });
 
         return redirect()->route('bank-account')->with('success', 'Bank account deleted successfully.');
     }

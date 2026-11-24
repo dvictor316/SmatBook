@@ -86,7 +86,8 @@ class LedgerService
                 relatedType: Sale::class,
                 userId: $userId,
                 branchId: $branchId,
-                branchName: $branchName
+                branchName: $branchName,
+                companyId: self::$currentCompanyId
             );
         }
 
@@ -103,7 +104,8 @@ class LedgerService
                 relatedType: Sale::class,
                 userId: $userId,
                 branchId: $branchId,
-                branchName: $branchName
+                branchName: $branchName,
+                companyId: self::$currentCompanyId
             );
         }
 
@@ -144,11 +146,20 @@ class LedgerService
                 relatedType: Sale::class,
                 userId: $userId,
                 branchId: $branchId,
-                branchName: $branchName
+                branchName: $branchName,
+                companyId: self::$currentCompanyId
             );
         }
 
-        $paid = (float) ($sale->paid ?? $sale->amount_paid ?? 0);
+        $paid = min($total, (float) ($sale->paid ?? $sale->amount_paid ?? 0));
+        if ($paid > 0 && Schema::hasTable('payments')) {
+            $postedPayments = Transaction::withoutGlobalScope('tenant')
+                ->where('related_type', Payment::class)
+                ->where('transaction_type', Transaction::TYPE_RECEIPT)
+                ->whereIn('related_id', Payment::withoutGlobalScopes()->where('sale_id', $sale->id)->select('id'))
+                ->sum('credit');
+            $paid = round($paid - (float) $postedPayments, 2);
+        }
         if ($paid > 0) {
             $paymentDetails = is_array($sale->payment_details) ? $sale->payment_details : [];
             $splitDetails = is_array($paymentDetails['split'] ?? null) ? $paymentDetails['split'] : [];
@@ -168,8 +179,8 @@ class LedgerService
                     }
 
                     $cashAccount = !empty($details['account_id'])
-                        ? (Account::withoutGlobalScopes()->find((int) $details['account_id']) ?? self::resolveCashAccount($channel))
-                        : self::resolveCashAccount($channel);
+                        ? (Account::withoutGlobalScopes()->find((int) $details['account_id']) ?? self::resolveCashAccount($channel, $branchId, $branchName))
+                        : self::resolveCashAccount($channel, $branchId, $branchName);
 
                     self::postDoubleEntry(
                         debitAccountId: $cashAccount->id,
@@ -183,15 +194,22 @@ class LedgerService
                         relatedType: Sale::class,
                         userId: $userId,
                         branchId: $branchId,
-                        branchName: $branchName
+                        branchName: $branchName,
+                        companyId: self::$currentCompanyId
                     );
 
                     $remainingPaid = round($remainingPaid - $channelAmount, 2);
                 }
             } else {
+                $channelAccountId = match (strtolower((string) $sale->payment_method)) {
+                    'transfer', 'bank transfer' => $paymentDetails['transfer_account_id'] ?? null,
+                    'card', 'pos', 'pos/card' => $paymentDetails['card_account_id'] ?? null,
+                    default => null,
+                };
+                $depositAccountId ??= (int) ($channelAccountId ?? $paymentDetails['payment_account_id'] ?? 0);
                 $cashAccount = $depositAccountId
-                    ? (Account::withoutGlobalScopes()->find($depositAccountId) ?? self::resolveCashAccount($sale->payment_method ?? null))
-                    : self::resolveCashAccount($sale->payment_method ?? null);
+                    ? (Account::withoutGlobalScopes()->find($depositAccountId) ?? self::resolveCashAccount($sale->payment_method ?? null, $branchId, $branchName))
+                    : self::resolveCashAccount($sale->payment_method ?? null, $branchId, $branchName);
 
                 self::postDoubleEntry(
                     debitAccountId: $cashAccount->id,
@@ -205,7 +223,8 @@ class LedgerService
                     relatedType: Sale::class,
                     userId: $userId,
                     branchId: $branchId,
-                    branchName: $branchName
+                    branchName: $branchName,
+                    companyId: self::$currentCompanyId
                 );
             }
         }
@@ -372,24 +391,21 @@ class LedgerService
             ?? session('current_tenant_id')
             ?? 0) ?: null;
 
+        $branchId = $purchase->branch_id ?? null;
+        $branchName = $purchase->branch_name ?? $purchase->branch_label ?? null;
+
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
         $cashAccount = null;
         if ($paymentAccountId && $paymentAccountId > 0) {
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
-        if (!$cashAccount && $paymentMethod) {
-            $cashAccount = self::resolveAssetAccountByName($paymentMethod);
-        }
         if (!$cashAccount) {
-            $cashAccount = self::resolveCashAccount($paymentMethod);
+            $cashAccount = self::resolveCashAccount($paymentMethod, $branchId, $branchName);
         }
 
         $ref = $reference ?: ($purchase->purchase_no ?: ('PUR-' . $purchase->id)) . '-PAY';
         $date = self::resolveDate($paymentDate ?? $purchase->paid_at ?? $purchase->updated_at ?? now());
         $userId = auth()->id();
-        $branchId = $purchase->branch_id ?? null;
-        $branchName = $purchase->branch_name ?? $purchase->branch_label ?? null;
-
         self::postDoubleEntry(
             debitAccountId: $payableAccount->id,
             creditAccountId: $cashAccount->id,
@@ -432,11 +448,8 @@ class LedgerService
         if ($paymentAccountId && $paymentAccountId > 0) {
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
-        if (!$cashAccount && $paymentMethod) {
-            $cashAccount = self::resolveAssetAccountByName($paymentMethod);
-        }
         if (!$cashAccount) {
-            $cashAccount = self::resolveCashAccount($paymentMethod);
+            $cashAccount = self::resolveCashAccount($paymentMethod, $branchId, $branchName);
         }
 
         $ref = $reference ?: ('SUP-OPEN-' . $supplierId . '-PAY');
@@ -812,7 +825,7 @@ class LedgerService
                 'code' => self::nextCode('AST'),
                 'name' => $bankName,
                 'type' => Account::TYPE_ASSET,
-                'sub_type' => Account::SUBTYPE_CURRENT_ASSET,
+                'sub_type' => 'Bank',
                 'opening_balance' => $seedBalance,
                 'current_balance' => $seedBalance,
                 'description' => 'Auto-backfilled bank ledger account.',
@@ -934,7 +947,11 @@ class LedgerService
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
         if (!$cashAccount) {
-            $cashAccount = self::resolveCashAccount($payment->method ?? $sale->payment_method ?? null);
+            $cashAccount = self::resolveCashAccount(
+                $payment->method ?? $sale->payment_method,
+                $payment->branch_id ?? $sale->branch_id,
+                $payment->branch_name ?? $sale->branch_name
+            );
         }
         $reference = $externalReference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
         $date = self::resolveDate($payment->created_at);
@@ -954,7 +971,8 @@ class LedgerService
             relatedType: Payment::class,
             userId: $userId,
             branchId: $branchId,
-            branchName: $branchName
+            branchName: $branchName,
+            companyId: self::$currentCompanyId
         );
     }
 
@@ -968,6 +986,11 @@ class LedgerService
         if ($amount <= 0) {
             return;
         }
+
+        self::$currentCompanyId = (int) ($payment->company_id
+            ?? session('current_tenant_id')
+            ?? Auth::user()?->company_id
+            ?? 0) ?: null;
 
         $existing = Transaction::query()
             ->where('related_id', $payment->id)
@@ -984,7 +1007,7 @@ class LedgerService
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
         if (!$cashAccount) {
-            $cashAccount = self::resolveCashAccount($payment->method ?? null);
+            $cashAccount = self::resolveCashAccount($payment->method, $payment->branch_id, $payment->branch_name);
         }
         $revenueAccount = self::resolveAccount('Other Income', 'Revenue', ['income', 'other income', 'sales'], 'AUTO-REV-OTH');
         $reference = $payment->reference ?: ($payment->payment_id ?: ('PAY-' . $payment->id));
@@ -1042,7 +1065,7 @@ class LedgerService
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
         if (!$cashAccount) {
-            $cashAccount = self::resolveCashAccount($payment->method ?? null);
+            $cashAccount = self::resolveCashAccount($payment->method, $payment->branch_id, $payment->branch_name);
         }
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
@@ -1095,7 +1118,7 @@ class LedgerService
             $cashAccount = Account::withoutGlobalScopes()->find($paymentAccountId);
         }
         if (!$cashAccount) {
-            $cashAccount = self::resolveCashAccount($payment->method ?? null);
+            $cashAccount = self::resolveCashAccount($payment->method, $payment->branch_id, $payment->branch_name);
         }
 
         $advanceAccount = self::resolveAccount('Customer Advances', 'Liability', ['customer advance', 'customer deposit', 'unearned revenue'], 'AUTO-LIB-CADV');
@@ -1196,7 +1219,12 @@ class LedgerService
             ['expense', 'operating', 'cost'],
             'AUTO-EXP-GEN'
         );
-        $cashAccount = self::resolveCashAccount($expense->payment_mode ?? null);
+        $cashAccount = self::resolveCashAccount(
+            $expense->payment_mode,
+            $expense->branch_id,
+            $expense->branch_name,
+            $expense->payment_account_id
+        );
         $reference = $expense->reference ?: ($expense->expense_id ?: ('EXP-' . $expense->id));
         $branchId = $expense->branch_id ?? null;
         $branchName = $expense->branch_name ?? null;
@@ -1213,7 +1241,8 @@ class LedgerService
             relatedType: Expense::class,
             userId: $expense->created_by ?? auth()->id(),
             branchId: $branchId,
-            branchName: $branchName
+            branchName: $branchName,
+            companyId: self::$currentCompanyId
         );
     }
 
@@ -1402,8 +1431,8 @@ class LedgerService
 
         $receivableAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
         $cashAccount = $depositAccountId
-            ? (Account::withoutGlobalScopes()->find($depositAccountId) ?? self::resolveCashAccount('cash'))
-            : self::resolveCashAccount('cash');
+            ? (Account::withoutGlobalScopes()->find($depositAccountId) ?? self::resolveCashAccount('cash', $branchId, $branchName))
+            : self::resolveCashAccount('cash', $branchId, $branchName);
 
         self::postDoubleEntry(
             debitAccountId: $cashAccount->id,
@@ -1443,7 +1472,8 @@ class LedgerService
         string $relatedType,
         ?int $userId = null,
         ?string $branchId = null,
-        ?string $branchName = null
+        ?string $branchName = null,
+        ?int $companyId = null
     ): void {
         if ($amount <= 0) {
             return;
@@ -1463,6 +1493,9 @@ class LedgerService
             'balance' => 0,
         ];
         $payload = array_merge($payload, self::resolveTenantPayload('transactions'));
+        if ($companyId !== null) {
+            $payload['company_id'] = $companyId;
+        }
         if ($branchId !== null && Schema::hasColumn('transactions', 'branch_id')) {
             $payload['branch_id'] = $branchId;
         }
@@ -1620,54 +1653,68 @@ class LedgerService
         );
     }
 
-    private static function resolveCashAccount(?string $paymentMethod = null): Account
-    {
-        $cid = self::$currentCompanyId;
-        $base = Account::withoutGlobalScopes()->where('type', 'Asset')->where('is_active', 1);
-        if ($cid && Schema::hasColumn('accounts', 'company_id')) {
-            $base->where('company_id', $cid);
+    private static function resolveCashAccount(
+        ?string $paymentMethod = null,
+        ?string $branchId = null,
+        ?string $branchName = null,
+        ?int $paymentAccountId = null
+    ): Account {
+        $branchId = trim((string) ($branchId ?? session('active_branch_id')));
+        $branchName = trim((string) ($branchName ?? session('active_branch_name')));
+        $method = strtolower(trim((string) $paymentMethod));
+        $payload = self::resolveTenantPayload('accounts');
+
+        $accounts = Account::withoutGlobalScope('tenant')->ofType(Account::TYPE_ASSET)
+            ->when(self::$currentCompanyId, function ($query, $companyId) use ($payload) {
+                $userId = $payload['user_id'] ?? null;
+                $query->where(function ($owner) use ($companyId, $userId) {
+                    $owner->where('company_id', $companyId);
+                    if ($userId) {
+                        $owner->orWhere(fn ($legacy) => $legacy->whereNull('company_id')->where('user_id', $userId));
+                    }
+                });
+            })
+            ->when(!self::$currentCompanyId, fn ($query) => $query->whereNull('company_id')
+                ->where('user_id', $payload['user_id'] ?? null))
+            ->when($paymentAccountId, fn ($query, $id) => $query->whereKey($id), fn ($query) => $query->active())
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Account $account) => $account->matchesAccountingBranch($branchId, $branchName))
+            ->sortBy(fn (Account $account) => $account->isCompanyWide() ? 1 : 0);
+
+        if ($paymentAccountId) {
+            return $accounts->firstWhere('id', $paymentAccountId)
+                ?? throw new InvalidArgumentException('The selected payment account is unavailable for this branch.');
         }
 
-        if ($paymentMethod && stripos($paymentMethod, 'cash') !== false) {
-            $cash = (clone $base)->whereRaw('LOWER(name) LIKE ?', ['%cash%'])->first();
-            if ($cash) {
-                return $cash;
-            }
+        $namedAccount = $method !== '' ? $accounts->first(
+            fn (Account $account) => strtolower(trim($account->name)) === $method
+        ) : null;
+        if ($namedAccount) {
+            return $namedAccount;
         }
 
-        $bank = (clone $base)->whereRaw('LOWER(name) LIKE ?', ['%bank%'])->first();
-        if ($bank) {
-            return $bank;
+        $type = str_contains($method, 'cash') ? 'Cash' : 'Bank';
+        $liquid = $accounts->filter(fn (Account $account) => $account->cashOrBankType() !== null);
+        $fallback = $liquid->first(fn (Account $account) => $account->cashOrBankType() === $type)
+            ?? $liquid->first(fn (Account $account) => $account->cashOrBankType() === 'Cash & Bank');
+
+        if (!$fallback && $type === 'Bank' && !preg_match('/\b(bank|transfer|card|pos|cheque|check)\b/', $method)) {
+            $fallback = $liquid->first();
         }
 
-        $cash = (clone $base)->whereRaw('LOWER(name) LIKE ?', ['%cash%'])->first();
-        if ($cash) {
-            return $cash;
-        }
-
-        return self::resolveAccount('Main Bank Account', 'Asset', ['bank', 'cash'], 'AUTO-AST-CASH');
-    }
-
-    private static function resolveAssetAccountByName(string $name): ?Account
-    {
-        $cid = self::$currentCompanyId;
-        $normalized = strtolower(trim($name));
-        if ($normalized === '') {
-            return null;
-        }
-
-        $base = Account::withoutGlobalScopes()->where('type', 'Asset')->where('is_active', 1);
-        if ($cid && Schema::hasColumn('accounts', 'company_id')) {
-            $base->where('company_id', $cid);
-        }
-
-        return (clone $base)
-            ->whereRaw('LOWER(name) = ?', [$normalized])
-            ->first()
-            ?: (clone $base)
-                ->whereRaw('LOWER(name) LIKE ?', ['%' . $normalized . '%'])
-                ->orderBy('id')
-                ->first();
+        return $fallback ?? Account::create(self::filterAccountPayload(array_merge($payload, [
+            'code' => self::nextCode($type === 'Cash' ? 'AUTO-AST-CASH' : 'AUTO-AST-BANK'),
+            'name' => $type === 'Cash' ? 'Cash on Hand' : 'Main Bank Account',
+            'type' => Account::TYPE_ASSET,
+            'sub_type' => $type,
+            'company_id' => self::$currentCompanyId,
+            'branch_id' => $branchId ?: null,
+            'branch_name' => $branchName ?: null,
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'is_active' => true,
+        ])));
     }
 
     private static function resolveAccount(string $name, string $type, array $keywords, string $autoCodePrefix): Account
@@ -1714,6 +1761,9 @@ class LedgerService
             'is_active' => 1,
         ];
         $payload = array_merge($payload, self::resolveTenantPayload('accounts'));
+        if ($cid) {
+            $payload['company_id'] = $cid;
+        }
 
         return Account::create(self::filterAccountPayload($payload));
     }
