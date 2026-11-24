@@ -111,6 +111,15 @@ class LedgerService
 
         $sale->loadMissing('items.product');
         $inventoryCost = round($sale->items->sum(function ($item) {
+            $quantity = max(0, (float) ($item->qty ?? 0));
+
+            // Use the cost captured on the sale line when available. Product
+            // purchase prices can change later; re-posting an older sale must
+            // not rewrite its historical COGS using today's product cost.
+            if ($item->unit_cost !== null && is_numeric($item->unit_cost) && (float) $item->unit_cost > 0) {
+                return round(max(0, (float) $item->unit_cost) * $quantity, 2);
+            }
+
             $product = $item->product;
             if (!$product) {
                 return 0;

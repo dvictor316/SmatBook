@@ -53,6 +53,9 @@
     @if(Route::has('trial-balance'))
         <li><a href="{{ route('trial-balance') }}" class="{{ request()->routeIs('trial-balance') ? 'active' : '' }}">Trial Balance</a></li>
     @endif
+    @if($canEnterprise && Route::has('balance-sheet'))
+        <li><a href="{{ route('balance-sheet') }}" class="{{ request()->routeIs('balance-sheet*') ? 'active' : '' }}">Balance Sheet</a></li>
+    @endif
     @if(Route::has('general-ledger'))
         <li><a href="{{ route('general-ledger') }}" class="{{ request()->routeIs('general-ledger') ? 'active' : '' }}">General Ledger</a></li>
     @endif

@@ -160,7 +160,7 @@ class Plan extends Model
         return match ($normalizedTier) {
             'enterprise' => [
                 $seatLabel,
-                'Full accounting suite with tax, bank, and audit controls',
+                'Full accounting suite with Balance Sheet, Trial Balance, and Cash Flow',
                 'Budgets, fixed assets, payroll, and compliance workflows',
                 'Production BOM, returnable assets, and secure developer API',
                 'Provider-backed bill payments and commission reconciliation',
@@ -194,7 +194,7 @@ class Plan extends Model
                 'Price lists, returns, requisitions, GRN, and branch workflows',
                 'PWA online store with custom-domain order capture',
                 'Expiry alerts, reorder controls, and richer stock management',
-                'Cash flow, forecasting, and scheduled reporting',
+                'Cash Flow, Trial Balance, forecasting, and scheduled reporting',
                 'Operational controls for growing multi-user teams',
             ],
             default => [

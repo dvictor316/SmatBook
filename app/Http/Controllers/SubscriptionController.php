@@ -555,7 +555,7 @@ class SubscriptionController extends Controller
             ]);
 
             $isTrialSubscription = $subscription->isTrial();
-            $subscriptionPlanName = (string) ($subscription->plan_name ?? $subscription->plan ?? 'Basic');
+            $subscriptionPlanName = $subscription->planLabel();
             $isHotelPlan = str_contains(strtolower($subscriptionPlanName), 'hotel')
                 || str_contains(strtolower($subscriptionPlanName), 'hospitality');
             $isLivestockPlan = str_contains(strtolower($subscriptionPlanName), 'livestock')

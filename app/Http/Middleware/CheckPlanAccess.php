@@ -26,7 +26,11 @@ class CheckPlanAccess
         }
 
         $user = Auth::user();
-        if ($user?->isDemoUser()) {
+        // Demo controls and standalone specialist workspaces are available
+        // independently of the general-business plan being previewed.
+        if ($user?->isDemoUser() && $request->routeIs(
+            'demo.workspace.plan', 'customers.demo-preview', 'demo.customer-preview.*', 'hotel.*', 'livestock.*'
+        )) {
             return $next($request);
         }
 

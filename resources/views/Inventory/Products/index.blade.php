@@ -965,7 +965,7 @@
                     </div>
 
                     <?php if ($canBulkEditProducts) { ?>
-                        <button type="button" class="btn btn-outline-primary inventory-tool-btn inventory-toolbar-bulk-edit" data-bs-toggle="modal" data-bs-target="#bulkEditProductsModal">
+                        <button type="button" class="btn btn-outline-primary inventory-tool-btn inventory-toolbar-bulk-edit" data-bs-toggle="modal" data-bs-target="#bulkEditProductsModal" data-bulk-edit-scope="selected">
                             <i class="fas fa-pen-to-square me-1"></i> Bulk Edit Inventory
                         </button>
                     <?php } ?>

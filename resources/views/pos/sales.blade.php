@@ -20,6 +20,9 @@
         }
         return false;
     };
+    $posCanEditSales = $posSalesCan('sales.sales.edit');
+    $posCanDeleteSales = $posSalesCan('sales.sales.delete');
+    $posCanReturnSales = $posSalesCan('sales.sales.return');
     $posCanManageSalesLog = $posSalesCan(['sales.sales.edit', 'sales.sales.delete', 'sales.sales.return', 'reports.reports.view', 'sales.sales.view_all']);
     $posCanExportSalesLog = $posSalesCan(['reports.reports.export', 'reports.reports.view', 'sales.sales.view_all']);
     $posReceiptLookupMode = request()->boolean('reprint') && !$posCanManageSalesLog;
@@ -768,10 +771,16 @@
                                         <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}" target="_blank" rel="noopener"><i class="fas fa-file-invoice me-1"></i> Standard Receipt</a></li>
                                         <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}?format=thermal&amp;paper=80" target="_blank" rel="noopener"><i class="fas fa-receipt me-1"></i> Thermal Receipt (80mm)</a></li>
                                         <li><a class="dropdown-item" href="{{ $receiptPrintUrl }}?format=thermal&amp;paper=58" target="_blank" rel="noopener"><i class="fas fa-receipt me-1"></i> Thermal Receipt (58mm)</a></li>
-                                        @if($posCanManageSalesLog)
+                                        @if($posCanReturnSales || $posCanEditSales || $posCanDeleteSales)
                                             <li><hr class="dropdown-divider"></li>
+                                        @endif
+                                        @if($posCanReturnSales)
                                             <li><a class="dropdown-item text-warning" href="{{ $posReturnBaseUrl }}?sale_id={{ urlencode((string) $sale->id) }}"><i class="fas fa-undo me-1"></i> Process Return</a></li>
+                                        @endif
+                                        @if($posCanEditSales)
                                             <li><a class="dropdown-item" href="{{ route('sales.edit', $sale->id) }}">Edit Sale</a></li>
+                                        @endif
+                                        @if($posCanDeleteSales)
                                             <li>
                                                 <form method="POST" action="{{ route('sales.destroy', $sale->id) }}" onsubmit="return confirm('Delete this sale?');">
                                                     @csrf

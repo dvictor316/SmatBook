@@ -14,6 +14,10 @@ class PlanAccess
             return 'full';
         }
 
+        if ($user?->isDemoUser()) {
+            return self::normalizeTier(session('demo_customer_preview_plan')) ?? 'basic';
+        }
+
         $subscription = Subscription::resolveCurrentForUser($user);
 
         foreach (self::planCandidates($user, $subscription) as $candidate) {
@@ -55,11 +59,12 @@ class PlanAccess
             return 'enterprise';
         }
 
-        if (str_contains($value, 'enterprise')) {
+        if (str_contains($value, 'enterprise') || str_contains($value, 'institutional')) {
             return 'enterprise';
         }
 
-        if ($value === 'pro' || $value === 'professional' || str_contains($value, 'professional') || str_contains($value, 'pro ')) {
+        if ($value === 'pro' || str_starts_with($value, 'pro-') || str_contains($value, 'professional')
+            || str_contains($value, 'pro ') || str_contains($value, 'premium')) {
             return 'pro';
         }
 
@@ -73,9 +78,10 @@ class PlanAccess
     private static function planCandidates($user, ?Subscription $subscription): array
     {
         return [
-            $subscription?->planLabel(),
-            optional($subscription?->plan_relationship)->name,
-            optional($user?->company)->plan,
+            $subscription?->plan_name,
+            $subscription?->plan,
+            $subscription?->plan_relationship?->name,
+            $subscription?->company?->plan ?? $user?->company?->plan,
             session('user_plan'),
         ];
     }

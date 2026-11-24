@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\{Product, Expense, Sale, Company, Subscription, User, Plan, ProductBranchStock};
 use App\Models\Customer;
 use App\Support\InventoryQuantity;
+use App\Support\PlanAccess;
 use App\Support\StockValuation;
 use Illuminate\Support\Facades\{DB, Auth, Schema, Cache, Log};
 use Illuminate\Database\QueryException;
@@ -162,13 +163,7 @@ class DashboardController extends Controller
         }
 
         $userRole = $user->role;
-        $plan = ($isSuperAdmin && $isBusinessWorkspace)
-            ? 'enterprise'
-            : ($demoPreviewPlan ?: Plan::normalizeTier(
-                $currentSubscription?->plan_name
-                ?? $currentSubscription?->plan
-                ?? ($company?->plan ?? 'basic')
-            ));
+        $plan = PlanAccess::resolveTierForUser($user);
         $dashboardBranchLabel = ($activeBranch['scope'] ?? 'branch') === 'all'
             ? 'All Branches'
             : ($activeBranch['name'] ?? null);
@@ -281,8 +276,8 @@ class DashboardController extends Controller
 
         return match($plan) {
             'starter' => view('SuperAdmin.dashboards.starter', $data),
-            'professional' => view('SuperAdmin.dashboards.pro', $data),
-            'enterprise' => view('SuperAdmin.dashboards.enterprise', $data),
+            'pro' => view('SuperAdmin.dashboards.pro', $data),
+            'enterprise', 'full' => view('SuperAdmin.dashboards.enterprise', $data),
             default      => view('SuperAdmin.dashboards.basic', $data),
         };
     }

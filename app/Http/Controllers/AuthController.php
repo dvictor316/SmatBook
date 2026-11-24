@@ -38,10 +38,10 @@ class AuthController extends Controller
         $isPartner = $socialRegistration
             ? $socialRegistration['role'] === 'agent'
             : in_array($request->query('type'), ['partner', 'manager'], true);
-        $planParam = strtolower((string) ($socialRegistration['plan'] ?? $request->query('plan', 'pro')));
         $cycleParam = 'yearly';
         $catalog = $this->registrationPlanCatalog();
-        $selectedCatalog = $catalog[$planParam] ?? $catalog['pro'];
+        $planKey = $this->resolveRegistrationPlanKey($socialRegistration['plan'] ?? $request->query('plan'), $catalog) ?? 'pro';
+        $selectedCatalog = $catalog[$planKey];
         $planData = Plan::findByCatalogName($selectedCatalog['label'], $cycleParam);
 
         if ($isPartner) {
@@ -342,41 +342,20 @@ class AuthController extends Controller
                 }
 
                 $fieldOfOperation = strtolower(trim((string) ($validated['field_of_operation'] ?? '')));
-                $requestedPlan = strtolower((string) ($request->plan ?? session('selected_plan', 'pro')));
                 $requestedCycle = 'yearly';
-                $requestedPlan = ModuleCatalog::dedicatedPlanForOperation($fieldOfOperation) ?? $requestedPlan;
-
                 $catalog = $this->registrationPlanCatalog();
-                $catalogEntry = $catalog[$requestedPlan] ?? null;
-                $planId = $request->plan_id ?? session('selected_plan_id');
-                if (in_array($requestedPlan, ['hotel', 'livestock'], true)) {
-                    $planId = null;
-                }
-                $plan = $planId ? Plan::find((int) $planId) : null;
-                if ($plan && (
-                    strtolower((string) $plan->billing_cycle) !== 'yearly'
-                    || (Schema::hasColumn('plans', 'is_active') && ! $plan->is_active)
-                )) {
-                    $plan = null;
-                    $planId = null;
-                }
-
-                if (!$plan && $catalogEntry) {
-                    $plan = Plan::findByCatalogName($catalogEntry['label'], $requestedCycle);
-                }
-
-                if (!$plan && !empty(session('selected_plan'))) {
-                    $plan = Plan::findByCatalogName((string) session('selected_plan'), $requestedCycle);
-                }
-
-                $planName = $catalogEntry['label'] ?? $plan?->name ?? ucfirst($requestedPlan ?: 'pro');
-                $planAmount = (float) ($plan?->price ?? ($catalogEntry['prices'][$requestedCycle] ?? session('selected_amount', 150000)));
-                $planId = $plan?->id ?? $planId;
+                $requestedPlan = ModuleCatalog::dedicatedPlanForOperation($fieldOfOperation)
+                    ?? $this->resolveRegistrationPlanKey($request->input('plan') ?? session('selected_plan'), $catalog)
+                    ?? 'pro';
+                $catalogEntry = $catalog[$requestedPlan];
+                $planName = $catalogEntry['label'];
+                $plan = Plan::findByCatalogName($planName, $requestedCycle);
+                $planAmount = (float) ($plan?->price ?? $catalogEntry['prices'][$requestedCycle]);
                 $billingCycle = ucfirst($requestedCycle);
 
                 $subscriptionPayload = $this->filterPayloadForTable('subscriptions', array_merge([
                     'user_id' => $user->id,
-                    'plan_id' => $planId,
+                    'plan_id' => $plan?->id,
                     'plan' => $planName,
                     'plan_name' => $planName,
                     'billing_cycle' => $billingCycle,
@@ -1406,24 +1385,13 @@ class AuthController extends Controller
         $catalog = $this->registrationPlanCatalog();
         $planKey = $this->resolveRegistrationPlanKey($planInput, $catalog);
         $entry = $planKey ? ($catalog[$planKey] ?? null) : null;
-        $planId = $request->query('plan_id', session('selected_plan_id'));
-        $amount = $request->query('amount', session('selected_amount'));
+        $planId = null;
+        $amount = null;
 
         if ($entry) {
-            $plan = $planId ? Plan::find((int) $planId) : null;
-            if ($plan && (
-                strtolower((string) $plan->billing_cycle) !== 'yearly'
-                || (Schema::hasColumn('plans', 'is_active') && ! $plan->is_active)
-            )) {
-                $plan = null;
-                $planId = null;
-            }
-            if (!$plan) {
-                $plan = Plan::findByCatalogName($entry['label'], $cycle);
-                $planId = $plan?->id;
-            }
-
-            $amount = $plan?->price ?? ($entry['prices'][$cycle] ?? $amount);
+            $plan = Plan::findByCatalogName($entry['label'], $cycle);
+            $planId = $plan?->id;
+            $amount = $plan?->price ?? $entry['prices'][$cycle];
 
             session([
                 'selected_plan_id' => $planId,

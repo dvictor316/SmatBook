@@ -174,6 +174,8 @@ Route::post('/email/verify/resend', [EmailVerificationController::class, 'resend
 |--------------------------------------------------------------------------
 */
 
+Route::get('/desktop-launch', [AuthController::class, 'desktopLaunch'])->name('desktop.launch');
+
 Route::middleware('guest')->group(function () {
     Route::get('/saas-login', [AuthController::class, 'showLogin'])->name('saas-login');
     Route::post('/saas-login', [AuthController::class, 'login'])->name('saas-login.post');
@@ -1107,9 +1109,9 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/invoice/{id}', 'showInvoice')->name('invoice.show');
         Route::get('/invoice/{id}/print', 'printInvoice')->name('invoice.print');
         Route::get('/{id}/pdf', 'downloadPDF')->name('pdf');
-        Route::get('/{sale}/edit', 'edit')->name('edit');
-        Route::put('/{sale}', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::get('/{sale}/edit', 'edit')->middleware('permission:sales.sales.edit')->name('edit');
+        Route::put('/{sale}', 'update')->middleware('permission:sales.sales.edit')->name('update');
+        Route::delete('/{id}', 'destroy')->middleware('permission:sales.sales.delete')->name('destroy');
         Route::get('/{id}', 'showSale')->name('show');
     });
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
@@ -1382,11 +1384,11 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     Route::get('/balance-sheet/export', [BalanceSheetController::class, 'export'])->middleware('plan.access:enterprise')->name('balance-sheet.export');
     Route::get('/balance-sheet-summary', [BalanceSheetController::class, 'summary'])->middleware('plan.access:enterprise')->name('balance-sheet-summary');
     Route::get('/balance-sheet-comparison', [BalanceSheetController::class, 'comparison'])->middleware('plan.access:enterprise')->name('balance-sheet-comparison');
-    Route::get('/trial-balance', [TrialBalanceController::class, 'index'])->middleware('plan.access:enterprise')->name('trial-balance');
-    Route::get('/trial-balance/export', [TrialBalanceController::class, 'export'])->middleware('plan.access:enterprise')->name('trial-balance.export');
+    Route::get('/trial-balance', [TrialBalanceController::class, 'index'])->middleware('plan.access:pro,enterprise')->name('trial-balance');
+    Route::get('/trial-balance/export', [TrialBalanceController::class, 'export'])->middleware('plan.access:pro,enterprise')->name('trial-balance.export');
     Route::get('/reports/chart-of-accounts', [ReportController::class, 'chartOfAccountsReport'])->middleware('plan.access:pro,enterprise')->name('reports.chart-of-accounts');
     Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])
-        ->middleware('plan.access:enterprise')
+        ->middleware('plan.access:pro,enterprise')
         ->name('general-ledger');
 
     // Compliance & Global Tax

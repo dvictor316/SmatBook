@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\RegistrationEmailApprovalMail;
 use App\Models\DeploymentManager;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -362,13 +363,17 @@ class AssistedBusinessRegistrationTest extends TestCase
     public function test_public_registration_starts_trial_and_activates_workspace_before_payment(): void
     {
         $this->approveRegistrationEmail('public-owner@example.test', 'self');
+        $stalePlan = Plan::create([
+            'name' => 'Basic', 'billing_cycle' => 'Yearly', 'price' => 80000, 'is_active' => true,
+        ]);
         $response = $this->from(route('saas-register'))->post(route('saas-register.post'), [
             'role' => 'admin',
             'name' => 'Public Business Owner',
             'email' => 'public-owner@example.test',
             'password' => 'ClientPass123',
             'password_confirmation' => 'ClientPass123',
-            'plan' => 'pro',
+            'plan' => 'professional',
+            'plan_id' => $stalePlan->id,
             'billing_cycle' => 'yearly',
             'field_of_operation' => 'general',
         ]);
@@ -382,6 +387,8 @@ class AssistedBusinessRegistrationTest extends TestCase
         $this->assertNotNull($owner->fresh()->email_verified_at);
         $this->assertSame('trial', strtolower((string) $subscription->status));
         $this->assertSame('free', strtolower((string) $subscription->payment_status));
+        $this->assertSame('Professional', $subscription->plan_name ?? $subscription->plan);
+        $this->assertNotEquals($stalePlan->id, $subscription->plan_id);
         $this->assertTrue(\Illuminate\Support\Carbon::parse($subscription->end_date)->isSameDay(now()->addMonth()));
 
         $setupResponse = $this->post(route('saas.store'), [
@@ -403,11 +410,18 @@ class AssistedBusinessRegistrationTest extends TestCase
             'status' => 'Active',
         ]);
 
+        $this->get(route('reports.hub', ['tab' => 'management']))->assertOk()
+            ->assertViewHas('reportAccess', 'pro')->assertSee('Trial Balance')->assertSee('Cash Flow');
+        $this->get(route('trial-balance'))->assertOk();
+        $this->get(route('reports.cash-flow'))->assertOk();
+        $this->get(route('balance-sheet'))->assertRedirect(route('user.dashboard'));
+
         $trial = Subscription::findOrFail($subscription->id);
         $trial->update(['end_date' => now()->subDay()]);
 
         $this->get(route('user.dashboard'))
             ->assertRedirect(route('subscription.expired'));
+        $this->get(route('trial-balance'))->assertRedirect(route('subscription.expired'));
         $this->get(route('subscription.expired'))
             ->assertRedirect(route('subscription.upgrade.redirect', [
                 'plan' => $trial->renewalPlanKey(),

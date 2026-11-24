@@ -224,7 +224,7 @@ class Subscription extends Model
 
     public function planLabel(): string
     {
-        return (string) ($this->plan_name ?: $this->plan ?: optional($this->company)->plan ?: 'Basic');
+        return (string) ($this->plan_name ?: $this->plan ?: $this->plan_relationship?->name ?: $this->company?->plan ?: 'Basic');
     }
 
     public function resolvedUserLimit(): ?int
