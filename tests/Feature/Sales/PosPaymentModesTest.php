@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Sales;
 
+use App\Models\Account;
 use App\Models\Company;
 use App\Models\Sale;
 use App\Models\User;
@@ -13,6 +14,61 @@ use Tests\TestCase;
 class PosPaymentModesTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_cash_summary_combines_retired_current_and_unassigned_cash_accounts(): void
+    {
+        [$company, $user] = $this->createCompanyAndSales();
+        $branch = ['branch_id' => 'hq', 'branch_name' => 'Headquarters'];
+        Sale::where('company_id', $company->id)->update($branch);
+        $this->withSession([
+            'current_tenant_id' => $company->id,
+            'active_branch_id' => $branch['branch_id'],
+            'active_branch_name' => $branch['branch_name'],
+        ]);
+        $oldCash = Account::create(['company_id' => $company->id, 'name' => 'Cash', 'code' => 'OLD-CASH',
+            'type' => 'Asset', 'sub_type' => 'Bank', 'is_active' => true]);
+        $currentCash = Account::create(['company_id' => $company->id, 'name' => 'Cash', 'code' => 'POS-CASH',
+            'type' => 'Asset', 'sub_type' => 'Cash', 'is_active' => true]);
+        $bank = Account::create(['company_id' => $company->id, 'name' => 'Operating Bank', 'code' => 'OPERATING-BANK',
+            'type' => 'Asset', 'sub_type' => 'Bank', 'is_active' => true]);
+
+        foreach (['OLD' => $oldCash->id, 'CURRENT' => $currentCash->id, 'UNASSIGNED' => null] as $label => $cashId) {
+            $direct = $label === 'CURRENT';
+            $total = $direct ? 100 : 1000;
+            Sale::create($branch + [
+                'company_id' => $company->id,
+                'user_id' => $user->id,
+                'terminal_id' => 'POS-1',
+                'invoice_no' => 'CASH-'.$label,
+                'subtotal' => $total,
+                'total' => $total,
+                'paid' => $total,
+                'amount_paid' => $total,
+                'payment_method' => $direct ? 'cash' : 'split',
+                'payment_status' => 'paid',
+                'payment_details' => [
+                    'source' => 'pos',
+                    'payment_account_id' => $cashId,
+                    'transfer_account_id' => $bank->id,
+                    'transfer_account_name' => $bank->name,
+                    'card_account_id' => $bank->id,
+                    'card_account_name' => $bank->name,
+                    'split' => $direct ? [] : ['cash' => 100, 'transfer' => 300, 'card' => 600],
+                ],
+            ]);
+        }
+        $oldCash->delete();
+
+        $this->get(route('pos.sales'))->assertOk()
+            ->assertViewHas('paymentBreakdown', fn ($summary) => $summary['cash'] === ['label' => 'Cash', 'amount' => 300.0, 'count' => 3]
+                && count(array_filter($summary, fn ($row) => $row['label'] === 'Cash')) === 1
+                && $summary['account:'.$bank->id]['count'] === 2
+                && $summary['account:'.$bank->id]['amount'] === 1800.0);
+
+        $this->get(route('pos.sales', ['payment_method' => 'cash']))->assertOk()
+            ->assertViewHas('totalSalesCount', 3)->assertSee('CASH-OLD')->assertSee('CASH-CURRENT')->assertSee('CASH-UNASSIGNED')
+            ->assertDontSee('POS-TRANSFER-1')->assertDontSee('POS-CARD-1');
+    }
 
     public function test_pos_sales_register_filters_split_payments_by_card_amount(): void
     {

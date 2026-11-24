@@ -107,7 +107,7 @@
                                 <p class="small text-muted mb-0">Calculated from current stock and the movements shown; it may differ from the original opening entry.</p>
                             @else
                                 <h6 class="fw-bold mb-1">Historical balances need review</h6>
-                                <p class="small mb-0">The recorded movements do not reconcile with current stock without a negative balance. Historical balances and values are unavailable until the records are reviewed. Current stock is unchanged.</p>
+                                <p class="small mb-0">Balances and values are estimates calculated from current stock and the recorded movements. A negative balance points to a discrepancy in the history.</p>
                             @endif
                         </div>
                         <div class="col-lg-5 text-lg-end">
@@ -180,19 +180,11 @@
                                                 <span class="text-muted text-uppercase ms-1">{{ $stockUnitLabel }}</span>
                                             @endif
                                         </td>
-                                        <td class="text-end fw-semibold {{ $currentStock >= 0 ? 'text-primary' : 'text-danger' }}">
-                                            @if($history->running_balance !== null)
-                                                {{ \App\Support\CompactNumber::format((float) $history->running_balance, 2) }} {{ $stockUnitLabel }}
-                                            @else
-                                                <span class="text-muted">Unavailable</span>
-                                            @endif
+                                        <td class="text-end fw-semibold {{ $history->running_balance < 0 ? 'text-danger' : 'text-primary' }}">
+                                            {{ \App\Support\CompactNumber::format((float) $history->running_balance, 2) }} {{ $stockUnitLabel }}
                                         </td>
-                                        <td class="text-end">
-                                            @if($history->stock_value !== null)
-                                                {{ \App\Support\GeoCurrency::format((float) $history->stock_value, 'NGN', $currencyCode, $currencyLocale) }}
-                                            @else
-                                                <span class="text-muted">Unavailable</span>
-                                            @endif
+                                        <td class="text-end {{ $history->stock_value < 0 ? 'text-danger' : '' }}">
+                                            {{ \App\Support\GeoCurrency::format((float) $history->stock_value, 'NGN', $currencyCode, $currencyLocale) }}
                                         </td>
                                     </tr>
                                 @empty

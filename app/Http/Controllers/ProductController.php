@@ -4247,6 +4247,7 @@ public function inventory(Request $request)
                     ->join('products', 'purchase_items.product_id', '=', 'products.id')
                     ->selectRaw("
                         {$purchaseIdExpression} as id,
+                        purchase_items.id as purchase_item_id,
                         purchases.created_at as created_at,
                         'in' as type,
                         COALESCE(" . ($purchaseReferenceColumn ? "purchases.{$purchaseReferenceColumn}" : 'NULL') . ", purchases.purchase_no, {$purchaseFallbackReference}) as reference,
@@ -4352,18 +4353,26 @@ public function inventory(Request $request)
                     });
                 }
 
-                $purchaseEvents = $purchaseHistoryQuery->get();
+                // A stock backfill posts its own movement at the time stock was credited.
+                // Keep that entry and omit the synthetic movement for the same receipt line.
+                $backfilledReferences = $inventoryHistories
+                    ->filter(fn ($row) => in_array(strtolower(trim((string) $row->type)), ['in', 'stock in'], true))
+                    ->pluck('reference')->filter()->flip();
+                $purchaseEvents = $purchaseHistoryQuery->get()->reject(
+                    fn ($row) => $backfilledReferences->has('Purchase stock backfill item '.$row->purchase_item_id)
+                );
                 $matchedHistoryIds = [];
                 foreach ($purchaseEvents as $purchaseEvent) {
                     $purchaseTime = strtotime((string) $purchaseEvent->created_at);
-                    $matchingHistory = $inventoryHistories->first(function ($history) use ($purchaseTime, $matchedHistoryIds) {
+                    $matchingHistory = $inventoryHistories->first(function ($history) use ($purchaseEvent, $purchaseTime, $matchedHistoryIds) {
                         $reference = strtolower(trim((string) ($history->reference ?? '')));
                         $historyTime = strtotime((string) ($history->created_at ?? ''));
 
                         return is_numeric($history->id)
                             && ! in_array((int) $history->id, $matchedHistoryIds, true)
                             && in_array(strtolower((string) ($history->type ?? '')), ['in', 'stock in'], true)
-                            && ($reference === '' || $reference === 'stock in')
+                            && abs((float) $history->quantity - (float) $purchaseEvent->quantity) < 0.000001
+                            && in_array($reference, ['', 'stock in', strtolower(trim((string) $purchaseEvent->reference))], true)
                             && $purchaseTime !== false
                             && $historyTime !== false
                             && abs($purchaseTime - $historyTime) <= 5;
@@ -4662,47 +4671,28 @@ public function inventory(Request $request)
                 return (int) $left->id <=> (int) $right->id;
             }
 
-            return strcasecmp((string) $left->id, (string) $right->id);
+            return strnatcasecmp((string) $left->id, (string) $right->id);
         })->values();
-        $netMovement = (float) $orderedHistories->sum(function ($row) {
-            $type = strtolower((string) ($row->type ?? ''));
-            $quantity = (float) ($row->quantity ?? 0);
+        $inventoryHistories = $orderedHistories->reverse()->values();
+        $runningBalance = round($currentStock, 6);
+        $historyReconciles = $runningBalance >= 0;
+        foreach ($inventoryHistories as $row) {
+            $row->running_balance = $runningBalance;
+            $row->stock_value = $runningBalance * (float) ($row->purchase_price ?? 0);
 
-            if (in_array($type, ['in', 'stock in'], true)) {
-                return $quantity;
-            }
-            if (in_array($type, ['out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off'], true)) {
-                return -$quantity;
-            }
-
-            return 0;
-        });
-        $inferredOpeningBalance = round($currentStock - $netMovement, 6);
-        $runningBalance = $inferredOpeningBalance;
-        $historyReconciles = $runningBalance >= -0.000001;
-        $orderedHistories->each(function ($row) use (&$runningBalance, &$historyReconciles) {
-            $type = strtolower((string) ($row->type ?? ''));
+            $type = strtolower(trim((string) ($row->type ?? '')));
             $quantity = (float) ($row->quantity ?? 0);
             if (in_array($type, ['in', 'stock in'], true)) {
-                $runningBalance += $quantity;
-            } elseif (in_array($type, ['out', 'stock out', 'damage', 'damaged', 'waste', 'spoilage', 'write_off'], true)) {
                 $runningBalance -= $quantity;
+            } elseif (in_array($type, $outMovementTypes, true)) {
+                $runningBalance += $quantity;
             }
-            if ($runningBalance < -0.000001) {
+            $runningBalance = round($runningBalance, 6);
+            if ($runningBalance < 0) {
                 $historyReconciles = false;
             }
-            $row->running_balance = round($runningBalance, 6);
-            $row->stock_value = $runningBalance * (float) ($row->purchase_price ?? 0);
-        });
-        $openingBalance = $historyReconciles ? $inferredOpeningBalance : null;
-        $inventoryHistories = $orderedHistories->map(function ($row) use ($historyReconciles) {
-            if (! $historyReconciles) {
-                $row->running_balance = null;
-                $row->stock_value = null;
-            }
-
-            return $row;
-        })->reverse()->values();
+        }
+        $openingBalance = $historyReconciles ? $runningBalance : null;
 
         return view('Inventory.inventory-history', compact(
             'inventoryHistories',

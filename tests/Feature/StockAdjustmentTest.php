@@ -132,7 +132,7 @@ class StockAdjustmentTest extends TestCase
             'created_at' => $purchaseTime,
             'updated_at' => $purchaseTime,
         ], array_flip(Schema::getColumnListing('purchases'))));
-        DB::table('purchase_items')->insert(array_intersect_key([
+        $purchaseItemId = DB::table('purchase_items')->insertGetId(array_intersect_key([
             'purchase_id' => $purchaseId,
             'product_id' => $product->id,
             'qty' => 1,
@@ -144,7 +144,7 @@ class StockAdjustmentTest extends TestCase
             'created_at' => $purchaseTime,
             'updated_at' => $purchaseTime,
         ], array_flip(Schema::getColumnListing('purchase_items'))));
-        DB::table('inventory_history')->insert(array_intersect_key([
+        $stockInId = DB::table('inventory_history')->insertGetId(array_intersect_key([
             'user_id' => $user->id,
             'company_id' => $company->id,
             'product_id' => $product->id,
@@ -170,9 +170,9 @@ class StockAdjustmentTest extends TestCase
                     && (float) $purchaseMovements->first()->quantity === 2000.0
                     && (float) $purchaseMovements->first()->display_quantity === 2.0
                     && strtolower((string) $purchaseMovements->first()->display_unit_label) === 'carton'
-                    && $histories->first()->running_balance === null;
+                    && $histories->first()->running_balance === 2000.0;
             });
-        $historyResponse->assertSee('Historical balances need review');
+        $historyResponse->assertSee('Historical balances need review')->assertDontSee('Unavailable');
 
         $this->withMiddleware();
         $reportResponse = $this->actingAs($user)->withSession(['current_tenant_id' => $company->id])
@@ -201,6 +201,19 @@ class StockAdjustmentTest extends TestCase
             ->assertOk()
             ->assertSee('Live snapshot as at')
             ->assertSee('Stock Movements');
+
+        $marker = 'Purchase stock backfill item '.$purchaseItemId;
+        DB::table('inventory_history')->where('id', $stockInId)->update([
+            'reference' => $marker,
+            'created_at' => now(),
+        ]);
+        $this->withoutMiddleware()->withSession(['current_tenant_id' => $company->id])
+            ->get(route('inventory.history', $product->id))->assertOk()
+            ->assertViewHas('totalIn', 3000.0)
+            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->count() === 2
+                && $rows->first()->reference === $marker
+                && $rows->first()->running_balance === 2000.0
+                && !$rows->contains('reference', 'PUR-CONVERSION-1000'));
     }
 
     public function test_history_uses_recorded_purchase_units_and_excludes_pending_orders_without_changing_stock(): void
@@ -267,12 +280,12 @@ class StockAdjustmentTest extends TestCase
         DB::table('products')->where('id', $product->id)->update(['stock' => 20, 'stock_quantity' => 20]);
         $this->withSession(['current_tenant_id' => $company->id, 'active_branch_id' => 'hq', 'active_branch_name' => 'Headquarters'])
             ->get(route('inventory.history', $product->id))->assertOk()
-            ->assertSee('Historical balances need review')->assertSee('Current stock is unchanged.')
-            ->assertSee('Unavailable')
+            ->assertSee('Historical balances need review')->assertSee('Balances and values are estimates')
+            ->assertDontSee('Unavailable')
             ->assertViewHas('historyReconciles', false)->assertViewHas('openingBalance', null)
-            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->every(
-                fn ($row) => $row->running_balance === null && $row->stock_value === null
-            ));
+            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->first()->running_balance === 20.0
+                && $rows->first()->stock_value === 200.0
+                && $rows->firstWhere('reference', 'PUR-RECEIVED')->running_balance === 3.0);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 20, 'stock_quantity' => 20]);
 
         $historyId = DB::table('inventory_history')->insertGetId(array_intersect_key([
@@ -285,9 +298,9 @@ class StockAdjustmentTest extends TestCase
             ->get(route('inventory.history', $product->id))->assertOk()
             ->assertSee('Historical balances need review')
             ->assertViewHas('historyReconciles', false)
-            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->every(
-                fn ($row) => $row->running_balance === null && $row->stock_value === null
-            ));
+            ->assertViewHas('inventoryHistories', fn ($rows) => $rows->first()->running_balance === 20.0
+                && $rows->last()->running_balance === -47.0
+                && $rows->last()->stock_value === -470.0);
         $this->assertDatabaseHas('inventory_history', ['id' => $historyId, 'quantity' => 60]);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 20, 'stock_quantity' => 20]);
     }
