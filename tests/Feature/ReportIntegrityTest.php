@@ -745,6 +745,63 @@ class ReportIntegrityTest extends TestCase
             ->assertViewHas('totals', fn (array $totals) => $totals['debit'] === 75.0 && $totals['credit'] === 0.0);
     }
 
+    public function test_account_drill_down_and_read_only_audit_show_the_source_of_posted_balances(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $bank = $this->account($company, 'Moniepoint MFB', Account::TYPE_ASSET, 'Bank');
+        $inventory = $this->account($company, 'Inventory', Account::TYPE_ASSET, 'Inventory');
+        $unposted = $this->account($company, 'Unposted Access Bank', Account::TYPE_ASSET, 'Bank');
+        [, $otherCompany] = $this->businessUser();
+        $otherCompany->update(['name' => 'Other Audit Business']);
+        $otherBank = $this->account($otherCompany, 'Other Bank', Account::TYPE_ASSET, 'Bank');
+        $unposted->update(['opening_balance' => 1000000]);
+        $date = now()->subMonths(2)->toDateString();
+        $source = [
+            'company_id' => $company->id,
+            'branch_id' => 'hq',
+            'branch_name' => 'Headquarters',
+            'transaction_date' => $date,
+            'reference' => 'PUR-AUDIT-660',
+            'transaction_type' => 'Journal Entry',
+            'related_type' => \App\Models\Purchase::class,
+            'related_id' => 700,
+        ];
+        DB::table('transactions')->insert([
+            $source + ['account_id' => $bank->id, 'debit' => 0, 'credit' => 660000],
+            $source + ['account_id' => $inventory->id, 'debit' => 660000, 'credit' => 0],
+            array_replace($source, ['branch_id' => 'other', 'branch_name' => 'Other', 'reference' => 'OTHER-BRANCH'])
+                + ['account_id' => $bank->id, 'debit' => 10, 'credit' => 0],
+            array_replace($source, ['company_id' => $otherCompany->id, 'reference' => 'OTHER-BUSINESS'])
+                + ['account_id' => $otherBank->id, 'debit' => 10, 'credit' => 0],
+            array_replace($source, ['company_id' => null, 'reference' => 'UNASSIGNED'])
+                + ['account_id' => $bank->id, 'debit' => 10, 'credit' => 0],
+        ]);
+
+        $this->artisan('ledger:audit-reports', ['--company' => $company->id])
+            ->expectsOutputToContain('OTHER-BRANCH')
+            ->expectsOutputToContain('Unposted Access Bank')
+            ->expectsOutputToContain('-660,000.00')
+            ->assertSuccessful();
+        $this->artisan('ledger:audit-reports', ['--all-companies' => true])
+            ->expectsOutputToContain('Other Audit Business')
+            ->expectsOutputToContain('1 posted row(s) have no matching business ID')
+            ->assertSuccessful();
+        $this->assertDatabaseCount('transactions', 5);
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $this->get(route('balance-sheet', ['branch_scope' => 'branch']))
+            ->assertOk()->assertSee('Overdraft')->assertSee('from_inception=1');
+        $this->get(route('trial-balance', ['branch_scope' => 'branch']))
+            ->assertOk()->assertSee('from_inception=1');
+        $this->get(route('general-ledger', ['account_id' => $bank->id, 'branch_scope' => 'branch', 'from_inception' => 1]))
+            ->assertOk()
+            ->assertSee('View source postings')
+            ->assertViewHas('entries', fn ($entries) => $entries->total() === 1 && $entries->first()->reference === 'PUR-AUDIT-660');
+        $this->get(route('general-ledger', ['source_type' => \App\Models\Purchase::class, 'source_id' => 700, 'branch_scope' => 'branch', 'from_inception' => 1]))
+            ->assertOk()
+            ->assertViewHas('entries', fn ($entries) => $entries->total() === 2);
+    }
+
     public function test_read_only_report_catalogue_renders_without_server_errors(): void
     {
         $this->withoutExceptionHandling();

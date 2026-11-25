@@ -21,6 +21,10 @@ class GeneralLedgerController extends Controller
             'end_date' => ['nullable', 'date_format:Y-m-d'],
             'account_id' => ['nullable', 'integer', 'min:1'],
             'search' => ['nullable', 'string', 'max:200'],
+            'from_inception' => ['nullable', 'boolean'],
+            'source_id' => ['nullable', 'integer', 'min:1', 'required_with:source_type'],
+            'source_type' => ['nullable', 'string', 'max:191', 'required_with:source_id'],
+            'reference' => ['nullable', 'string', 'max:191'],
         ]);
         $endDate = Carbon::parse($filters['end_date'] ?? now())->endOfDay();
         $startDate = Carbon::parse($filters['start_date'] ?? $endDate->copy()->startOfMonth())->startOfDay();
@@ -42,10 +46,24 @@ class GeneralLedgerController extends Controller
         }
 
         $query = Transaction::withoutGlobalScopes()->whereNull('transactions.deleted_at')
-            ->where('transaction_date', '>=', $startDate->toDateString())
             ->where('transaction_date', '<', $endDate->copy()->addDay()->toDateString());
         $this->applyTransactionScope($query, $request);
         $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch);
+        $selectedAccountId = $filters['account_id'] ?? null;
+        $source = array_intersect_key($filters, array_flip(['source_id', 'source_type', 'reference']));
+        if (isset($source['source_id'], $source['source_type'])) {
+            $query->where('related_id', $source['source_id'])->where('related_type', $source['source_type']);
+        } elseif (isset($source['reference'])) {
+            $query->where('reference', $source['reference']);
+        }
+        if (empty($filters['start_date']) && $request->boolean('from_inception')) {
+            $earliest = (clone $query)->when($selectedAccountId, fn ($ledger) => $ledger->where('account_id', $selectedAccountId))
+                ->min('transaction_date');
+            if ($earliest) {
+                $startDate = Carbon::parse($earliest)->startOfDay();
+            }
+        }
+        $query->where('transaction_date', '>=', $startDate->toDateString());
 
         $accountsQuery = Account::withoutGlobalScopes()->select('accounts.id', 'accounts.code', 'accounts.name');
         $this->applyAccountScope($accountsQuery, $request);
@@ -54,7 +72,6 @@ class GeneralLedgerController extends Controller
 
         $query->whereIn('account_id', $accounts->modelKeys())
             ->with(['account' => fn ($account) => $account->withoutGlobalScopes()->whereIn('accounts.id', $accounts->modelKeys())]);
-        $selectedAccountId = $filters['account_id'] ?? null;
         if ($selectedAccountId) {
             $query->where('account_id', $selectedAccountId);
         }
@@ -89,6 +106,7 @@ class GeneralLedgerController extends Controller
             'selectedAccountId' => $selectedAccountId,
             'search' => $search,
             'activeBranch' => $activeBranch,
+            'source' => $source,
         ]);
     }
 }

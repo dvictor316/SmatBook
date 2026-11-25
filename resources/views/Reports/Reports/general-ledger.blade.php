@@ -2,6 +2,15 @@
 @extends('layout.mainlayout')
 
 @section('content')
+@php
+    $source = $source ?? [];
+    $ledgerContext = [
+        'branch_id' => $activeBranch['id'] ?? null,
+        'branch_scope' => $activeBranch['scope'] ?? 'branch',
+        'end_date' => $endDate ?? null,
+        'from_inception' => 1,
+    ];
+@endphp
 <style>
     .ledger-summary-value {
         font-size: clamp(0.9rem, 1.6vw, 1.02rem);
@@ -36,7 +45,13 @@
 
         <div class="card border-0 shadow-sm mb-3">
             <div class="card-body">
+                @if($source !== [])
+                    <div class="alert alert-info py-2">Showing posted entries for {{ isset($source['source_type'], $source['source_id']) ? class_basename($source['source_type']).' #'.$source['source_id'] : ($source['reference'] ?? '') }}.</div>
+                @endif
                 <form method="GET" class="row g-2 align-items-end">
+                    @foreach($source as $field => $value)
+                        <input type="hidden" name="{{ $field }}" value="{{ $value }}">
+                    @endforeach
                     <div class="col-md-3">
                         <label class="form-label small">Start Date</label>
                         <input type="date" name="start_date" class="form-control" value="{{ $startDate ?? '' }}">
@@ -76,7 +91,7 @@
                 <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Total Credit</div><div class="h5 mb-0 ledger-summary-value">₦{{ \App\Support\CompactNumber::format((float)($totals['credit'] ?? 0), 2) }}</div></div></div>
             </div>
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">Difference</div><div class="h5 mb-0 ledger-summary-value">₦{{ \App\Support\CompactNumber::format(abs((float)($totals['debit'] ?? 0) - (float)($totals['credit'] ?? 0)), 2) }}</div></div></div>
+                <div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">{{ $selectedAccountId ? 'Net debit less credit' : 'Debit less credit' }}</div><div class="h5 mb-0 ledger-summary-value">₦{{ \App\Support\CompactNumber::format((float)($totals['debit'] ?? 0) - (float)($totals['credit'] ?? 0), 2) }}</div></div></div>
             </div>
         </div>
 
@@ -98,7 +113,15 @@
                         @forelse(($entries ?? collect()) as $entry)
                             <tr>
                                 <td>{{ optional($entry->transaction_date)->format('Y-m-d') }}</td>
-                                <td>{{ $entry->reference ?? '-' }}</td>
+                                <td>
+                                    {{ $entry->reference ?? '—' }}
+                                    @if($source === [] && ($entry->reference || ($entry->related_id && $entry->related_type)))
+                                        @php $linkSource = $entry->related_id && $entry->related_type
+                                            ? ['source_id' => $entry->related_id, 'source_type' => $entry->related_type]
+                                            : ['reference' => $entry->reference]; @endphp
+                                        <a class="d-block small" href="{{ route('general-ledger', $ledgerContext + $linkSource) }}">View source postings</a>
+                                    @endif
+                                </td>
                                 <td>{{ optional($entry->account)->code }} {{ optional($entry->account)->name }}</td>
                                 <td>{{ $entry->description ?? '-' }}</td>
                                 <td class="text-end">{{ \App\Support\CompactNumber::format((float)$entry->debit, 2) }}</td>

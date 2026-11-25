@@ -1285,13 +1285,14 @@ class LedgerService
             return;
         }
 
+        $branch = self::resolveRelatedBranchContext($relatedId, $relatedType);
+        self::$currentCompanyId = (int) ($branch['company_id'] ?? session('current_tenant_id') ?? Auth::user()?->company_id ?? 0) ?: null;
+
         Transaction::query()
             ->where('related_id', $relatedId)
             ->where('related_type', $relatedType)
             ->where('transaction_type', Transaction::TYPE_ADJUSTMENT)
             ->delete();
-
-        $branch = self::resolveRelatedBranchContext($relatedId, $relatedType);
 
         $payableAccount = self::resolveAccount('Accounts Payable', 'Liability', ['payable', 'creditor'], 'AUTO-LIB-AP');
         $inventoryAccount = self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
@@ -1308,7 +1309,8 @@ class LedgerService
             relatedType: $relatedType,
             userId: $userId,
             branchId: $branch['id'] ?? null,
-            branchName: $branch['name'] ?? null
+            branchName: $branch['name'] ?? null,
+            companyId: self::$currentCompanyId
         );
     }
 
@@ -1597,8 +1599,13 @@ class LedgerService
         ?string $branchName = null,
         ?int $companyId = null
     ): void {
+        $amount = round($amount, 2);
         if ($amount <= 0) {
             return;
+        }
+
+        if ($debitAccountId === $creditAccountId) {
+            throw new InvalidArgumentException('The debit and credit accounts must be different.');
         }
 
         [$branchId, $branchName] = self::validatedBranchContext($branchId, $branchName, $transactionType, $relatedType, $reference);
@@ -1615,8 +1622,17 @@ class LedgerService
             'balance' => 0,
         ];
         $payload = array_merge($payload, self::resolveTenantPayload('transactions'));
-        if ($companyId !== null) {
-            $payload['company_id'] = $companyId;
+        if (Schema::hasColumn('accounts', 'company_id') && Schema::hasColumn('transactions', 'company_id')) {
+            $owners = Account::withoutGlobalScopes()->whereIn('id', [$debitAccountId, $creditAccountId])->pluck('company_id')
+                ->filter()->map(fn ($id) => (int) $id)->unique()->values();
+            if ($owners->count() > 1 || ($companyId && $owners->isNotEmpty() && $owners->first() !== $companyId)) {
+                throw new InvalidArgumentException('The journal accounts must belong to the same business as the posting.');
+            }
+            $payload['company_id'] = $companyId ?? $owners->first() ?? ($payload['company_id'] ?? null);
+            $activeCompanyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
+            if (Auth::check() && $activeCompanyId > 0 && (int) $payload['company_id'] !== $activeCompanyId) {
+                throw new InvalidArgumentException('The journal must be posted from its own business workspace.');
+            }
         }
         if ($branchId !== null && Schema::hasColumn('transactions', 'branch_id')) {
             $payload['branch_id'] = $branchId;
@@ -1625,17 +1641,19 @@ class LedgerService
             $payload['branch_name'] = $branchName;
         }
 
-        Transaction::create(self::filterTransactionPayload(array_merge($payload, [
-            'account_id' => $debitAccountId,
-            'debit' => $amount,
-            'credit' => 0,
-        ])));
+        DB::transaction(function () use ($payload, $debitAccountId, $creditAccountId, $amount) {
+            Transaction::create(self::filterTransactionPayload(array_merge($payload, [
+                'account_id' => $debitAccountId,
+                'debit' => $amount,
+                'credit' => 0,
+            ])));
 
-        Transaction::create(self::filterTransactionPayload(array_merge($payload, [
-            'account_id' => $creditAccountId,
-            'debit' => 0,
-            'credit' => $amount,
-        ])));
+            Transaction::create(self::filterTransactionPayload(array_merge($payload, [
+                'account_id' => $creditAccountId,
+                'debit' => 0,
+                'credit' => $amount,
+            ])));
+        });
     }
 
     private static function validatedBranchContext(
@@ -1722,6 +1740,7 @@ class LedgerService
                 return [
                     'id' => $purchaseReturn->purchase->branch_id ?? null,
                     'name' => $purchaseReturn->purchase->branch_name ?? $purchaseReturn->purchase->branch_label ?? null,
+                    'company_id' => $purchaseReturn->purchase->company_id ?? null,
                 ];
             }
         }
@@ -1847,13 +1866,21 @@ class LedgerService
         if ($cid && Schema::hasColumn('accounts', 'company_id')) {
             $base->where('company_id', $cid);
         }
+        if ($name === 'Inventory' && Schema::hasColumn('accounts', 'sub_type')) {
+            $base->whereRaw("LOWER(TRIM(COALESCE(sub_type, ''))) NOT IN ('bank', 'bank account', 'cash', 'cash account', 'cash & bank', 'cash and bank', 'cash/bank')");
+            $configured = (clone $base)->whereRaw('LOWER(TRIM(sub_type)) = ?', ['inventory'])->orderBy('id')->first();
+            if ($configured) {
+                return $configured;
+            }
+        }
 
         $account = (clone $base)->where('name', $name)->first();
         if ($account) {
             return $account;
         }
 
-        foreach (self::accountAliases($name, $keywords) as $alias) {
+        $aliases = self::accountAliases($name, $keywords);
+        foreach ($aliases as $alias) {
             $account = (clone $base)
                 ->whereRaw('LOWER(name) = ?', [strtolower($alias)])
                 ->first();
@@ -1862,7 +1889,7 @@ class LedgerService
             }
         }
 
-        foreach (self::accountAliases($name, $keywords) as $alias) {
+        foreach ($name === 'Inventory' ? [] : $aliases as $alias) {
             $account = (clone $base)
                 ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($alias) . '%'])
                 ->orderByDesc('is_active')

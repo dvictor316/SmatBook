@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Support\LedgerService;
 use App\Support\TaxReturnPreparationService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -130,6 +131,13 @@ class TaxLedgerReportingIntegrityTest extends TestCase
 
     public function test_purchase_tax_posting_creates_balanced_input_vat_ledger_entries(): void
     {
+        $bankId = DB::table('accounts')->insertGetId([
+            'company_id' => 1,
+            'code' => 'BANK-1',
+            'name' => 'Stock Settlement Bank',
+            'type' => 'Asset',
+            'sub_type' => 'Bank',
+        ]);
         $purchase = Purchase::query()->create([
             'company_id' => 1,
             'branch_id' => 'branch-main',
@@ -150,6 +158,8 @@ class TaxLedgerReportingIntegrityTest extends TestCase
             ->get();
 
         $this->assertCount(4, $rows);
+        $this->assertTrue($rows->every(fn ($row) => (int) $row->company_id === 1));
+        $this->assertFalse($rows->contains('account_id', $bankId));
         $this->assertEquals(107500.0, round((float) $rows->sum('debit'), 2));
         $this->assertEquals(107500.0, round((float) $rows->sum('credit'), 2));
 
@@ -164,6 +174,30 @@ class TaxLedgerReportingIntegrityTest extends TestCase
 
         $this->assertNotNull($taxRow);
         $this->assertEquals(7500.0, round((float) ($taxRow->debit ?? 0), 2));
+    }
+
+    public function test_failed_credit_rolls_back_the_paired_debit(): void
+    {
+        $purchase = Purchase::query()->create([
+            'company_id' => 1,
+            'branch_id' => 'branch-main',
+            'branch_name' => 'Main Branch',
+            'purchase_no' => 'PUR-ROLLBACK',
+            'purchase_date' => '2026-05-11',
+            'total_amount' => 100,
+            'status' => 'received',
+        ]);
+        DB::unprepared("CREATE TRIGGER fail_credit BEFORE INSERT ON transactions
+            WHEN NEW.credit > 0 BEGIN SELECT RAISE(ABORT, 'Credit rejected'); END");
+
+        try {
+            LedgerService::postPurchase($purchase);
+            $this->fail('The trigger should reject the credit.');
+        } catch (QueryException $exception) {
+            $this->assertStringContainsString('Credit rejected', $exception->getMessage());
+        }
+
+        $this->assertDatabaseMissing('transactions', ['reference' => 'PUR-ROLLBACK']);
     }
 
     public function test_tax_return_preparation_respects_branch_scope_for_sales_and_purchases(): void

@@ -22,6 +22,12 @@ $companyName     = optional($reportCompany)->company_name
 $activeBranchName = trim((string) ($activeBranch['name'] ?? ''));
 $asOfDate        = Carbon::parse($reportDate ?? now());
 $asOfStr         = $asOfDate->toDateString();
+$ledgerContext = [
+    'branch_id' => $activeBranch['id'] ?? null,
+    'branch_scope' => $activeBranch['scope'] ?? 'branch',
+    'end_date' => $asOfStr,
+    'from_inception' => 1,
+];
 $accountingMethod = $method ?? 'accrual';
 $activeCompareTo  = $compareTo ?? 'none';
 
@@ -45,6 +51,9 @@ foreach ($presets as $key => $p) {
 
 // Consolidation state (passed from controller when all-branches mode)
 $consolidate   = (bool) ($consolidate   ?? false);
+$accountLedgerUrl = fn ($account) => !empty($account->id) && !$consolidate
+    ? route('general-ledger', $ledgerContext + ['account_id' => $account->id])
+    : null;
 $isAllBranches = (bool) ($isAllBranches ?? (($activeBranch['scope'] ?? '') === 'all'));
 $showZeroAccounts = request()->boolean('show_zero_accounts');
 
@@ -675,6 +684,9 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                 · Related: {{ $entry->related_type ?: 'N/A' }} #{{ $entry->related_id ?: 'N/A' }}
                                 · {{ $entry->description ?: 'No description' }}
                                 · Gap {{ $fmt(abs(((float) $entry->total_debit) - ((float) $entry->total_credit)) ) }}
+                                @if(!empty($entry->reference))
+                                    <a href="{{ route('general-ledger', $ledgerContext + ['reference' => $entry->reference]) }}">View source postings</a>
+                                @endif
                             </li>
                         @endforeach
                     </ul>
@@ -766,6 +778,9 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                     <td>
                                         {{ !empty($account->_vendor_credit) ? ($account->_display_name ?? 'Supplier Advance') : $account->name }}
                                         @if(!empty($account->_vendor_credit))<span class="bs-vendor-credit-tag">Prepaid</span>@endif
+                                        @if($url = $accountLedgerUrl($account))
+                                            <a href="{{ $url }}" class="ms-1 small no-print">Ledger</a>
+                                        @endif
                                     </td>
                                     <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt($bal) }}
@@ -818,7 +833,12 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                             @foreach($group['items'] as $account)
                                 @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                                 <tr class="{{ $showFaGroupHead ? 'bs-line bs-line-indented' : 'bs-line' }}">
-                                    <td>{{ $account->name }}</td>
+                                    <td>
+                                        {{ $account->name }}
+                                        @if($url = $accountLedgerUrl($account))
+                                            <a href="{{ $url }}" class="ms-1 small no-print">Ledger</a>
+                                        @endif
+                                    </td>
                                     <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">
                                         {{ $fmt($bal) }}
                                     </td>
@@ -880,6 +900,9 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                     @if(!empty($account->_overdraft))
                                         <span class="bs-overdraft-tag">Overdraft</span>
                                     @endif
+                                    @if($url = $accountLedgerUrl($account))
+                                        <a href="{{ $url }}" class="ms-1 small no-print">Ledger</a>
+                                    @endif
                                 </td>
                                 <td class="bs-amt">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
@@ -909,7 +932,12 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         @foreach($longTermLiabilityLines as $account)
                             @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
-                                <td>{{ $account->name }}</td>
+                                <td>
+                                    {{ $account->name }}
+                                    @if($url = $accountLedgerUrl($account))
+                                        <a href="{{ $url }}" class="ms-1 small no-print">Ledger</a>
+                                    @endif
+                                </td>
                                 <td class="bs-amt">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
@@ -955,7 +983,12 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         @foreach($equityCapitalLines as $account)
                             @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
-                                <td>{{ $account->name }}</td>
+                                <td>
+                                    {{ $account->name }}
+                                    @if($url = $accountLedgerUrl($account))
+                                        <a href="{{ $url }}" class="ms-1 small no-print">Ledger</a>
+                                    @endif
+                                </td>
                                 <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
@@ -984,7 +1017,12 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         @foreach($equityRetainedLines as $account)
                             @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
-                                <td>{{ $account->name }}</td>
+                                <td>
+                                    {{ $account->name }}
+                                    @if($url = $accountLedgerUrl($account))
+                                        <a href="{{ $url }}" class="ms-1 small no-print">Ledger</a>
+                                    @endif
+                                </td>
                                 <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
@@ -1033,7 +1071,12 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                         @foreach($equityReserveLines as $account)
                             @php $cv = $cmpAmt($account); $bal = (float)($account->balance ?? 0); @endphp
                             <tr class="bs-line">
-                                <td>{{ $account->name }}</td>
+                                <td>
+                                    {{ $account->name }}
+                                    @if($url = $accountLedgerUrl($account))
+                                        <a href="{{ $url }}" class="ms-1 small no-print">Ledger</a>
+                                    @endif
+                                </td>
                                 <td class="bs-amt {{ $bal < 0 ? 'bs-amt-neg' : '' }}">{{ $fmt($bal) }}</td>
                                 @if($hasCmp)
                                     @if($cv !== null)
@@ -1130,6 +1173,9 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                         · DR {{ $fmt((float)($ie->total_debit ?? 0)) }}
                                         · CR {{ $fmt((float)($ie->total_credit ?? 0)) }}
                                         · Gap {{ $fmt(abs(((float)($ie->total_debit ?? 0)) - ((float)($ie->total_credit ?? 0)))) }}
+                                        @if(!empty($ie->reference))
+                                            <a href="{{ route('general-ledger', $ledgerContext + ['reference' => $ie->reference]) }}" class="no-print">View source postings</a>
+                                        @endif
                                     </li>
                                 @endforeach
                                 </ul>
