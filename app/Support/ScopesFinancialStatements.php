@@ -263,6 +263,26 @@ trait ScopesFinancialStatements
         return $query;
     }
 
+    private function applyReportAccountVisibility($accounts, $postings, array $branch): void
+    {
+        $accounts->where(function ($visible) use ($postings, $branch) {
+            $visible->where(function ($active) use ($branch) {
+                $active->whereNull('accounts.deleted_at');
+                if ($branch['scope'] === 'all' || (!$branch['id'] && !$branch['name'])) {
+                    return;
+                }
+                $active->where(function ($matching) use ($branch) {
+                    $this->applyExactBranchScope($matching, $branch['id'] ?? '', $branch['name'] ?? '', 'accounts.branch_id', 'accounts.branch_name');
+                    $matching->orWhere(fn ($global) => $global->whereRaw("COALESCE(accounts.branch_id, '') = ''")
+                        ->whereRaw("COALESCE(accounts.branch_name, '') = ''"));
+                });
+            });
+            if (Schema::hasTable('transactions')) {
+                $visible->orWhereIn('accounts.id', (clone $postings)->select('account_id'));
+            }
+        });
+    }
+
     private function unpostedAccountOpenings(Request $request, Carbon $date, array $branch): Collection
     {
         if (!Schema::hasColumn('accounts', 'opening_balance')) {

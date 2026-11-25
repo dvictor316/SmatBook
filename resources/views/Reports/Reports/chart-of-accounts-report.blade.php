@@ -6,7 +6,7 @@
     $currencyCode = $geoCurrency ?? \App\Support\GeoCurrency::currentCurrency();
     $currencyLocale = $geoCurrencyLocale ?? \App\Support\GeoCurrency::currentLocale();
     $currencySymbol = $geoCurrencySymbol ?? \App\Support\GeoCurrency::currentSymbol();
-    $reportCompany = optional(auth()->user())->company;
+    $reportCompany = \App\Models\Company::find(session('current_tenant_id')) ?? auth()->user()?->company;
     $reportCompanyName = optional($reportCompany)->company_name
         ?? optional($reportCompany)->name
         ?? (\App\Models\Setting::businessProfile()['company_name'] ?? null)
@@ -64,6 +64,11 @@
                     <button type="button" onclick="coaTable.button('.buttons-excel').trigger()" class="coa-export-btn">Excel</button>
                 </div>
             </div>
+
+        @include('Reports.Reports.unposted-openings', [
+            'openings' => $unpostedOpeningAccounts,
+            'formatOpening' => fn ($amount) => \App\Support\GeoCurrency::format($amount, 'NGN', $currencyCode, $currencyLocale),
+        ])
 
             <div class="coa-summary-grid">
                 <div class="coa-summary-card">
@@ -155,8 +160,8 @@
                                     <td>{{ $account->type }}</td>
                                     <td>{{ $account->sub_type ?: '—' }}</td>
                                     <td>
-                                        @php $isActive = (bool) ($account->is_active ?? true); @endphp
-                                        <span class="coa-status {{ $isActive ? 'coa-status-active' : 'coa-status-inactive' }}">{{ $isActive ? 'Active' : 'Inactive' }}</span>
+                                        @php $status = $account->trashed() ? 'Archived' : (($account->is_active ?? true) ? 'Active' : 'Inactive'); @endphp
+                                        <span class="coa-status {{ $status === 'Active' ? 'coa-status-active' : 'coa-status-inactive' }}">{{ $status }}</span>
                                     </td>
                                     <td class="text-end">{{ \App\Support\CompactNumber::format((float) ($account->opening_balance ?? 0), 2) }}</td>
                                     <td class="text-end fw-semibold">{{ \App\Support\CompactNumber::format((float) ($account->current_balance ?? 0), 2) }}</td>

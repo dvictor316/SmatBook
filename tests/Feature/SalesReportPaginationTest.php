@@ -12,12 +12,14 @@ class SalesReportPaginationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_sales_report_shows_500_rows_and_totals_the_entire_filtered_result(): void
+    public function test_sales_report_can_show_500_rows_and_totals_the_entire_filtered_result(): void
     {
         [$user, $company] = $this->business();
         $this->records($user, $company, 520);
         $this->login($user, $company);
-        $response = $this->get(route('reports.sales'));
+        $this->get(route('reports.sales'))->assertOk()
+            ->assertViewHas('salesreports', fn ($rows) => $rows->perPage() === \App\Support\PageSize::DEFAULT);
+        $response = $this->get(route('reports.sales', ['per_page' => 500]));
         $response->assertOk()->assertSee('Rows per page');
         $rows = $response->viewData('salesreports');
         $this->assertSame(500, $rows->perPage());
@@ -27,7 +29,7 @@ class SalesReportPaginationTest extends TestCase
         $this->assertSame(522.0, (float) $response->viewData('reportSummary')->quantity);
         $this->assertSame(52200.0, (float) $response->viewData('reportSummary')->revenue);
 
-        $page2 = $this->get(route('reports.sales', ['page' => 2]));
+        $page2 = $this->get(route('reports.sales', ['page' => 2, 'per_page' => 500]));
         $page2->assertOk();
         $this->assertSame(20, $page2->viewData('salesreports')->count());
         $this->assertSame(50200.0, (float) $page2->viewData('reportRunningTotal'));

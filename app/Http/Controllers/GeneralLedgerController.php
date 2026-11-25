@@ -4,123 +4,29 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Support\ScopesFinancialStatements;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class GeneralLedgerController extends Controller
 {
-    private function activeBranchContext(Request $request): array
-    {
-        $branchScope = strtolower(trim((string) $request->get('branch_scope', '')));
-        $requestBranchId = trim((string) $request->get('branch_id', ''));
-        $allBranches = $request->boolean('all_branches')
-            || $branchScope === 'all'
-            || strtolower($requestBranchId) === 'all'
-            || session('active_branch_scope') === 'all';
-
-        if ($allBranches) {
-            $request->session()->put('active_branch_scope', 'all');
-
-            return [
-                'id' => null,
-                'name' => 'All Branches',
-                'scope' => 'all',
-            ];
-        }
-
-        $branchId = trim((string) session('active_branch_id', ''));
-        $branchName = trim((string) session('active_branch_name', ''));
-
-        if ($requestBranchId !== '') {
-            $branchId = $requestBranchId;
-            $branchName = '';
-        }
-
-        if (($branchId === '' || $branchName === '') && Schema::hasTable('settings')) {
-            $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
-            if ($companyId > 0) {
-                $key = 'branches_json_company_'.$companyId;
-                $raw = (string) (DB::table('settings')->where('key', $key)->value('value') ?? '');
-                $branches = json_decode($raw, true) ?: [];
-
-                if ($branchId !== '') {
-                    $match = collect($branches)->firstWhere('id', $branchId);
-                    $branchName = trim((string) ($match['name'] ?? $branchName));
-                } else {
-                    $first = collect($branches)->first();
-                    $branchId = trim((string) ($first['id'] ?? $branchId));
-                    $branchName = trim((string) ($first['name'] ?? $branchName));
-                }
-            }
-        }
-
-        if ($branchId !== '') {
-            $request->session()->put('active_branch_id', $branchId);
-        }
-        if ($branchName !== '') {
-            $request->session()->put('active_branch_name', $branchName);
-        }
-        $request->session()->put('active_branch_scope', 'branch');
-
-        return [
-            'id' => $branchId !== '' ? $branchId : null,
-            'name' => $branchName !== '' ? $branchName : null,
-            'scope' => 'branch',
-        ];
-    }
-
-    private function applyTenantScope($query, string $table)
-    {
-        $companyId = (int) (session('current_tenant_id') ?? Auth::user()?->company_id ?? 0);
-        $userId = (int) (Auth::id() ?? 0);
-
-        if ($companyId > 0 && Schema::hasColumn($table, 'company_id')) {
-            $query->where("{$table}.company_id", $companyId);
-        } elseif ($userId > 0 && Schema::hasColumn($table, 'user_id')) {
-            $query->where("{$table}.user_id", $userId);
-        } elseif ($userId > 0 && Schema::hasColumn($table, 'created_by')) {
-            $query->where("{$table}.created_by", $userId);
-        }
-
-        return $query;
-    }
-
-    private function applyBranchScope($query, string $table, array $activeBranch)
-    {
-        if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            return $query;
-        }
-
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
-            return $query;
-        }
-
-        return $query->where(function ($sub) use ($table, $branchId, $branchName) {
-            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-                $sub->where("{$table}.branch_id", $branchId);
-            }
-            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                $sub->orWhere("{$table}.branch_name", $branchName);
-            }
-        });
-    }
+    use ScopesFinancialStatements;
 
     public function index(Request $request)
     {
-        $activeBranch = $this->activeBranchContext($request);
-        $startDate = $request->filled('start_date')
-            ? Carbon::parse($request->start_date)->startOfDay()
-            : now()->startOfMonth()->startOfDay();
-
-        $endDate = $request->filled('end_date')
-            ? Carbon::parse($request->end_date)->endOfDay()
-            : now()->endOfDay();
+        $activeBranch = $this->resolveActiveBranch($request);
+        $filters = $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d'],
+            'account_id' => ['nullable', 'integer', 'min:1'],
+            'search' => ['nullable', 'string', 'max:200'],
+        ]);
+        $endDate = Carbon::parse($filters['end_date'] ?? now())->endOfDay();
+        $startDate = Carbon::parse($filters['start_date'] ?? $endDate->copy()->startOfMonth())->startOfDay();
+        if ($endDate->lt($startDate)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['end_date' => 'The end date must be on or after the start date.']);
+        }
 
         if (! Schema::hasTable('accounts') || ! Schema::hasTable('transactions')) {
             return view('Reports.Reports.general-ledger', [
@@ -135,36 +41,33 @@ class GeneralLedgerController extends Controller
             ]);
         }
 
-        $accountsQuery = Account::query()->orderBy('code')->orderBy('name');
-        $this->applyTenantScope($accountsQuery, 'accounts');
-        $accounts = $accountsQuery->get(['id', 'code', 'name']);
-        $activeAccountIds = $accounts->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $query = Transaction::withoutGlobalScopes()->whereNull('transactions.deleted_at')
+            ->where('transaction_date', '>=', $startDate->toDateString())
+            ->where('transaction_date', '<', $endDate->copy()->addDay()->toDateString());
+        $this->applyTransactionScope($query, $request);
+        $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch);
 
-        $query = Transaction::query()->with('account')
-            ->whereBetween('transaction_date', [$startDate, $endDate]);
-        $this->applyTenantScope($query, 'transactions');
-        $this->applyBranchScope($query, 'transactions', $activeBranch);
+        $accountsQuery = Account::withoutGlobalScopes()->select('accounts.id', 'accounts.code', 'accounts.name');
+        $this->applyAccountScope($accountsQuery, $request);
+        $this->applyReportAccountVisibility($accountsQuery, $query, $activeBranch);
+        $accounts = $accountsQuery->orderBy('code')->orderBy('name')->get();
 
-        if (! empty($activeAccountIds)) {
-            $query->whereIn('account_id', $activeAccountIds);
-        } else {
-            $query->whereRaw('1 = 0');
-        }
-
-        $selectedAccountId = $request->input('account_id');
+        $query->whereIn('account_id', $accounts->modelKeys())
+            ->with(['account' => fn ($account) => $account->withoutGlobalScopes()->whereIn('accounts.id', $accounts->modelKeys())]);
+        $selectedAccountId = $filters['account_id'] ?? null;
         if ($selectedAccountId) {
             $query->where('account_id', $selectedAccountId);
         }
 
-        $search = trim((string) $request->input('search', ''));
+        $search = trim($filters['search'] ?? '');
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
+            $searchTerm = mb_strtolower($search);
+            $matchingAccounts = $accounts->filter(fn ($account) => str_contains(mb_strtolower((string) $account->name), $searchTerm)
+                || str_contains(mb_strtolower((string) $account->code), $searchTerm));
+            $query->where(function ($q) use ($search, $matchingAccounts) {
                 $q->where('reference', 'like', '%'.$search.'%')
                     ->orWhere('description', 'like', '%'.$search.'%')
-                    ->orWhereHas('account', function ($a) use ($search) {
-                        $a->where('name', 'like', '%'.$search.'%')
-                            ->orWhere('code', 'like', '%'.$search.'%');
-                    });
+                    ->orWhereIn('account_id', $matchingAccounts->modelKeys());
             });
         }
 

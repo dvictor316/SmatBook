@@ -101,7 +101,7 @@
 <div class="page-wrapper">
     <div class="report-container">
         @php
-            $cashFlowCompany = optional(auth()->user())->company;
+            $cashFlowCompany = \App\Models\Company::find(session('current_tenant_id')) ?? auth()->user()?->company;
             $cashFlowCompanyName = optional($cashFlowCompany)->company_name
                 ?? optional($cashFlowCompany)->name
                 ?? (\App\Models\Setting::businessProfile()['company_name'] ?? null)
@@ -147,6 +147,14 @@
                 <canvas id="cashFlowChart" style="max-height: 250px;"></canvas>
             </div>
         </div>
+
+        @if(!$ledger)
+            <div class="alert alert-info">Estimated cash movements from payments and paid expenses. Set up cash or bank ledger accounts to report posted balances.</div>
+        @endif
+        @include('Reports.Reports.unposted-openings', [
+            'openings' => $unpostedOpeningAccounts,
+            'formatOpening' => fn ($amount) => \App\Support\GeoCurrency::format($amount),
+        ])
 
         <div class="summary-grid">
             <div class="summary-card">

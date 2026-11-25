@@ -65,13 +65,7 @@
                             </div>
                             <div>
                                 <p class="text-muted mb-1 small">{{ __('Total Amount (Filtered)') }}</p>
-                                @php
-                                    $totalExpense = 0;
-                                    foreach(($expenses ?? []) as $item) {
-                                        $totalExpense += (float) ($item->amount ?? 0);
-                                    }
-                                @endphp
-                                <h3 class="mb-0 fw-bold">{{ \App\Support\GeoCurrency::format($totalExpense, 'NGN', $currencyCode, $currencyLocale) }}</h3>
+                                <h3 class="mb-0 fw-bold">{{ \App\Support\GeoCurrency::format($totalExpense ?? 0, 'NGN', $currencyCode, $currencyLocale) }}</h3>
                             </div>
                         </div>
                     </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Support\ScopesFinancialStatements;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Schema;
 
 class FinancialRatiosController extends Controller
 {
+    use ScopesFinancialStatements;
+
     public function index(Request $request)
     {
         $period = in_array($request->input('period'), ['monthly', 'quarterly', 'ytd', 'annual'], true)
@@ -19,7 +22,7 @@ class FinancialRatiosController extends Controller
             : 'ytd';
         [$periodStart, $periodEnd] = $this->periodDates($period);
         $companyId = (int) (session('current_tenant_id') ?: Auth::user()?->company_id ?: 0);
-        $activeBranch = $this->activeBranchContext();
+        $activeBranch = $this->resolveActiveBranch($request);
         $balances = $this->ledgerBalances($companyId, $periodStart, $periodEnd, $activeBranch);
 
         $revenue = $this->sumCategory($balances, 'revenue');
@@ -82,9 +85,9 @@ class FinancialRatiosController extends Controller
             return collect();
         }
 
-        $accounts = Account::withoutGlobalScope('tenant')
+        $accounts = Account::withoutGlobalScopes()
             ->where('company_id', $companyId)
-            ->get(['id', 'name', 'type', 'sub_type', 'opening_balance']);
+            ->get(['id', 'name', 'type', 'sub_type', 'description']);
 
         if ($accounts->isEmpty()) {
             return collect();
@@ -98,7 +101,7 @@ class FinancialRatiosController extends Controller
         if (Schema::hasColumn('transactions', 'deleted_at')) {
             $transactionQuery->whereNull('transactions.deleted_at');
         }
-        $this->applyBranchScope($transactionQuery, 'transactions', $activeBranch);
+        $this->applyLegacyOpeningBalanceBranchScope($transactionQuery, $activeBranch);
 
         $totals = $transactionQuery
             ->selectRaw('account_id')
@@ -112,30 +115,30 @@ class FinancialRatiosController extends Controller
 
         return $accounts->map(function (Account $account) use ($totals) {
             $row = $totals->get($account->id);
-            $type = strtolower(trim((string) $account->type));
+            $type = $this->normalizeAccountType($account->type);
             $periodDebit = (float) ($row->period_debit ?? 0);
             $periodCredit = (float) ($row->period_credit ?? 0);
             $closingDebit = (float) ($row->closing_debit ?? 0);
             $closingCredit = (float) ($row->closing_credit ?? 0);
-            $opening = (float) ($account->opening_balance ?? 0);
             $periodAmount = in_array($type, ['revenue', 'income'], true)
                 ? $periodCredit - $periodDebit
                 : $periodDebit - $periodCredit;
             $closingAmount = in_array($type, ['asset', 'expense'], true)
-                ? $opening + $closingDebit - $closingCredit
-                : $opening + $closingCredit - $closingDebit;
+                ? $closingDebit - $closingCredit
+                : $closingCredit - $closingDebit;
+            $isOverdraft = $closingAmount < 0 && $account->cashOrBankType() !== null;
 
             return (object) [
-                'categories' => $this->accountCategories($account),
+                'categories' => $isOverdraft ? ['liabilities', 'current_liabilities'] : $this->accountCategories($account),
                 'period_amount' => $periodAmount,
-                'closing_amount' => $closingAmount,
+                'closing_amount' => $isOverdraft ? abs($closingAmount) : $closingAmount,
             ];
         });
     }
 
     private function accountCategories(Account $account): array
     {
-        $type = strtolower(trim((string) $account->type));
+        $type = $this->normalizeAccountType($account->type);
         $descriptor = strtolower(trim(($account->sub_type ?? '').' '.($account->name ?? '')));
         $categories = [];
 
@@ -144,7 +147,7 @@ class FinancialRatiosController extends Controller
             if (! str_contains($descriptor, 'fixed') && ! str_contains($descriptor, 'non-current') && ! str_contains($descriptor, 'non current')) {
                 $categories[] = 'current_assets';
             }
-            if (str_contains($descriptor, 'cash') || str_contains($descriptor, 'bank')) {
+            if ($account->cashOrBankType() !== null) {
                 $categories[] = 'cash';
             }
             if (str_contains($descriptor, 'inventory') || str_contains($descriptor, 'stock')) {
@@ -183,41 +186,6 @@ class FinancialRatiosController extends Controller
         return (float) $balances
             ->filter(fn ($row) => in_array($category, $row->categories, true))
             ->sum($usePeriodAmount ? 'period_amount' : 'closing_amount');
-    }
-
-    private function applyBranchScope($query, string $table, array $activeBranch): void
-    {
-        if (($activeBranch['scope'] ?? 'branch') === 'all') {
-            return;
-        }
-
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-        if ($branchId === '' && $branchName === '') {
-            return;
-        }
-
-        $query->where(function ($branchQuery) use ($table, $branchId, $branchName) {
-            if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-                $branchQuery->where("{$table}.branch_id", $branchId);
-            }
-            if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                $branchQuery->orWhere("{$table}.branch_name", $branchName);
-            }
-        });
-    }
-
-    private function activeBranchContext(): array
-    {
-        if (session('active_branch_scope') === 'all') {
-            return ['id' => null, 'name' => 'All Branches', 'scope' => 'all'];
-        }
-
-        return [
-            'id' => session('active_branch_id'),
-            'name' => session('active_branch_name'),
-            'scope' => 'branch',
-        ];
     }
 
     private function divide(float $numerator, float $denominator): float

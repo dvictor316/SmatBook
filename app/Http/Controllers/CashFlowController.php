@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Transaction;
+use App\Support\ScopesFinancialStatements;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -17,6 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CashFlowController extends Controller
 {
+    use ScopesFinancialStatements;
+
     public function cashFlow(Request $request)
     {
         $report = $this->reportData($request);
@@ -31,8 +34,8 @@ class CashFlowController extends Controller
             ? $outflows->paginate(\App\Support\PageSize::resolve(), ['*'], 'outflow_page')->withQueryString()
             : $this->paginateCollection($outflows, 'outflow_page', $request);
         $report['chartData'] = $ledger
-            ? $this->getMonthlyTrend($ledger)
-            : $this->getMonthlyTrendFromOperations();
+            ? $this->getMonthlyTrend($ledger, $report['end'])
+            : $this->getMonthlyTrendFromOperations($report['end']);
 
         return view('Reports.Reports.cash-flow', $report);
     }
@@ -51,6 +54,7 @@ class CashFlowController extends Controller
             'closingBalance' => $closingBalance,
             'ledger' => $ledger,
             'accountLabel' => $accountLabel,
+            'unpostedOpeningAccounts' => $unpostedOpeningAccounts,
         ] = $this->reportData($request);
 
         if ($ledger) {
@@ -70,7 +74,9 @@ class CashFlowController extends Controller
             $totalOutflow,
             $netCashFlow,
             $closingBalance,
-            $accountLabel
+            $accountLabel,
+            $ledger,
+            $unpostedOpeningAccounts
         ) {
             $out = fopen('php://output', 'w');
 
@@ -78,12 +84,16 @@ class CashFlowController extends Controller
             fputcsv($out, ['Period', $start->toDateString().' to '.$end->toDateString()]);
             fputcsv($out, []);
             fputcsv($out, ['Account', $accountLabel]);
+            fputcsv($out, ['Source', $ledger ? 'Posted ledger' : 'Estimate from payments and paid expenses']);
             fputcsv($out, ['Summary']);
             fputcsv($out, ['Opening Balance', $openingBalance]);
             fputcsv($out, ['Total Inflows', $totalInflow]);
             fputcsv($out, ['Total Outflows', $totalOutflow]);
             fputcsv($out, ['Net Cash Flow', $netCashFlow]);
             fputcsv($out, ['Closing Balance', $closingBalance]);
+            foreach ($unpostedOpeningAccounts as $opening) {
+                fputcsv($out, ['Unposted opening for review', $opening['code'], $opening['amount']]);
+            }
             fputcsv($out, []);
 
             fputcsv($out, ['Inflows']);
@@ -193,10 +203,18 @@ class CashFlowController extends Controller
             'account' => ['nullable', 'string', 'max:32'],
         ]);
 
-        $start = Carbon::parse($filters['start_date'] ?? now()->startOfMonth())->startOfDay();
         $end = Carbon::parse($filters['end_date'] ?? now())->endOfDay();
+        $start = Carbon::parse($filters['start_date'] ?? $end->copy()->startOfMonth())->startOfDay();
+        if ($end->lt($start)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['end_date' => 'The end date must be on or after the start date.']);
+        }
         $accountFilter = $filters['account'] ?? '';
-        $accounts = $this->cashAccounts();
+        $activeBranch = $this->resolveActiveBranch($request);
+        $cashPostings = Transaction::withoutGlobalScopes()->whereNull('transactions.deleted_at');
+        $this->applyTransactionScope($cashPostings, $request);
+        $this->applyLegacyOpeningBalanceBranchScope($cashPostings, $activeBranch);
+        $accounts = $this->cashAccounts($request, $activeBranch, (clone $cashPostings)->where('transaction_date', '<', $end->copy()->addDay()->toDateString()));
+
         $selectedAccounts = match ($accountFilter) {
             '' => $accounts,
             'cash' => $accounts->filter(fn (Account $account) => $account->cashOrBankType() === 'Cash'),
@@ -213,25 +231,18 @@ class CashFlowController extends Controller
         };
 
         $ledger = null;
+        $unpostedOpeningAccounts = collect();
         if ($accounts->isNotEmpty() || $accountFilter !== '') {
-            $ledger = $this->applyTenantScope(Transaction::query(), 'transactions')
-                ->tap(fn ($query) => $this->applyBranchScope($query, 'transactions', true))
-                ->whereIn('account_id', $selectedAccounts->modelKeys());
-
-            $postedOpeningIds = (clone $ledger)
-                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
-                ->where('related_type', Account::class)
-                ->whereColumn('related_id', 'account_id')
-                ->distinct()->pluck('account_id')->all();
-
+            $ledger = $cashPostings->whereIn('account_id', $selectedAccounts->modelKeys());
+            $unpostedOpeningAccounts = $this->unpostedAccountOpenings($request, $end, $activeBranch)
+                ->whereIn('id', $selectedAccounts->modelKeys());
             $priorEntries = (clone $ledger)->where('transaction_date', '<', $start->toDateString());
-            $openingBalance = $selectedAccounts->whereNotIn('id', $postedOpeningIds)->sum('opening_balance')
-                + $this->sumMovement($priorEntries, 'debit - credit');
+            $openingBalance = $this->sumMovement($priorEntries, 'debit - credit');
 
             $period = (clone $ledger)
                 ->where('transaction_date', '>=', $start->toDateString())
                 ->where('transaction_date', '<', $end->copy()->addDay()->toDateString())
-                ->with('account')
+                ->with(['account' => fn ($query) => $query->withoutGlobalScopes()->whereIn('accounts.id', $selectedAccounts->modelKeys())])
                 ->orderBy('transaction_date')
                 ->orderBy('id');
 
@@ -254,21 +265,18 @@ class CashFlowController extends Controller
 
         return compact(
             'start', 'end', 'accountFilter', 'accountLabel', 'accounts', 'ledger', 'openingBalance',
-            'inflows', 'outflows', 'totalInflow', 'totalOutflow', 'netCashFlow', 'closingBalance'
+            'inflows', 'outflows', 'totalInflow', 'totalOutflow', 'netCashFlow', 'closingBalance',
+            'unpostedOpeningAccounts'
         );
     }
 
-    private function cashAccounts(): Collection
+    private function cashAccounts(Request $request, array $branch, $postings): Collection
     {
-        $branch = $this->getActiveBranchContext();
+        $accounts = Account::withoutGlobalScopes()->ofType(Account::TYPE_ASSET)->orderBy('name');
+        $this->applyAccountScope($accounts, $request);
+        $this->applyReportAccountVisibility($accounts, $postings, $branch);
 
-        return $this->applyTenantScope(Account::query()->ofType(Account::TYPE_ASSET), 'accounts')
-            ->orderBy('name')
-            ->get()
-            ->filter(fn (Account $account) => $account->cashOrBankType() !== null
-                && ($branch['scope'] === 'all' || (!$branch['id'] && !$branch['name']) || $account->matchesAccountingBranch(
-                    $branch['id'] ?? '', $branch['name'] ?? ''
-                )));
+        return $accounts->get()->filter(fn (Account $account) => $account->cashOrBankType() !== null);
     }
 
     private function sumMovement($query, string $expression): float
@@ -276,17 +284,18 @@ class CashFlowController extends Controller
         return (float) (clone $query)->reorder()->select(DB::raw("SUM($expression) AS total"))->toBase()->value('total');
     }
 
-    private function getMonthlyTrend($ledger): array
+    private function getMonthlyTrend($ledger, Carbon $end): array
     {
         $labels = [];
         $inflows = [];
         $outflows = [];
 
         for ($i = 5; $i >= 0; $i--) {
-            $month = now()->startOfMonth()->subMonths($i);
+            $month = $end->copy()->startOfMonth()->subMonths($i);
+            $next = $i === 0 ? $end->copy()->addDay() : $month->copy()->addMonth();
             $labels[] = $month->format('M Y');
             $period = (clone $ledger)->where('transaction_date', '>=', $month->toDateString())
-                ->where('transaction_date', '<', $month->copy()->addMonth()->toDateString());
+                ->where('transaction_date', '<', $next->toDateString());
             $inflows[] = $this->sumMovement((clone $period)->whereColumn('debit', '>', 'credit'), 'debit - credit');
             $outflows[] = $this->sumMovement((clone $period)->whereColumn('credit', '>', 'debit'), 'credit - debit');
         }
@@ -370,20 +379,21 @@ class CashFlowController extends Controller
         );
     }
 
-    private function getMonthlyTrendFromOperations(): array
+    private function getMonthlyTrendFromOperations(Carbon $end): array
     {
         $labels = [];
         $inflows = [];
         $outflows = [];
 
         for ($i = 5; $i >= 0; $i--) {
-            $month = now()->startOfMonth()->subMonths($i);
+            $month = $end->copy()->startOfMonth()->subMonths($i);
+            $next = $i === 0 ? $end->copy()->addDay() : $month->copy()->addMonth();
             $labels[] = $month->format('M Y');
 
             $inflows[] = $this->applyTenantScope(Payment::query(), 'payments')
                 ->tap(fn ($query) => $this->applyBranchScope($query, 'payments'))
-                ->whereMonth('created_at', $month->month)
-                ->whereYear('created_at', $month->year)
+                ->where('created_at', '>=', $month->toDateString())
+                ->where('created_at', '<', $next->toDateString())
                 ->where(function ($query) {
                     $query->whereRaw('LOWER(status) in (?, ?, ?)', ['completed', 'success', 'successful'])
                         ->orWhereRaw('LOWER(status) = ?', ['paid']);
@@ -392,8 +402,8 @@ class CashFlowController extends Controller
 
             $outflows[] = $this->applyTenantScope(Expense::query(), 'expenses')
                 ->tap(fn ($query) => $this->applyBranchScope($query, 'expenses'))
-                ->whereMonth('created_at', $month->month)
-                ->whereYear('created_at', $month->year)
+                ->where('created_at', '>=', $month->toDateString())
+                ->where('created_at', '<', $next->toDateString())
                 ->whereRaw('LOWER(status) = ?', ['paid'])
                 ->sum('amount');
         }

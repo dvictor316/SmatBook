@@ -711,10 +711,13 @@ class ReportIntegrityTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $account->delete();
+        $this->ledgerEntry($company, $account, 125, 0);
+        DB::table('transactions')->where('account_id', $account->id)->where('debit', 125)->update(['branch_id' => 'different']);
         $response = $this->withoutReportAccessMiddleware()
             ->actingAs($user)
-            ->withSession($this->branchSession($company))
-            ->get(route('general-ledger'));
+            ->withSession(array_replace($this->branchSession($company), ['active_branch_scope' => 'all']))
+            ->get(route('general-ledger', ['branch_scope' => 'branch', 'search' => 'Cash at Bank']));
 
         $response->assertOk()
             ->assertViewHas('entries', fn ($entries) => $entries->total() === 1)
@@ -735,6 +738,7 @@ class ReportIntegrityTest extends TestCase
             'reports.purchase',
             'reports.sales',
             'reports.stock',
+            'reports.stock-movements',
             'reports.low-stock',
             'reports.accounts-receivable',
             'reports.quotation',
@@ -758,6 +762,7 @@ class ReportIntegrityTest extends TestCase
             'reports.expense-by-category',
             'reports.expense-trend',
             'reports.stock-valuation',
+            'reports.expected-stock-profit',
             'reports.stock-by-category',
             'reports.tax-summary',
             'reports.cash-flow',
@@ -772,9 +777,60 @@ class ReportIntegrityTest extends TestCase
 
         foreach ($routes as $routeName) {
             $response = $this->withSession($this->branchSession($company))->get(route($routeName));
-            $this->assertLessThan(500, $response->getStatusCode(), "{$routeName} returned a server error.");
-            $this->assertNotSame(404, $response->getStatusCode(), "{$routeName} was not found.");
+            $this->assertSame(200, $response->getStatusCode(), "{$routeName} did not render.");
         }
+    }
+
+    public function test_purchase_reports_count_supplier_documents_in_the_selected_branch(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $other = Company::withoutGlobalScopes()->create(['name' => 'Other purchase workspace']);
+        $date = now();
+        foreach ([
+            [$company->id, 'HQ-RECEIPT', 'hq', 'Headquarters', 125],
+            [$company->id, 'OTHER-RECEIPT', 'other', 'Headquarters', 250],
+            [$company->id, 'LEGACY-RECEIPT', null, 'Other Branch', 525],
+            [$company->id, 'AUTO-STK-100', 'hq', 'Headquarters', 9000],
+            [$company->id, 'HIST-INV-100', 'hq', 'Headquarters', 10000],
+            [$other->id, 'OTHER-TENANT-RECEIPT', 'hq', 'Headquarters', 800],
+        ] as [$companyId, $reference, $branchId, $branchName, $amount]) {
+            DB::table('purchases')->insert([
+                'company_id' => $companyId, 'branch_id' => $branchId, 'branch_name' => $branchName,
+                'purchase_no' => $reference, 'total_amount' => $amount, 'status' => 'received', 'created_at' => $date,
+            ]);
+        }
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)
+            ->withSession(array_replace($this->branchSession($company), ['active_branch_scope' => 'all']));
+        $this->get(route('reports.purchase', ['branch_scope' => 'branch']))
+            ->assertOk()->assertViewHas('totalSum', 125.0);
+        $this->get(route('reports.purchase-summary'))
+            ->assertOk()->assertViewHas('totalAmount', 125.0)->assertViewHas('totalCount', 1);
+        $this->get(route('reports.purchase-by-supplier'))
+            ->assertOk()->assertViewHas('grandTotal', 125.0);
+        $this->get(route('reports.purchase-summary', ['branch_scope' => 'all']))
+            ->assertOk()->assertViewHas('totalAmount', 900.0)->assertViewHas('totalCount', 3);
+    }
+
+    public function test_income_includes_the_first_day_and_expense_totals_cover_every_filtered_page(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $sale = $this->sale($user, $company, 'SAME-DAY-INCOME', 125, 'completed');
+        $date = $sale->order_date;
+        foreach ([25, 50] as $amount) {
+            Expense::create([
+                'company_id' => $company->id, 'created_by' => $user->id,
+                'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'expense_id' => "FILTERED-EXP-{$amount}",
+                'company_name' => 'Report Vendor', 'category' => 'Utilities', 'amount' => $amount,
+                'status' => 'Paid', 'payment_status' => 'paid',
+            ]);
+        }
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $this->get(route('reports.income', ['from_date' => $date, 'to_date' => $date]))
+            ->assertOk()->assertViewHas('tIn', 125)->assertViewHas('tOut', 75);
+        $this->get(route('reports.expense', ['per_page' => 1, 'page' => 2, 'search' => 'Utilities']))
+            ->assertOk()->assertViewHas('expenses', fn ($rows) => $rows->count() === 1 && $rows->total() === 2)
+            ->assertViewHas('totalExpense', 75.0);
     }
 
     public function test_basic_plan_can_find_and_open_the_profit_loss_report(): void
@@ -829,6 +885,7 @@ class ReportIntegrityTest extends TestCase
         ];
 
         $this->ledgerEntry($company, $accounts['cash'], 200, 0);
+        $accounts['cash']->update(['opening_balance' => 1000000]);
         $this->ledgerEntry($company, $accounts['inventory'], 100, 0);
         $this->ledgerEntry($company, $accounts['receivables'], 100, 0);
         $this->ledgerEntry($company, $accounts['payables'], 0, 100);
@@ -896,8 +953,10 @@ class ReportIntegrityTest extends TestCase
         $this->ledgerEntry($company, $inventory, 900, 0);
         $this->ledgerEntry($company, $revenue, 0, 1000);
         $this->ledgerEntry($company, $otherBranch, 700, 0);
+        DB::table('transactions')->where('account_id', $otherBranch->id)
+            ->update(['branch_id' => 'other', 'branch_name' => 'Other']);
         DB::table('transactions')->where('account_id', $cash->id)->where('credit', 15)
-            ->update(['branch_id' => 'other']);
+            ->update(['branch_id' => 'other', 'branch_name' => 'Other']);
         $this->ledgerEntry($company, $cash, 0, 45);
 
         $this->withoutMiddleware([
@@ -917,26 +976,31 @@ class ReportIntegrityTest extends TestCase
             ->assertViewHas('cashAccountSummary', fn ($summary) => $summary->get('cash')['balance'] === -5.0);
 
         $this->get(route('reports.cash-flow', ['account' => 'cash']))->assertOk()
-            ->assertViewHas('openingBalance', 30.0)
+            ->assertViewHas('openingBalance', 0.0)
             ->assertViewHas('totalInflow', 10.0)
             ->assertViewHas('totalOutflow', 45.0)
-            ->assertViewHas('closingBalance', -5.0)
+            ->assertViewHas('closingBalance', -35.0)
+            ->assertSee('Opening balances awaiting review')
             ->assertDontSee('Other Branch Cash');
 
         $this->get(route('reports.cash-flow'))->assertOk()
             ->assertViewHas('accounts', fn ($accounts) => $accounts->contains('id', $bank->id))
             ->assertViewHas('totalInflow', 60.0)
-            ->assertViewHas('closingBalance', 45.0);
+            ->assertViewHas('closingBalance', 15.0);
+        $this->withoutMiddleware(CheckPlanAccess::class)->get(route('reports.chart-of-accounts'))->assertOk()
+            ->assertViewHas('summary', fn ($summary) => $summary['cash_balance'] === -35.0)
+            ->assertSee('Opening balances awaiting review');
         $this->get(route('reports.cash-flow', ['account' => $otherBranch->id]))->assertNotFound();
         $this->withSession($this->branchSession($company))->get(route('reports.cash-flow', [
             'account' => $cash->id,
             'start_date' => now()->addDay()->toDateString(),
             'end_date' => now()->addDay()->toDateString(),
-        ]))->assertOk()->assertViewHas('closingBalance', -5.0);
+        ]))->assertOk()->assertViewHas('closingBalance', -35.0);
 
         $csv = $this->get(route('reports.cash-flow.export', ['account' => $cash->id]))->assertOk()->streamedContent();
         $this->assertStringContainsString('Alh Cash Account', $csv);
-        $this->assertStringContainsString('"Closing Balance",-5', $csv);
+        $this->assertStringContainsString('"Closing Balance",-35', $csv);
+        $this->assertStringContainsString('Unposted opening for review', $csv);
         $this->assertStringNotContainsString('Operating Account', $csv);
     }
 

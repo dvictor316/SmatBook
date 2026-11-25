@@ -20,6 +20,7 @@ use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
 use App\Support\PlanAccess;
 use App\Support\SalesPaymentModeFilter;
+use App\Support\ScopesFinancialStatements;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -34,6 +35,8 @@ use Illuminate\Validation\Rule;
 
 class ReportController extends Controller
 {
+    use ScopesFinancialStatements;
+
     private function normalizeReportPlan(string $plan): string
     {
         return PlanAccess::normalizeTier($plan) ?? 'basic';
@@ -81,18 +84,6 @@ class ReportController extends Controller
         abort_unless(in_array('custom', $this->allowedReportTabs($this->resolveReportAccess()), true), 403);
     }
 
-    private function calculateReportSideBalances(float $amount, bool $isDebitNormal): array
-    {
-        if ($isDebitNormal) {
-            return $amount >= 0
-                ? ['debit' => $amount, 'credit' => 0.0]
-                : ['debit' => 0.0, 'credit' => abs($amount)];
-        }
-
-        return $amount >= 0
-            ? ['debit' => 0.0, 'credit' => $amount]
-            : ['debit' => abs($amount), 'credit' => 0.0];
-    }
 
     private function normalizeProfitLossAccountType(?string $value): string
     {
@@ -756,13 +747,23 @@ class ReportController extends Controller
         return $query;
     }
 
+    private function applyPurchaseDocumentScope($query): void
+    {
+        $this->applyReportableDocumentScope($query, 'purchases');
+        if (Schema::hasColumn('purchases', 'purchase_no')) {
+            $query->where(fn ($source) => $source->whereNull('purchases.purchase_no')->orWhere(fn ($reference) =>
+                $reference->where('purchases.purchase_no', 'not like', 'AUTO-STK-%')
+                    ->where('purchases.purchase_no', 'not like', 'HIST-INV-%')));
+        }
+    }
+
     private function applyReportDateRange($query, string $column, ?string $from, ?string $to)
     {
         if ($from) {
-            $query->where($column, '>=', Carbon::parse($from)->startOfDay());
+            $query->where($column, '>=', Carbon::parse($from)->toDateString());
         }
         if ($to) {
-            $query->where($column, '<=', Carbon::parse($to)->endOfDay());
+            $query->where($column, '<', Carbon::parse($to)->addDay()->toDateString());
         }
 
         return $query;
@@ -780,7 +781,7 @@ class ReportController extends Controller
         $allBranches = request()->boolean('all_branches')
             || strtolower($branchScope) === 'all'
             || strtolower($requestBranchId) === 'all'
-            || session('active_branch_scope') === 'all';
+            || ($branchScope === '' && $requestBranchId === '' && session('active_branch_scope') === 'all');
 
         if ($allBranches) {
             request()->session()->put('active_branch_scope', 'all');
@@ -929,7 +930,7 @@ class ReportController extends Controller
         });
     }
 
-    private function applyGenericBranchFilter($query, string $table)
+    private function applyGenericBranchFilter($query, string $table, bool $includeUnassigned = true)
     {
         $activeBranch = $this->getActiveBranchContext();
         if (($activeBranch['scope'] ?? 'branch') === 'all') {
@@ -943,16 +944,19 @@ class ReportController extends Controller
             return $query;
         }
 
-        $query->where(function ($sub) use ($table, $branchId, $branchName) {
-            if (Schema::hasColumn($table, 'branch_id') && $branchId !== '') {
-                $sub->where("{$table}.branch_id", $branchId);
-            }
-            if (Schema::hasColumn($table, 'branch_name') && $branchName !== '') {
-                $sub->orWhere("{$table}.branch_name", $branchName);
-            }
-            // Include records created before the branch feature (branch_id not yet assigned)
-            if (Schema::hasColumn($table, 'branch_id')) {
-                $sub->orWhereNull("{$table}.branch_id");
+        $hasId = Schema::hasColumn($table, 'branch_id');
+        $hasName = Schema::hasColumn($table, 'branch_name');
+        $query->where(function ($sub) use ($table, $branchId, $branchName, $includeUnassigned, $hasId, $hasName) {
+            $this->applyExactBranchScope($sub, $hasId ? $branchId : '', $hasName ? $branchName : '', "{$table}.branch_id", "{$table}.branch_name");
+            if ($includeUnassigned && ($hasId || $hasName)) {
+                $sub->orWhere(function ($legacy) use ($table, $hasId, $hasName) {
+                    if ($hasId) {
+                        $legacy->whereRaw("COALESCE({$table}.branch_id, '') = ''");
+                    }
+                    if ($hasName) {
+                        $legacy->whereRaw("COALESCE({$table}.branch_name, '') = ''");
+                    }
+                });
             }
         });
 
@@ -1066,112 +1070,7 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        $activeBranch = $this->getActiveBranchContext();
-        // 1. Parse Dates
-        $start = $request->start_date ? \Carbon\Carbon::parse($request->start_date) : null;
-        $end = $request->end_date ? \Carbon\Carbon::parse($request->end_date) : null;
-
-        $accountsQuery = \App\Models\Account::query();
-        $this->applyTenantScope($accountsQuery, 'accounts');
-        $accountsBase = $accountsQuery->get();
-        $accountIds = $accountsBase->pluck('id')->all();
-
-        if (! $start || ! $end) {
-            $latestTxnQuery = \App\Models\Transaction::query();
-            if (! empty($accountIds)) {
-                $latestTxnQuery->whereIn('account_id', $accountIds);
-            }
-            $latestTxnDate = $latestTxnQuery->max('transaction_date');
-
-            $effectiveEnd = $latestTxnDate
-                ? \Carbon\Carbon::parse($latestTxnDate)->endOfDay()
-                : \Carbon\Carbon::now()->endOfDay();
-
-            $end = $end ?: $effectiveEnd;
-            $start = $start ?: $end->copy()->startOfMonth();
-        }
-
-        // 2. Fetch and Map Data as ARRAYS (Removed (object) cast)
-        // Trial Balance is an "as-of" report; include all transactions up to end date.
-        $txnTotals = \App\Models\Transaction::selectRaw('account_id, SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->when(! empty($accountIds), function ($query) use ($accountIds) {
-                $query->whereIn('account_id', $accountIds);
-            })
-            ->whereDate('transaction_date', '<=', $end->toDateString())
-            ->groupBy('account_id')
-            ->get()
-            ->keyBy('account_id');
-
-        $postedOpeningBalanceAccountIds = \App\Models\Transaction::query()
-            ->where('transaction_type', \App\Models\Transaction::TYPE_OPENING_BALANCE)
-            ->where('related_type', Account::class)
-            ->whereColumn('account_id', 'related_id')
-            ->whereDate('transaction_date', '<=', $end->toDateString())
-            ->distinct()
-            ->pluck('account_id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        $openingTotals = ['debit' => 0.0, 'credit' => 0.0];
-
-        $accounts = $accountsBase
-            ->map(function ($account) use ($txnTotals, $postedOpeningBalanceAccountIds, &$openingTotals) {
-                $totals = $txnTotals->get($account->id);
-                $totalDebit = (float) ($totals->total_debit ?? 0);
-                $totalCredit = (float) ($totals->total_credit ?? 0);
-                $openingBalance = in_array((int) $account->id, $postedOpeningBalanceAccountIds, true)
-                    ? 0.0
-                    : (float) ($account->opening_balance ?? 0);
-
-                $debitBalance = 0;
-                $creditBalance = 0;
-
-                $normalizedType = strtolower(trim((string) ($account->type ?? '')));
-
-                $isDebitNormal = in_array($normalizedType, ['asset', 'expense'], true);
-
-                if (abs($openingBalance) > 0.0001) {
-                    $openingSide = $this->calculateReportSideBalances($openingBalance, $isDebitNormal);
-                    $openingTotals['debit'] += $openingSide['debit'];
-                    $openingTotals['credit'] += $openingSide['credit'];
-                }
-
-                $netBalance = $isDebitNormal
-                    ? $openingBalance + $totalDebit - $totalCredit
-                    : $openingBalance + $totalCredit - $totalDebit;
-
-                $netSide = $this->calculateReportSideBalances($netBalance, $isDebitNormal);
-                $debitBalance = $netSide['debit'];
-                $creditBalance = $netSide['credit'];
-
-                // Return a plain ARRAY to prevent the "stdClass" error
-                $hasActivity = ($totalDebit > 0) || ($totalCredit > 0) || (abs($openingBalance) > 0);
-
-                return [
-                    'code' => $account->code ?? 'N/A',
-                    'name' => $account->name,
-                    'type' => $account->type,
-                    'debit_balance' => $debitBalance,
-                    'credit_balance' => $creditBalance,
-                    'has_activity' => $hasActivity,
-                ];
-            })
-            ->filter(fn ($acc) => $acc['has_activity'])
-            ->sortBy('code')
-            ->values();
-
-        $accounts = $accounts->sortBy('code')->values();
-
-        // 3. Totals
-        $totalDebits = $accounts->sum('debit_balance');
-        $totalCredits = $accounts->sum('credit_balance');
-
-        $startDate = $start->toDateString();
-        $endDate = $end->toDateString();
-
-        return view('Reports.Reports.trial-balance', compact(
-            'startDate', 'endDate', 'accounts', 'totalDebits', 'totalCredits', 'activeBranch'
-        ));
+        return app(TrialBalanceController::class)->index($request);
     }
 
     /**
@@ -1194,7 +1093,7 @@ class ReportController extends Controller
             });
         }
 
-        return $query->orderBy($dateColumn, 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
+        return (clone $query)->orderBy($dateColumn, 'desc')->paginate(\App\Support\PageSize::resolve())->withQueryString();
     }
 
     /**
@@ -1246,11 +1145,15 @@ class ReportController extends Controller
             'end_date' => ['nullable', 'date_format:Y-m-d', ...($request->filled('start_date') ? ['after_or_equal:start_date'] : [])],
         ]);
         $start = $dates['start_date'] ?? null;
-        $endExclusive = isset($dates['end_date'])
-            ? Carbon::parse($dates['end_date'])->addDay()->toDateString()
-            : null;
+        $activeBranch = $this->resolveActiveBranch($request);
+        $reportEnd = isset($dates['end_date']) ? Carbon::parse($dates['end_date']) : now();
+        $unpostedOpeningAccounts = collect();
+        $postings = Transaction::withoutGlobalScopes()->whereNull('transactions.deleted_at');
+        $this->applyTransactionScope($postings, $request);
+        $this->applyLegacyOpeningBalanceBranchScope($postings, $activeBranch);
+        $endExclusive = $reportEnd->copy()->addDay()->toDateString();
 
-        $accountsQuery = Account::query()
+        $accountsQuery = Account::withoutGlobalScopes()
             ->orderByRaw("CASE LOWER(type)
                     WHEN 'asset' THEN 1
                     WHEN 'liability' THEN 2
@@ -1260,8 +1163,12 @@ class ReportController extends Controller
                     ELSE 6 END")
             ->orderBy('code');
 
-        $this->applyTenantScope($accountsQuery, 'accounts');
-        $this->applyGenericBranchFilter($accountsQuery, 'accounts');
+        $this->applyAccountScope($accountsQuery, $request);
+        $this->applyReportAccountVisibility(
+            $accountsQuery,
+            (clone $postings)->where('transaction_date', '<', $endExclusive),
+            $activeBranch
+        );
 
         if ($request->filled('type')) {
             $accountsQuery->where('type', $request->input('type'));
@@ -1269,9 +1176,9 @@ class ReportController extends Controller
 
         if ($request->filled('status') && Schema::hasColumn('accounts', 'is_active')) {
             if ($request->input('status') === 'active') {
-                $accountsQuery->where('is_active', 1);
+                $accountsQuery->where('is_active', 1)->whereNull('accounts.deleted_at');
             } elseif ($request->input('status') === 'inactive') {
-                $accountsQuery->where('is_active', 0);
+                $accountsQuery->where(fn ($inactive) => $inactive->where('is_active', 0)->orWhereNotNull('accounts.deleted_at'));
             }
         }
 
@@ -1294,16 +1201,12 @@ class ReportController extends Controller
         $accounts = $accountsQuery->get();
 
         if (Schema::hasTable('transactions') && $accounts->isNotEmpty()) {
-            $ledger = Transaction::query()->whereIn('account_id', $accounts->modelKeys());
-            $this->applyTenantScope($ledger, 'transactions');
-            $this->applyGenericBranchFilter($ledger, 'transactions');
-
-            $postedOpeningIds = (clone $ledger)->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
-                ->where('related_type', Account::class)->whereColumn('account_id', 'related_id')
-                ->distinct()->pluck('account_id')->flip();
+            $ledger = $postings->whereIn('account_id', $accounts->modelKeys());
+            $unpostedOpeningAccounts = $this->unpostedAccountOpenings($request, $reportEnd, $activeBranch)
+                ->whereIn('id', $accounts->modelKeys());
 
             $transactionTotals = $ledger
-                ->when($endExclusive, fn ($query) => $query->where('transaction_date', '<', $endExclusive))
+                ->where('transaction_date', '<', $endExclusive)
                 ->selectRaw('account_id, SUM(debit - credit) as closing_movement')
                 ->when($start,
                     fn ($query) => $query->selectRaw(
@@ -1311,33 +1214,31 @@ class ReportController extends Controller
                          SUM(CASE WHEN transaction_date >= ? THEN 1 ELSE 0 END) as transaction_count',
                         [$start, $start]
                     ),
-                    fn ($query) => $query->selectRaw('COUNT(*) as transaction_count')
+                    fn ($query) => $query->selectRaw('COUNT(*) as transaction_count, SUM(CASE WHEN transaction_type = ? THEN debit - credit ELSE 0 END) as prior_movement', [Transaction::TYPE_OPENING_BALANCE])
                 )
                 ->groupBy('account_id')->toBase()->get()->keyBy('account_id');
 
             foreach ($accounts as $account) {
                 $totals = $transactionTotals->get($account->id);
-                $sign = $account->isDebitAccount() ? 1 : -1;
-                $unpostedOpening = $postedOpeningIds->has($account->id) ? 0.0 : (float) $account->opening_balance;
-
-                if ($start) {
-                    $account->opening_balance = $unpostedOpening + $sign * (float) ($totals->prior_movement ?? 0);
-                }
-                $account->current_balance = $unpostedOpening + $sign * (float) ($totals->closing_movement ?? 0);
+                $type = $this->normalizeAccountType($account->type);
+                $sign = in_array($type, ['asset', 'expense', 'other'], true) ? 1 : -1;
+                $account->opening_balance = $sign * (float) ($totals->prior_movement ?? 0);
+                $account->current_balance = $sign * (float) ($totals->closing_movement ?? 0);
                 $account->transactions_count = (int) ($totals->transaction_count ?? 0);
             }
         }
 
         $accountTypes = Account::typeOptions();
+        $activeAccounts = $accounts->filter(fn (Account $account) => !$account->trashed() && ($account->is_active ?? true))->count();
         $summary = [
             'total_accounts' => $accounts->count(),
-            'active_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', true)->count() : $accounts->count(),
-            'inactive_accounts' => Schema::hasColumn('accounts', 'is_active') ? $accounts->where('is_active', false)->count() : 0,
+            'active_accounts' => $activeAccounts,
+            'inactive_accounts' => $accounts->count() - $activeAccounts,
             'cash_balance' => $accounts->filter(fn (Account $account) => $account->cashOrBankType() === 'Cash')->sum('current_balance'),
             'bank_balance' => $accounts->filter(fn (Account $account) => in_array($account->cashOrBankType(), ['Bank', 'Cash & Bank'], true))->sum('current_balance'),
         ];
 
-        return $this->renderReportView('chart-of-accounts-report', compact('accounts', 'accountTypes', 'summary'));
+        return $this->renderReportView('chart-of-accounts-report', compact('accounts', 'accountTypes', 'summary', 'activeBranch', 'unpostedOpeningAccounts'));
     }
 
     public function purchaseReport(Request $request)
@@ -1353,7 +1254,6 @@ class ReportController extends Controller
 
         $purchases = collect();
         $totalSum = 0;
-        $hasPurchaseRows = false;
 
         if (Schema::hasTable('purchases')) {
             $purchaseRefColumn = Schema::hasColumn('purchases', 'purchase_no') ? 'purchase_no' : 'id';
@@ -1383,7 +1283,7 @@ class ReportController extends Controller
             if (Schema::hasColumn('purchases', 'total_amount') || Schema::hasColumn('purchases', 'amount') || Schema::hasTable('purchase_items')) {
                 $query = \App\Models\Purchase::query();
                 $this->applyTenantScope($query, 'purchases');
-                $this->applyReportableDocumentScope($query, 'purchases');
+                $this->applyPurchaseDocumentScope($query);
 
                 if (
                     Schema::hasTable('suppliers') &&
@@ -1427,66 +1327,18 @@ class ReportController extends Controller
                     });
                 }
 
-                if (! empty($activeBranch['id']) || ! empty($activeBranch['name'])) {
-                    $query->where(function ($sub) use ($activeBranch) {
-                        if (! empty($activeBranch['id']) && Schema::hasColumn('purchases', 'branch_id')) {
-                            $sub->where('purchases.branch_id', $activeBranch['id']);
-                        }
-                        if (! empty($activeBranch['name']) && Schema::hasColumn('purchases', 'branch_name')) {
-                            $sub->orWhere('purchases.branch_name', $activeBranch['name']);
-                        }
-                    });
-                }
-
-                $hasPurchaseRows = (clone $query)->exists();
-
-                if ($hasPurchaseRows) {
-                    $totalSum = (float) ((clone $query)->sum(DB::raw($purchaseAmountExpression)) ?? 0);
-                    $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")->paginate(\App\Support\PageSize::resolve())->withQueryString();
-                }
+                $this->applyGenericBranchFilter($query, 'purchases', false);
+                $totalSum = (float) ((clone $query)->sum(DB::raw($purchaseAmountExpression)) ?? 0);
+                $purchases = $query->orderByDesc("purchases.{$purchaseDateColumn}")
+                    ->paginate(\App\Support\PageSize::resolve())->withQueryString();
             }
         }
 
-        if (! $hasPurchaseRows && Schema::hasTable('inventory_history') && Schema::hasTable('products')) {
-            $historyQuery = $this->scopedTable('inventory_history')
-                ->join('products', 'inventory_history.product_id', '=', 'products.id')
-                ->select([
-                    DB::raw($this->prefixedIdExpression('HIST-IN-', 'inventory_history.id').' as Reference'),
-                    DB::raw("'Inventory History' as CompanyName"),
-                    'inventory_history.branch_name as BranchName',
-                    DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0) as Amount'),
-                    'inventory_history.created_at as Date',
-                    DB::raw("'received' as Type"),
-                    'inventory_history.id as id',
-                ])
-                ->whereRaw("LOWER(COALESCE(inventory_history.type, '')) = 'in'");
-
-            $this->applyTenantScope($historyQuery, 'products');
-
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $historyQuery->whereBetween('inventory_history.created_at', [
-                    Carbon::parse($request->start_date)->startOfDay(),
-                    Carbon::parse($request->end_date)->endOfDay(),
-                ]);
-            }
-
-            if ($request->filled('search')) {
-                $search = trim((string) $request->search);
-                $historyQuery->where(function ($q) use ($search) {
-                    $q->where('products.name', 'like', '%'.$search.'%')
-                        ->orWhere('products.sku', 'like', '%'.$search.'%')
-                        ->orWhere('inventory_history.id', 'like', '%'.$search.'%');
-                });
-            }
-
-            $purchases = $historyQuery->orderByDesc('inventory_history.created_at')->paginate(\App\Support\PageSize::resolve())->withQueryString();
-            $totalSum = (clone $historyQuery)->sum(DB::raw('COALESCE(inventory_history.quantity, 0) * COALESCE(products.purchase_price, products.price, 0)'));
-        } elseif (! $hasPurchaseRows) {
+        if (!$purchases instanceof LengthAwarePaginator) {
             $purchases = new LengthAwarePaginator([], 0, \App\Support\PageSize::resolve(), 1, [
-                'path' => request()->url(),
-                'query' => request()->query(),
+                'path' => $request->url(),
+                'query' => $request->query(),
             ]);
-            $totalSum = 0;
         }
 
         // 6. Return View
@@ -1530,7 +1382,9 @@ class ReportController extends Controller
             ['expenses.company_name', 'expenses.reference', 'expenses.notes', 'expenses.category', 'users.name']
         );
 
-        return $this->renderReportView('expense-report', compact('expenses'));
+        $totalExpense = (float) (clone $query)->sum('expenses.amount');
+
+        return $this->renderReportView('expense-report', compact('expenses', 'totalExpense'));
     }
 
     public function income_report(Request $request)
@@ -1550,7 +1404,8 @@ class ReportController extends Controller
                 DB::raw('total as amount'),
                 DB::raw("'Inflow' as type"),
                 DB::raw("'Sales' as label"),
-            ])->whereBetween($salesDateColumn, [$start.' 00:00:00', $end.' 23:59:59']);
+            ]);
+            $this->applyReportDateRange($sales, $salesDateColumn, $start, $end);
             $this->applySalesScope($sales, 'sales');
             $this->applyReportableDocumentScope($sales, 'sales');
 
@@ -1559,8 +1414,8 @@ class ReportController extends Controller
                 DB::raw('amount as amount'),
                 DB::raw("'Inflow' as type"),
                 DB::raw("'Misc' as label"),
-            ])->whereNull('sale_id')
-                ->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
+            ])->whereNull('sale_id');
+            $this->applyReportDateRange($other, 'created_at', $start, $end);
             $this->applyPaymentBranchFilter($other, 'payments');
             $this->applyReportableDocumentScope($other, 'payments');
 
@@ -1569,7 +1424,8 @@ class ReportController extends Controller
                 DB::raw('amount as amount'),
                 DB::raw("'Outflow' as type"),
                 DB::raw("COALESCE(category, 'Expense') as label"),
-            ])->whereBetween('created_at', [$start.' 00:00:00', $end.' 23:59:59']);
+            ]);
+            $this->applyReportDateRange($exp, 'created_at', $start, $end);
             $this->applyTenantScope($exp, 'expenses');
             $this->applyGenericBranchFilter($exp, 'expenses');
             $this->applyReportableDocumentScope($exp, 'expenses');
@@ -1585,8 +1441,8 @@ class ReportController extends Controller
         };
         $results = DB::table(DB::query()->fromSub($currentUnion, 'cf'))
             ->select(['log_date',
-                DB::raw('SUM(CASE WHEN type="Inflow" THEN amount ELSE 0 END) as total_in'),
-                DB::raw('SUM(CASE WHEN type="Outflow" THEN amount ELSE 0 END) as total_out'),
+                DB::raw("SUM(CASE WHEN type='Inflow' THEN amount ELSE 0 END) as total_in"),
+                DB::raw("SUM(CASE WHEN type='Outflow' THEN amount ELSE 0 END) as total_out"),
                 DB::raw("{$labelAggregate} as labels"),
             ])->groupBy('log_date')->orderBy('log_date', 'desc')->get();
 
@@ -4475,8 +4331,9 @@ class ReportController extends Controller
     /** 12. Tax Purchase **/
     public function tax_purchase(Request $request)
     {
-        $query = $this->scopedTable('purchases')->where('purchases.tax_amount', '>', 0);
-        $this->applyReportableDocumentScope($query, 'purchases');
+        $query = $this->applyTenantScope(DB::table('purchases'), 'purchases')->where('purchases.tax_amount', '>', 0);
+        $this->applyGenericBranchFilter($query, 'purchases', false);
+        $this->applyPurchaseDocumentScope($query);
         $purchaseDateExpression = Schema::hasColumn('purchases', 'purchase_date')
             ? 'purchases.purchase_date'
             : (Schema::hasColumn('purchases', 'date') ? 'purchases.date' : 'purchases.created_at');
@@ -5146,8 +5003,8 @@ class ReportController extends Controller
                     $query->select(DB::raw("'Unknown' as supplier"), DB::raw('COUNT(*) as order_count'), DB::raw("SUM({$amountExpression}) as total_amount"));
                 }
                 $this->applyTenantScope($query, 'purchases');
-                $this->applyGenericBranchFilter($query, 'purchases');
-                $this->applyReportableDocumentScope($query, 'purchases');
+                $this->applyGenericBranchFilter($query, 'purchases', false);
+                $this->applyPurchaseDocumentScope($query);
                 $this->applyReportDateRange($query, "purchases.{$dateCol}", $from, $to);
                 $rows = $query->orderByDesc(DB::raw("SUM({$amountExpression})"))->get();
             }
@@ -5170,8 +5027,8 @@ class ReportController extends Controller
                 : (Schema::hasColumn('purchases', 'date') ? 'date' : 'created_at');
             if (Schema::hasColumn('purchases', 'total_amount') || Schema::hasColumn('purchases', 'amount') || Schema::hasTable('purchase_items')) {
                 $query = $this->applyTenantScope(DB::table('purchases'), 'purchases');
-                $this->applyGenericBranchFilter($query, 'purchases');
-                $this->applyReportableDocumentScope($query, 'purchases');
+                $this->applyGenericBranchFilter($query, 'purchases', false);
+                $this->applyPurchaseDocumentScope($query);
                 $this->applyReportDateRange($query, "purchases.{$dateCol}", $from, $to);
                 $amountExpression = $this->attachPurchaseItemTotals($query);
                 $totalAmount = (float) (clone $query)->sum(DB::raw($amountExpression));
@@ -5381,8 +5238,8 @@ class ReportController extends Controller
 
             if ($purchaseTaxColumn) {
                 $q = $this->applyTenantScope(DB::table('purchases'), 'purchases');
-                $this->applyGenericBranchFilter($q, 'purchases');
-                $this->applyReportableDocumentScope($q, 'purchases');
+                $this->applyGenericBranchFilter($q, 'purchases', false);
+                $this->applyPurchaseDocumentScope($q);
                 $this->applyReportDateRange($q, "purchases.{$dateC}", $from, $to);
                 $taxOnPurchases = (float) $q->sum($purchaseTaxColumn);
             }
