@@ -484,18 +484,26 @@ class LedgerService
      * Bypasses the branch-required guard so it works for company-wide accounts.
      * Idempotent: calling it twice for the same account is safe.
      */
-    public static function postAccountOpeningBalance(Account $account): void
+    public static function postAccountOpeningBalance(Account $account, ?string $date = null): void
     {
         if (!self::isReady()) {
             return;
         }
 
+        DB::transaction(function () use ($account, $date) {
+            $lockedAccount = Account::withoutGlobalScopes()->lockForUpdate()->findOrFail($account->id);
+            self::writeAccountOpeningBalance($lockedAccount, $date);
+        });
+    }
+
+    private static function writeAccountOpeningBalance(Account $account, ?string $date): void
+    {
         $ob = (float) ($account->opening_balance ?? 0);
         if (abs($ob) < 0.005) {
             return;
         }
 
-        // Idempotent guard — never double-post
+        // Existing journals, including partial legacy journals, must be reviewed in place.
         $alreadyPosted = Transaction::withoutGlobalScopes()
             ->where('related_id', $account->id)
             ->where('related_type', Account::class)
@@ -521,7 +529,7 @@ class LedgerService
         );
 
         $reference  = 'OB-ACCT-' . $account->id;
-        $date       = now()->toDateString();
+        $date       = self::resolveDate($date);
         $userId     = (int) ($account->user_id ?? Auth::id() ?? 0) ?: null;
         $branchId   = trim((string) ($account->branch_id ?? ''));
         $branchName = trim((string) ($account->branch_name ?? ''));
@@ -532,6 +540,16 @@ class LedgerService
         $isDebitNormal   = in_array($normalizedType, ['asset', 'expense'], true);
         $debitAccountId  = $isDebitNormal ? $account->id : $equityAccount->id;
         $creditAccountId = $isDebitNormal ? $equityAccount->id : $account->id;
+
+        if ($debitAccountId === $creditAccountId) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'opening_balance' => 'Enter an opening balance on a separate account to post its Opening Balance Equity offset.',
+            ]);
+        }
+        if ($ob < 0) {
+            [$debitAccountId, $creditAccountId] = [$creditAccountId, $debitAccountId];
+            $ob = abs($ob);
+        }
 
         // Build base payload without calling validatedBranchContext (branch is optional here)
         $columns = Schema::getColumnListing('transactions');

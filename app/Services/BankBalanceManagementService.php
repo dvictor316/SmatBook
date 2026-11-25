@@ -54,7 +54,10 @@ class BankBalanceManagementService
         $totalCredit = round((float) (clone $transactionsQuery)->sum('credit'), 2);
         $ledgerMovement = round($this->signedBalanceForAccountType($account, $totalDebit, $totalCredit), 2);
         $openingBalance = round((float) ($account->opening_balance ?? 0), 2);
-        $derivedLedgerBalance = round($openingBalance + $ledgerMovement, 2);
+        $hasPostedOpening = (clone $transactionsQuery)
+            ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+            ->where('related_type', Account::class)->whereColumn('account_id', 'related_id')->exists();
+        $derivedLedgerBalance = round(($hasPostedOpening ? 0 : $openingBalance) + $ledgerMovement, 2);
         $storedCurrentBalance = round((float) ($account->getRawOriginal('current_balance') ?? $account->current_balance ?? 0), 2);
         $cachedDelta = round($storedCurrentBalance - $derivedLedgerBalance, 2);
 

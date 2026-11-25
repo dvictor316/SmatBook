@@ -1103,30 +1103,23 @@ class SettingController extends Controller
                 ]);
         }
 
-        $account = Account::create([
-            'code'            => $validated['code'],
-            'name'            => $validated['name'],
-            'type'            => $validated['type'],
-            'sub_type'        => $validated['sub_type'] ?? null,
-            'opening_balance' => (float) ($validated['opening_balance'] ?? 0),
-            'current_balance' => (float) ($validated['opening_balance'] ?? 0),
-            'description'     => $validated['description'] ?? null,
-            'is_active'       => (bool) ($validated['is_active'] ?? true),
-            'company_id'      => $companyId ?: null,
-            'user_id'         => $userId ?: null,
-            'branch_id'       => $branchId !== '' ? $branchId : null,
-            'branch_name'     => $branchName !== '' ? $branchName : null,
-        ]);
-
-        // Post opening-balance journal so it appears on the balance sheet
-        try {
-            \App\Support\LedgerService::postAccountOpeningBalance($account);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('postAccountOpeningBalance failed', [
-                'account_id' => $account->id,
-                'error'      => $e->getMessage(),
+        DB::transaction(function () use ($validated, $companyId, $userId, $branchId, $branchName) {
+            $account = Account::create([
+                'code'            => $validated['code'],
+                'name'            => $validated['name'],
+                'type'            => $validated['type'],
+                'sub_type'        => $validated['sub_type'] ?? null,
+                'opening_balance' => (float) ($validated['opening_balance'] ?? 0),
+                'current_balance' => (float) ($validated['opening_balance'] ?? 0),
+                'description'     => $validated['description'] ?? null,
+                'is_active'       => (bool) ($validated['is_active'] ?? true),
+                'company_id'      => $companyId ?: null,
+                'user_id'         => $userId ?: null,
+                'branch_id'       => $branchId !== '' ? $branchId : null,
+                'branch_name'     => $branchName !== '' ? $branchName : null,
             ]);
-        }
+            \App\Support\LedgerService::postAccountOpeningBalance($account);
+        });
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account added to chart of accounts.');
     }
@@ -1500,7 +1493,8 @@ class SettingController extends Controller
         }
 
         $payload = ['name' => $bankName];
-        if (!Transaction::withoutGlobalScope('tenant')->where('account_id', $account->id)->exists()) {
+        $hasTransactions = Transaction::withoutGlobalScope('tenant')->where('account_id', $account->id)->exists();
+        if (!$hasTransactions) {
             $payload['opening_balance'] = $newOpening;
             $payload['current_balance'] = $newOpening;
         }
@@ -1519,6 +1513,9 @@ class SettingController extends Controller
         }
 
         $account->update($payload);
+        if (!$hasTransactions) {
+            \App\Support\LedgerService::postAccountOpeningBalance($account);
+        }
     }
 
     private function createBankLedgerAccount(
@@ -1553,7 +1550,10 @@ class SettingController extends Controller
             $payload['branch_name'] = $branchName;
         }
 
-        return Account::create($payload);
+        $account = Account::create($payload);
+        \App\Support\LedgerService::postAccountOpeningBalance($account);
+
+        return $account;
     }
 
     private function suggestTransactionsForStatementLine(BankStatementLine $line, $transactions)
@@ -1610,7 +1610,7 @@ class SettingController extends Controller
         // Recompute current_balance: new opening_balance + existing transaction movement
         $newOpening = (float) ($validated['opening_balance'] ?? 0);
         $oldOpening = (float) $account->opening_balance;
-        $transactionCount = (int) $account->transactions()->count();
+        $transactionCount = Transaction::withoutGlobalScope('tenant')->where('account_id', $account->id)->count();
 
         if ($transactionCount > 0 && abs($newOpening - $oldOpening) >= 0.01) {
             return redirect()
@@ -1619,14 +1619,19 @@ class SettingController extends Controller
                 ->with('error', 'Opening balance cannot be edited directly after ledger entries exist. Use the Bank Balance Management flow or post a balancing journal entry instead.');
         }
 
-        $account->update([
-            'name'            => $validated['name'],
-            'sub_type'        => $validated['sub_type'],
-            'opening_balance' => $newOpening,
-            'current_balance' => $account->current_balance - $oldOpening + $newOpening,
-            'description'     => $validated['description'] ?? null,
-            'is_active'       => (bool) ($validated['is_active'] ?? true),
-        ]);
+        DB::transaction(function () use ($account, $validated, $newOpening, $oldOpening, $transactionCount) {
+            $account->update([
+                'name'            => $validated['name'],
+                'sub_type'        => $validated['sub_type'],
+                'opening_balance' => $newOpening,
+                'current_balance' => $account->current_balance - $oldOpening + $newOpening,
+                'description'     => $validated['description'] ?? null,
+                'is_active'       => (bool) ($validated['is_active'] ?? true),
+            ]);
+            if ($transactionCount === 0) {
+                \App\Support\LedgerService::postAccountOpeningBalance($account);
+            }
+        });
 
         return redirect()->route('chart-of-accounts')->with('success', 'Account updated successfully.');
     }
@@ -2244,7 +2249,7 @@ class SettingController extends Controller
             $payload['swift_code'] = $validated['ifsc_code'] ?? null;
         }
         if (Schema::hasColumn('banks', 'company_id')) {
-            $payload['company_id'] = $request->user()?->company_id;
+            $payload['company_id'] = session('current_tenant_id') ?? $request->user()?->company_id;
         }
         if (Schema::hasColumn('banks', 'user_id')) {
             $payload['user_id'] = $request->user()?->id;
@@ -2305,7 +2310,7 @@ class SettingController extends Controller
 
         if (abs(((float) $payload['balance']) - $oldBankBalance) >= 0.01) {
             $linkedAccount = $this->resolveBankLedgerAccount($bank);
-            if ($linkedAccount && $linkedAccount->transactions()->count() > 0) {
+            if ($linkedAccount && Transaction::withoutGlobalScope('tenant')->where('account_id', $linkedAccount->id)->exists()) {
                 return redirect()
                     ->back()
                     ->withInput()

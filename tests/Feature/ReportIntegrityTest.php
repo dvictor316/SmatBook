@@ -267,6 +267,38 @@ class ReportIntegrityTest extends TestCase
         $this->assertSame(2, DB::table('transactions')->where('reference', $reference)->count());
     }
 
+    public function test_bank_settings_posts_an_opening_and_legacy_repair_closes_only_the_selected_company_gap(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $this->post(route('settings.bank-account.store'), [
+            'bank_name' => 'Opening Bank', 'account_number' => '1234025000', 'opening_balance' => '400000.00',
+        ])->assertSessionHas('success');
+        $bank = Account::withoutGlobalScopes()->where('company_id', $company->id)->where('name', 'Opening Bank')->sole();
+        $opening = DB::table('transactions')->where('reference', 'OB-ACCT-'.$bank->id);
+        $this->assertEquals(400000, $opening->sum('debit'));
+        $this->assertEquals(400000, $opening->sum('credit'));
+        $diagnostic = app(\App\Services\BankBalanceManagementService::class)->buildDiagnostic($bank);
+        $this->assertEquals(400000, $diagnostic['derived_ledger_balance']);
+
+        $legacy = $this->account($company, 'Legacy Main Bank', 'Asset', 'Bank');
+        $legacy->forceFill(['opening_balance' => 1000000, 'branch_id' => 'hq', 'branch_name' => 'Headquarters'])->save();
+        $other = Company::withoutGlobalScopes()->create(['name' => 'Other Opening Business', 'plan' => 'Enterprise']);
+        $otherAccount = $this->account($other, 'Other Legacy Bank', 'Asset', 'Bank');
+        $otherAccount->forceFill(['opening_balance' => 2000000])->save();
+        $this->get(route('balance-sheet'))->assertOk()
+            ->assertViewHas('statementDifference', 1000000.0)->assertSee('Legacy Main Bank');
+
+        $command = ['--company' => $company->id, '--account' => $legacy->id, '--date' => now()->toDateString()];
+        $this->artisan('ledger:audit-openings', ['--all-companies' => true])->assertSuccessful();
+        $this->assertDatabaseMissing('transactions', ['reference' => 'OB-ACCT-'.$legacy->id]);
+        $this->artisan('ledger:audit-openings', $command + ['--amount' => '900000', '--apply' => true])->assertFailed();
+        $this->artisan('ledger:audit-openings', $command + ['--amount' => '1000000', '--apply' => true])->assertSuccessful();
+        $this->artisan('ledger:audit-openings', $command + ['--amount' => '1000000', '--apply' => true])->assertFailed();
+        $this->assertDatabaseMissing('transactions', ['reference' => 'OB-ACCT-'.$otherAccount->id]);
+        $this->get(route('balance-sheet'))->assertOk()->assertViewHas('statementDifference', 0.0);
+    }
+
     public function test_empty_branch_payment_summary_does_not_fall_back_to_company_wide_data(): void
     {
         $this->withoutExceptionHandling();

@@ -32,28 +32,6 @@ class BalanceSheetController extends Controller
             : ['debit' => abs($amount), 'credit' => 0.0];
     }
 
-    private function accountLooksLikeLiability(object $account): bool
-    {
-        $type = $this->normalizeAccountType($account->type ?? null);
-        $subType = $this->normalizeAccountType($account->sub_type ?? null);
-        $name = strtolower(trim((string) ($account->name ?? '')));
-
-        if ($type !== 'other') {
-            return $type === 'liability';
-        }
-
-        if ($subType === 'liability') {
-            return true;
-        }
-
-        return str_contains($name, 'payable')
-            || str_contains($name, 'vat')
-            || str_contains($name, 'tax')
-            || str_contains($name, 'firs')
-            || str_contains($name, 'withholding')
-            || str_contains($name, 'paye');
-    }
-
     private function accountLooksLikeCurrentAsset(object $account): bool
     {
         $subType = strtolower(trim((string) ($account->sub_type ?? '')));
@@ -120,16 +98,6 @@ class BalanceSheetController extends Controller
 
         return $code === 'SYS-OPENING-EQUITY'
             || str_contains($name, 'opening balance equity');
-    }
-
-    private function isDiagnosticReserveAccount(object $account): bool
-    {
-        // Only exclude the single programmatically-generated system reserve account.
-        // User-created reconciliation / suspense accounts must appear on the balance
-        // sheet in whatever equity or liability bucket they belong to.
-        $code = strtoupper(trim((string) ($account->code ?? '')));
-
-        return $code === 'SYS-BS-RECON';
     }
 
     private function assetPresentationFor(object $account): array
@@ -427,7 +395,6 @@ class BalanceSheetController extends Controller
 
         $assetAccounts = $accounts
             ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'asset')
-            ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
             ->map(function ($account) {
                 $meta = $this->assetPresentationFor($account);
                 $account->_bs_group = $meta['group'];
@@ -437,8 +404,7 @@ class BalanceSheetController extends Controller
             })
             ->values();
         $liabilityAccounts = $accounts
-            ->filter(fn ($account) => $this->accountLooksLikeLiability($account))
-            ->reject(fn ($account) => $this->isDiagnosticReserveAccount($account))
+            ->filter(fn ($account) => $this->normalizeAccountType($account->type ?? null) === 'liability')
             ->map(function ($account) {
                 $meta = $this->liabilityPresentationFor($account);
                 $account->_bs_group = $meta['group'];
@@ -532,13 +498,6 @@ class BalanceSheetController extends Controller
                 return false;   // intentionally off the face of the statement
             }
             return !$placedIds->contains($a->id);
-        })->map(function ($a) {
-            // Tag WHY the account is unplaced so the view can give the right suggestion
-            $type = $this->normalizeAccountType($a->type ?? null);
-            $a->_unplaced_reason = ($type !== 'other' && $this->isDiagnosticReserveAccount($a))
-                ? 'system_reserve'   // type IS recognised, but excluded as a system/suspense account
-                : 'unrecognized_type'; // raw type string not in any normalisation alias list
-            return $a;
         })->sortByDesc(fn ($a) => abs((float) ($a->balance ?? 0)))->values();
         // ────────────────────────────────────────────────────────────────────────
 
@@ -786,6 +745,14 @@ class BalanceSheetController extends Controller
         $this->applyAccountScope($accountsQuery, $request);
 
         $accounts = $accountsQuery->get();
+        $unpostedOpeningAccounts = $accounts->filter(fn ($account) => $openings->has($account->id))
+            ->sortByDesc(fn ($account) => abs((float) $openings->get($account->id)))
+            ->map(fn ($account) => [
+                'id' => $account->id,
+                'name' => $account->name,
+                'code' => $account->code,
+                'amount' => (float) $openings->get($account->id),
+            ])->values();
 
         $accounts->transform(function ($account) use ($txnTotals, $openings) {
             $totals = $txnTotals->get($account->id);
@@ -1028,6 +995,7 @@ class BalanceSheetController extends Controller
             'geoCurrency',
             'geoCurrencyLocale',
             'unplacedAccounts',
+            'unpostedOpeningAccounts',
             'fullLedgerBreakdown',
             'openingEquityGap',
             'orphanedLedgerDr',

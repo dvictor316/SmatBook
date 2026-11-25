@@ -1020,7 +1020,10 @@ class ExpenseController extends Controller
                 $accountValues['branch_name'] = $sessionBranch['name'];
             }
 
-            Account::firstOrCreate($accountAttributes, $accountValues);
+            $account = Account::firstOrCreate($accountAttributes, $accountValues);
+            if ($account->wasRecentlyCreated) {
+                \App\Support\LedgerService::postAccountOpeningBalance($account);
+            }
 
             return redirect()->route('expenses.index')->with('success', 'Bank/payment source added successfully.');
         });
@@ -1280,12 +1283,13 @@ class ExpenseController extends Controller
                 'code' => $this->generateAccountCode('AST'),
                 'sub_type' => 'Current Asset',
                 'description' => 'Auto-synced from banks table',
-                'opening_balance' => (float) ($bank->balance ?? 0),
-                'current_balance' => (float) ($bank->balance ?? 0),
+                // The linked bank balance may include movements after account opening.
+                'opening_balance' => 0,
+                'current_balance' => 0,
                 'is_active' => true,
             ];
             if (Schema::hasColumn('accounts', 'company_id')) {
-                $accountAttributes['company_id'] = Auth::user()?->company_id ?: null;
+                $accountAttributes['company_id'] = session('current_tenant_id') ?? Auth::user()?->company_id;
             }
             if (Schema::hasColumn('accounts', 'user_id')) {
                 $accountValues['user_id'] = Auth::id();
@@ -1299,7 +1303,7 @@ class ExpenseController extends Controller
                 $accountValues['branch_name'] = $bank->branch_name ?? session('active_branch_name');
             }
 
-            Account::updateOrCreate($accountAttributes, $accountValues);
+            Account::firstOrCreate($accountAttributes, $accountValues);
         }
     }
 

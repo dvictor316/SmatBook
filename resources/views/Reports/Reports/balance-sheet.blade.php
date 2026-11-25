@@ -1099,8 +1099,6 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 @php
                     $ledgerIsBalanced  = abs($ledgerDifference ?? 0) < 0.01;
                     $stmtGap           = abs($equationDiff ?? 0);
-                    $netIncomeAmt      = abs($netIncome ?? 0);
-                    $earningsWithNoAsset = $ledgerIsBalanced && ($visTotalAssets ?? 0) == 0 && $netIncomeAmt >= 0.01;
                 @endphp
                 <div class="bs-imbalance">
                     <strong>&#9888;&nbsp; Statement Review Required</strong>
@@ -1132,33 +1130,28 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                 </ul>
                             @endif
                         </div>
-                    @elseif($earningsWithNoAsset)
-                        <div style="margin-top:10px;padding:8px 12px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;font-size:0.82rem;">
-                            <strong>Cause: Asset accounts not matching scope filters.</strong><br>
-                            The ledger is balanced (DR = CR), and Current Year Earnings of {{ $fmt($netIncomeAmt) }}
-                            means revenue/expense transactions exist. However, the debit side of those transactions
-                            (Cash, Bank, Accounts Receivable) is not appearing under Assets.<br><br>
-                            <strong>Likely reasons:</strong>
-                            <ul style="margin:4px 0 0;padding-left:16px;">
-                                <li>The Cash/Bank account in your Chart of Accounts has a different branch or tenant scope than the revenue transaction.</li>
-                                <li>The account type for Cash/Bank is not set to <em>Asset</em> — check Accounts settings.</li>
-                                <li>The debit transaction leg was posted without a <code>branch_id</code> while this report is filtered to a specific branch.</li>
-                            </ul>
-                            @if(!empty($unplacedAccounts) && $unplacedAccounts->isNotEmpty())
-                                <div style="margin-top:6px;"><strong>Unclassified accounts with balances:</strong>
-                                <ul style="margin:4px 0 0;padding-left:16px;">
-                                @foreach($unplacedAccounts as $ua)
-                                    <li>{{ $ua->name }} (type: {{ $ua->type ?? 'null' }}) — {{ $fmt(abs((float)($ua->balance ?? 0))) }}</li>
-                                @endforeach
-                                </ul></div>
-                            @endif
-                        </div>
                     @else
-                        <div style="margin-top:10px;padding:8px 12px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;font-size:0.82rem;">
-                            <strong>Cause: Possible account classification or opening-balance mismatch.</strong><br>
-                            The ledger is balanced but some accounts may be classified under the wrong type,
-                            or opening balance equity adjustments are needed. Review the Chart of Accounts
-                            and ensure every debit account is typed as Asset or Expense.
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <strong>Posted debits and credits agree. Review the balances below.</strong>
+                            @if(!empty($unpostedOpeningAccounts) && $unpostedOpeningAccounts->isNotEmpty())
+                                <p class="mb-1 mt-2">Opening balances saved without a matching opening journal</p>
+                                <ul class="mb-2">
+                                    @foreach($unpostedOpeningAccounts as $opening)
+                                        <li>{{ $opening['code'] }} · {{ $opening['name'] }} (account #{{ $opening['id'] }}) · {{ $fmt($opening['amount']) }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            @if(!empty($unplacedAccounts) && $unplacedAccounts->isNotEmpty())
+                                <p class="mb-1 mt-2">Accounts that need an accounting type</p>
+                                <ul class="mb-2">
+                                    @foreach($unplacedAccounts as $account)
+                                        <li>{{ $account->code }} · {{ $account->name }} · {{ $fmt($account->balance) }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            @if(empty($unpostedOpeningAccounts) || $unpostedOpeningAccounts->isEmpty())
+                                <p class="mb-0 mt-2">Check the account assignments for the journals included in this report.</p>
+                            @endif
                         </div>
                     @endif
                 </div>
