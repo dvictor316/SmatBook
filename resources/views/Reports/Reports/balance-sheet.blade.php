@@ -66,23 +66,23 @@ $retainedEarningsLines  = $visibleOnly($retainedEarningsLines ?? []);
 /* ─────────────────────────────────────────────────────────────────
  *  DISPLAY TOTALS  (after reclassifications and system-account removal)
  * ──────────────────────────────────────────────────────────────── */
-$visTotalCurrentAssets  = $processedCurrentAssets->sum(fn ($a) => (float) ($a->balance ?? 0));
-$visTotalFixedAssets    = $processedFixedAssets->sum(fn ($a) => (float) ($a->balance ?? 0));
-$visTotalAssets         = $visTotalCurrentAssets + $visTotalFixedAssets;
+$visTotalCurrentAssets  = $totalCurrentAssets ?? 0;
+$visTotalFixedAssets    = $totalFixedAssets ?? 0;
+$visTotalAssets         = $totalAssets ?? 0;
 
-$visTotalCurrentLiab    = $currentLiabilityLines->sum(fn ($a) => (float) ($a->balance ?? 0));
-$visTotalLongTermLiab   = $longTermLiabilityLines->sum(fn ($a) => (float) ($a->balance ?? 0));
-$visTotalLiabilities    = $visTotalCurrentLiab + $visTotalLongTermLiab;
+$visTotalCurrentLiab    = $totalCurrentLiabilities ?? 0;
+$visTotalLongTermLiab   = $totalLongTermLiabilities ?? 0;
+$visTotalLiabilities    = $totalLiabilities ?? 0;
 
 $visTotalEquityCapital  = $equityCapitalLines->sum(fn ($a) => (float) ($a->balance ?? 0));
 $visTotalEquityRetained = $equityRetainedLines->sum(fn ($a) => (float) ($a->balance ?? 0));
 $visTotalEquityReserves = $equityReserveLines->sum(fn ($a) => (float) ($a->balance ?? 0));
 $visTotalCurrentEarnings = $retainedEarningsLines->sum(fn ($a) => (float) ($a->balance ?? 0));
-$visTotalEquity         = $visTotalEquityCapital + $visTotalEquityRetained + $visTotalEquityReserves + $visTotalCurrentEarnings;
+$visTotalEquity         = $totalEquity ?? 0;
 
 $visTotalLiabEquity     = $visTotalLiabilities + $visTotalEquity;
-$equationDiff           = round($visTotalAssets - $visTotalLiabEquity, 2);
-$isBalanced             = abs($equationDiff) < 0.01;
+$equationDiff           = $statementDifference ?? 0;
+$isBalanced             = ($isBalanced ?? true) && abs($ledgerDifference ?? 0) < 0.01;
 
 /* ─────────────────────────────────────────────────────────────────
  *  COMPARISON PERIOD DATA
@@ -1197,8 +1197,9 @@ function bsSetConsolidate(val) {
 }
 
 function bsExportExcel() {
-    const date = document.getElementById('bsDate').value;
-    window.location.href = '{{ route("balance-sheet.export") }}?date=' + date;
+    const form = document.getElementById('bsFilterForm');
+    const filters = new URLSearchParams(new FormData(form));
+    window.location.href = @json(route('balance-sheet.export')) + '?' + filters.toString();
 }
 </script>
 @endsection

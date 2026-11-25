@@ -224,7 +224,7 @@
         </div>
         @include('Reports.partials.context-strip', [
             'reportLabel' => 'Trial Balance Report',
-            'periodLabel' => 'Period: ' . $startDate . ' to ' . $endDate,
+            'periodLabel' => 'As of ' . $endDate,
         ])
         <div class="report-container">
 
@@ -233,16 +233,16 @@
                 <div class="report-title">Financial Audit Report</div>
                 <h1 class="company-name">{{ $reportCompanyName }}</h1>
                 <div class="text-muted small mt-1" style="font-size: 0.82rem;">
-                    Period: {{ $startDate }} — {{ $endDate }}
+                    As of {{ $endDate }}
                     @if(!empty($activeBranch['name'] ?? null))
                         <span class="ms-2">· Branch: {{ $activeBranch['name'] }}</span>
                     @endif
                 </div>
             </div>
             <div class="export-actions d-flex gap-1">
-                <button onclick="triggerAction(2)" class="btn-export"><i class="feather-printer me-1"></i> Print</button>
-                <button onclick="triggerAction(1)" class="btn-export text-danger"><i class="feather-file-text me-1"></i> PDF</button>
-                <button onclick="triggerAction(0)" class="btn-export text-success"><i class="feather-download me-1"></i> Excel</button>
+                <button onclick="triggerAction('.buttons-print')" class="btn-export"><i class="feather-printer me-1"></i> Print</button>
+                <button onclick="triggerAction('.buttons-pdf')" class="btn-export text-danger"><i class="feather-file-text me-1"></i> PDF</button>
+                <a href="{{ route('trial-balance.export', ['end_date' => $endDate, 'branch_scope' => $activeBranch['scope'] ?? 'branch', 'branch_id' => $activeBranch['id'] ?? null]) }}" class="btn-export text-success"><i class="feather-download me-1"></i> Excel</a>
             </div>
         </div>
 
@@ -305,6 +305,10 @@
             </div>
         @endif
 
+        @if (abs($statementDifference ?? 0) >= 0.01 && abs($ledgerDifference ?? 0) < 0.01)
+            <div class="alert alert-warning mb-3">The displayed account balances differ by {{ \App\Support\GeoCurrency::format(abs($statementDifference), 'NGN', $currencyCode, $currencyLocale) }}. Review opening balances and account assignments.</div>
+        @endif
+
         <div class="table-card">
             <div class="table-scroll">
             <table class="table align-middle" id="trialBalanceTable">
@@ -341,7 +345,7 @@
             </div>
         </div>
 
-        @php $isBalanced = abs($totalDebits - $totalCredits) < 0.01; @endphp
+        @php $isBalanced = abs($totalDebits - $totalCredits) < 0.01 && abs($ledgerDifference ?? 0) < 0.01; @endphp
         <div class="status-strip {{ $isBalanced ? 'balanced' : 'unbalanced' }}">
             {{ $isBalanced ? '✓ Trial Balance is Balanced' : '⚠ Discrepancy Detected in Trial Balance' }}
         </div>
@@ -353,7 +357,6 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
@@ -366,7 +369,6 @@ $(document).ready(function() {
         "dom": 'Bfrtip',
         "ordering": false,
         "buttons": [
-            { extend: 'excelHtml5', className: 'buttons-excel', title: 'Trial Balance', footer: true },
             { 
                 extend: 'pdfHtml5', 
                 className: 'buttons-pdf', 
@@ -382,9 +384,8 @@ $(document).ready(function() {
     });
 });
 
-function triggerAction(index) {
+function triggerAction(buttonClass) {
     if (!window.tbTable) return;
-    let buttonClass = index === 0 ? '.buttons-excel' : (index === 1 ? '.buttons-pdf' : '.buttons-print');
     window.tbTable.button(buttonClass).trigger();
 }
 </script>

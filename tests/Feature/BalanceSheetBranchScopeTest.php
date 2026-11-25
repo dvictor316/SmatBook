@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\BalanceSheetController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TrialBalanceController;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Maatwebsite\Excel\Facades\Excel;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -377,6 +379,145 @@ class BalanceSheetBranchScopeTest extends TestCase
         $totals = $view->getData()['totals'];
 
         $this->assertSame(0.0, round((float) $totals->total_purchase_expense, 2));
+    }
+
+    public function test_new_workspace_ignores_unowned_openings_and_live_customer_debt(): void
+    {
+        $user = $this->statementUser();
+        DB::table('accounts')->insert([
+            'name' => 'Unowned cash', 'code' => 'LEGACY-CASH', 'type' => 'Asset',
+            'opening_balance' => 34400, 'current_balance' => 34400,
+        ]);
+        Schema::create('customers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('company_id');
+            $table->decimal('balance', 15, 2);
+            $table->date('opening_balance_date')->nullable();
+        });
+        DB::table('customers')->insert(['company_id' => 1, 'balance' => 34400]);
+
+        $balance = app(BalanceSheetController::class)->index($this->statementRequest($user))->getData();
+        $trial = app(TrialBalanceController::class)->index($this->statementRequest($user))->getData();
+
+        $this->assertSame(0.0, $balance['totalAssets']);
+        $this->assertSame(0.0, $balance['totalEquity']);
+        $this->assertSame(0.0, $balance['totalLiabilities']);
+        $this->assertCount(0, $trial['accounts']);
+    }
+
+    public function test_statements_keep_real_imbalances_visible_instead_of_adding_operational_revenue(): void
+    {
+        $user = $this->statementUser();
+        DB::table('accounts')->insert([
+            'id' => 50, 'code' => 'VAT-INPUT', 'name' => 'VAT Receivable',
+            'type' => 'Asset', 'company_id' => 1,
+        ]);
+        DB::table('transactions')->insert([
+            'account_id' => 50, 'company_id' => 1, 'user_id' => $user->id,
+            'transaction_date' => '2026-05-10 14:00:00', 'debit' => 34400,
+            'transaction_type' => Transaction::TYPE_JOURNAL, 'reference' => 'UNBALANCED-1',
+        ]);
+        DB::table('sales')->insert([
+            'total_amount' => 34400, 'amount_paid' => 34400, 'order_date' => '2026-05-10',
+            'order_status' => 'completed', 'company_id' => 1,
+        ]);
+
+        $request = $this->statementRequest($user);
+        $balance = app(BalanceSheetController::class)->index($request)->getData();
+        $trial = app(TrialBalanceController::class)->index($request)->getData();
+
+        $this->assertSame(34400.0, $balance['totalAssets']);
+        $this->assertSame(0.0, $balance['totalLiabilities']);
+        $this->assertSame(0.0, $balance['netIncome']);
+        $this->assertSame(0.0, $balance['totalEquity']);
+        $this->assertFalse($balance['isBalanced']);
+        $this->assertSame(34400.0, $balance['reconciliationReserveDiagnostic']);
+        $this->assertCount(1, $trial['accounts']);
+        $this->assertSame(34400.0, $trial['totalDebits']);
+        $this->assertSame(0.0, $trial['totalCredits']);
+        $this->assertSame(34400.0, $trial['ledgerDifference']);
+
+        Excel::fake();
+        app(BalanceSheetController::class)->export($request);
+        Excel::assertDownloaded('balance_sheet_2026-05-10.xlsx', fn ($export) => collect($export->array())
+            ->contains(fn (array $row) => $row === ['Statement Difference', '', 34400.0]));
+        app(TrialBalanceController::class)->export($request);
+        Excel::assertDownloaded('trial_balance_2026-05-10.xlsx', fn ($export) => $export->collection()->all()
+            === [['VAT-INPUT', 'VAT Receivable', 'Asset', 34400.0, 0.0], ['', 'Totals', '', 34400.0, 0.0]]);
+    }
+
+    public function test_statements_show_entered_openings_once_and_exclude_future_openings(): void
+    {
+        $user = $this->statementUser();
+        DB::table('accounts')->insert([
+            ['id' => 60, 'code' => 'CASH-A', 'name' => 'Entered cash opening', 'type' => 'Asset', 'company_id' => 1, 'opening_balance' => 50],
+            ['id' => 61, 'code' => 'CASH-B', 'name' => 'Future cash opening', 'type' => 'Asset', 'company_id' => 1, 'opening_balance' => 200],
+            ['id' => 62, 'code' => 'EQUITY-A', 'name' => 'Owner Capital', 'type' => 'Equity', 'company_id' => 1, 'opening_balance' => 50],
+            ['id' => 63, 'code' => 'CASH-C', 'name' => 'Posted cash opening', 'type' => 'Asset', 'company_id' => 1, 'opening_balance' => 25],
+        ]);
+        foreach ([[61, 200, '2026-05-11'], [63, 25, '2026-05-10']] as [$account, $amount, $date]) {
+            DB::table('transactions')->insert([
+                ['account_id' => $account, 'company_id' => 1, 'transaction_date' => $date, 'debit' => $amount, 'credit' => 0,
+                    'transaction_type' => Transaction::TYPE_OPENING_BALANCE, 'related_type' => Account::class, 'related_id' => $account],
+                ['account_id' => 62, 'company_id' => 1, 'transaction_date' => $date, 'debit' => 0, 'credit' => $amount,
+                    'transaction_type' => Transaction::TYPE_OPENING_BALANCE, 'related_type' => Account::class, 'related_id' => $account],
+            ]);
+        }
+
+        $request = $this->statementRequest($user);
+        $balance = app(BalanceSheetController::class)->index($request)->getData();
+        $trial = app(TrialBalanceController::class)->index($request)->getData();
+
+        $this->assertSame(75.0, $balance['totalAssets']);
+        $this->assertSame(75.0, $balance['totalEquity']);
+        $this->assertTrue($balance['isBalanced']);
+        $this->assertSame(75.0, $trial['totalDebits']);
+        $this->assertSame(75.0, $trial['totalCredits']);
+    }
+
+    public function test_posted_sales_returns_remain_visible_in_both_statements(): void
+    {
+        $user = $this->statementUser();
+        DB::table('accounts')->insert([
+            ['id' => 70, 'code' => 'SALES', 'name' => 'Sales Revenue', 'type' => 'Revenue', 'company_id' => 1],
+            ['id' => 71, 'code' => 'ADVANCE', 'name' => 'Customer Advances', 'type' => 'Liability', 'company_id' => 1],
+        ]);
+        DB::table('transactions')->insert([
+            ['account_id' => 70, 'company_id' => 1, 'transaction_date' => '2026-05-10', 'debit' => 34400, 'credit' => 0,
+                'transaction_type' => Transaction::TYPE_ADJUSTMENT, 'related_type' => 'credit_note', 'related_id' => 1, 'reference' => 'CN-1'],
+            ['account_id' => 71, 'company_id' => 1, 'transaction_date' => '2026-05-10', 'debit' => 0, 'credit' => 34400,
+                'transaction_type' => Transaction::TYPE_ADJUSTMENT, 'related_type' => 'credit_note', 'related_id' => 1, 'reference' => 'CN-1'],
+        ]);
+
+        $request = $this->statementRequest($user);
+        $balance = app(BalanceSheetController::class)->index($request)->getData();
+        $trial = app(TrialBalanceController::class)->index($request)->getData();
+
+        $this->assertSame(34400.0, $balance['totalLiabilities']);
+        $this->assertSame(-34400.0, $balance['netIncome']);
+        $this->assertTrue($balance['isBalanced']);
+        $this->assertSame(34400.0, $trial['totalDebits']);
+        $this->assertSame(34400.0, $trial['totalCredits']);
+    }
+
+    private function statementUser(): User
+    {
+        $user = User::query()->create([
+            'name' => 'Statement Owner', 'email' => 'statement@example.test',
+            'password' => bcrypt('password'), 'company_id' => 1,
+        ]);
+        $this->actingAs($user);
+        session(['current_tenant_id' => 1, 'active_branch_scope' => 'all']);
+
+        return $user;
+    }
+
+    private function statementRequest(User $user): Request
+    {
+        $request = Request::create('/balance-sheet', 'GET', ['date' => '2026-05-10', 'end_date' => '2026-05-10']);
+        $request->setUserResolver(fn () => $user);
+
+        return $request;
     }
 
     private function invokePrivate(object $target, string $method, array $arguments = [])
