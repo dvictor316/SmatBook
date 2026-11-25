@@ -555,6 +555,42 @@ class BalanceSheetBranchScopeTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_inventory_ledger_audit_traces_all_stock_ins_to_company_scoped_history(): void
+    {
+        Schema::create('inventory_history', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('company_id');
+            $table->unsignedBigInteger('product_id');
+            $table->string('branch_id');
+            $table->string('branch_name');
+            $table->string('reference');
+            $table->string('type');
+            $table->decimal('quantity', 15, 2);
+            $table->timestamps();
+        });
+        DB::table('companies')->insert(['id' => 140, 'name' => 'Bilga Global Resources']);
+        foreach (range(101, 117) as $historyId) {
+            DB::table('purchases')->insert([
+                'company_id' => 140, 'purchase_no' => "AUTO-STK-{$historyId}",
+                'total_amount' => 100, 'created_at' => '2026-11-24 16:00:00',
+            ]);
+            DB::table('inventory_history')->insert([
+                'id' => $historyId, 'company_id' => $historyId === 117 ? 141 : 140, 'product_id' => 741,
+                'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'reference' => 'Initial Stock',
+                'type' => 'in', 'quantity' => 2, 'created_at' => '2026-11-24 16:00:00',
+            ]);
+        }
+
+        $this->artisan('ledger:audit-inventory', ['company' => 140, '--as-of' => '2026-11-25'])
+            ->expectsTable(['History branch ID', 'History branch', 'Movement', 'Records', 'Recorded value'], [
+                ['hq', 'Headquarters', 'Initial stock', 16, '1,600.00'],
+                ['—', 'Unassigned', 'No matching stock-in history', 1, '100.00'],
+            ])
+            ->assertSuccessful();
+        $this->assertDatabaseCount('inventory_history', 17);
+        $this->assertDatabaseCount('transactions', 0);
+    }
+
     private function statementUser(): User
     {
         $user = User::query()->create([
