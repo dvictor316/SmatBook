@@ -6467,20 +6467,19 @@
 @endif
 @if (Route::is(['bank-account']))
       
-      <div class="modal custom-modal fade" id="bank_details" role="dialog">
-        <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content">
-                <form class="bank-account-form" action="{{ route('settings.bank-account.store') }}" method="POST">
+      <div class="modal custom-modal fade" id="bank_details" tabindex="-1" aria-labelledby="add-bank-details-title">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md bank-account-dialog">
+            <form class="modal-content bank-account-form" action="{{ route('settings.bank-account.store') }}" method="POST">
                     @csrf
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">
-                        <h4 class="mb-0">Add Bank Details</h4>
+                        <h4 class="mb-0" id="add-bank-details-title">Add Bank Details</h4>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 
                     </button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" tabindex="0" aria-label="Bank details fields">
                     <div class="row">
                         <div class="col-lg-12 col-md-12">
                             <div class="input-block mb-3">
@@ -6526,8 +6525,7 @@
                     <button type="button" data-bs-dismiss="modal" class="btn btn-back cancel-btn me-2">Cancel</button>
                     <button type="submit" class="btn btn-primary paid-continue-btn">Save</button>
                 </div>
-                </form>
-            </div>
+            </form>
         </div>
     </div>
     

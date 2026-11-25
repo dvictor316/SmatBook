@@ -3,17 +3,21 @@
 
 @section('content')
     <style>
-        .bank-account-form {
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            max-height: calc(100vh - 2rem);
-            max-height: calc(100dvh - 2rem);
+        .bank-account-dialog.modal-dialog-scrollable {
+            height: calc(100vh - 32px);
+            height: calc(100dvh - 32px);
         }
 
-        .bank-account-form > .modal-body {
+        .bank-account-dialog > .bank-account-form {
+            max-height: 100%;
             min-height: 0;
-            overflow-y: auto;
+        }
+
+        .bank-account-dialog > .bank-account-form > .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
             overscroll-behavior: contain;
         }
 
@@ -252,17 +256,16 @@
             </div>
         </div>
 
-        <div class="modal fade" id="edit_bank_{{ $account->id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form class="bank-account-form" action="{{ route('settings.bank-account.update', $account->id) }}" method="POST">
+        <div class="modal fade" id="edit_bank_{{ $account->id }}" tabindex="-1" aria-labelledby="edit_bank_title_{{ $account->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable bank-account-dialog">
+                <form class="modal-content bank-account-form" action="{{ route('settings.bank-account.update', $account->id) }}" method="POST">
                         @csrf
                         @method('PUT')
                         <div class="modal-header">
-                            <h5 class="modal-title">Edit Bank Account</h5>
+                            <h5 class="modal-title" id="edit_bank_title_{{ $account->id }}">Edit Bank Account</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body" tabindex="0" aria-label="Bank details fields">
                             <div class="mb-3">
                                 <label class="form-label">Bank Name</label>
                                 <input type="text" class="form-control js-bank-code-source" data-bank-code-part="bank" name="bank_name" value="{{ old('bank_name', $account->name) }}" required>
@@ -294,8 +297,7 @@
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
                         </div>
-                    </form>
-                </div>
+                </form>
             </div>
         </div>
 

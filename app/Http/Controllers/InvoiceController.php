@@ -401,9 +401,8 @@ class InvoiceController extends Controller
             return 0.0;
         }
 
-        $walletBalance = round(max(0, (float) ($customer->wallet_balance ?? 0)), 2);
         $saleBalance = round(max(0, (float) ($sale->balance ?? ((float) ($sale->total ?? 0) - (float) ($sale->amount_paid ?? 0)))), 2);
-        $amount = min($walletBalance, $saleBalance);
+        $amount = $this->invoiceWalletAmount($customer, $saleBalance);
 
         if ($amount <= 0) {
             return 0.0;
@@ -456,6 +455,15 @@ class InvoiceController extends Controller
         LedgerPostingService::postCustomerWalletSettlement($sale->fresh(), $payment->fresh());
 
         return $amount;
+    }
+
+    private function invoiceWalletAmount(Customer $customer, float $balance): float
+    {
+        if (!Schema::hasColumn('customers', 'wallet_balance') || !Schema::hasTable('payments')) {
+            return 0.0;
+        }
+
+        return round(min($balance, max(0, (float) $customer->wallet_balance)), 2);
     }
 
     private function applyTenantScope($query, string $table)
@@ -683,6 +691,9 @@ class InvoiceController extends Controller
             'items.*.price_level' => 'nullable|in:list,retail,wholesale,special',
             'items.*.unit_type' => 'nullable|string|max:50',
             'total_amount' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.tax' => 'nullable|numeric|min:0',
+            'expenses' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -766,7 +777,7 @@ class InvoiceController extends Controller
                 }
             }
 
-            $totalAmount = (float) $request->total_amount;
+            $totalAmount = round(max(0, $subtotal - $discountTotal + $taxTotal + (float) $request->input('expenses', 0)), 2);
             $paidAmount = $isPaid ? $totalAmount : 0;
             $balanceAmount = max(0, $totalAmount - $paidAmount);
             $paymentStatus = $isPaid
@@ -774,7 +785,8 @@ class InvoiceController extends Controller
                 : ($requestedStatus === 'partially paid' ? 'partial' : 'unpaid');
             $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
 
-            if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $balanceAmount)) {
+            $newCredit = $balanceAmount - $this->invoiceWalletAmount($customer, $balanceAmount);
+            if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $newCredit)) {
                 DB::rollBack();
                 $creditWarning = session('credit_limit_warning');
                 if (is_array($creditWarning)) {
@@ -1110,6 +1122,9 @@ class InvoiceController extends Controller
             'items.*.price_list_id' => 'nullable|exists:price_lists,id',
             'items.*.price_level' => 'nullable|in:list,retail,wholesale,special',
             'total_amount' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.tax' => 'nullable|numeric|min:0',
+            'expenses' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -1227,14 +1242,15 @@ class InvoiceController extends Controller
                 }
             }
 
-            $totalAmount = (float) $request->total_amount;
+            $totalAmount = round(max(0, $subtotal - $discountTotal + $taxTotal + (float) $request->input('expenses', 0)), 2);
             $recordedPaid = (float) ($this->resolveAppliedPaymentAmount($sale) ?? 0);
             $paidAmount = $isPaid ? $totalAmount : min($totalAmount, $recordedPaid);
             $balanceAmount = max(0, $totalAmount - $paidAmount);
             $paymentStatus = $balanceAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'unpaid');
             $orderStatus = $isDraft ? 'draft' : ($action === 'send' ? 'sent' : 'pending');
 
-            if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $balanceAmount, (int) $sale->id)) {
+            $newCredit = $balanceAmount - $this->invoiceWalletAmount($customer, $balanceAmount);
+            if (!$isDraft && $creditLimitResponse = $this->creditLimitWarningResponse($request, $customer, $newCredit, (int) $sale->id)) {
                 DB::rollBack();
                 $creditWarning = session('credit_limit_warning');
                 if (is_array($creditWarning)) {

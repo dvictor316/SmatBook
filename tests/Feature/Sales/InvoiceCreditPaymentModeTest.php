@@ -96,13 +96,23 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->sale($company, $user, $customer, 'credit');
         $payload = $this->invoicePayload($customer, $this->product($company, $user));
         $payload['total_amount'] = 1;
-        $payload['items'][0]['rate'] = 1;
+        $payload['items'][0]['rate'] = 125;
 
         $this->post(route('invoices.store'), $payload)
             ->assertSessionHas('credit_limit_warning', fn (array $warning) => $warning['blocked'] === true
-                && (float) $warning['projected_outstanding'] === 1001.0);
+                && (float) $warning['projected_outstanding'] === 1125.0);
 
         $this->assertDatabaseCount('sales', 1);
+    }
+
+    public function test_invoice_credit_limit_uses_the_balance_after_wallet_credit(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        $customer->update(['credit_limit' => 500, 'wallet_balance' => 600]);
+        $this->post(route('invoices.store'), $this->invoicePayload($customer, $this->product($company, $user)))
+            ->assertSessionHasNoErrors()->assertSessionHas('success');
+        $this->assertSame(400.0, (float) Sale::query()->sole()->balance);
+        $this->assertSame(0.0, (float) $customer->fresh()->wallet_balance);
     }
 
     public function test_pos_checks_other_branch_debt_and_rolls_back_a_sale_over_the_credit_limit(): void
@@ -122,6 +132,30 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $response->assertUnprocessable()->assertJsonPath('credit_limit_warning.projected_outstanding', 2000);
         $this->assertDatabaseCount('sales', 1);
         $this->assertDatabaseHas('products', ['id' => $product, 'stock' => 10]);
+    }
+
+    public function test_editing_and_cloning_an_unpaid_sale_cannot_bypass_the_customer_credit_limit(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        $customer->update(['credit_limit' => 1200]);
+        $sale = $this->sale($company, $user, $customer, 'credit');
+        $sale->forceFill(['branch_id' => 'hq', 'branch_name' => 'Headquarters'])->save();
+        $product = $this->product($company, $user);
+
+        $this->putJson(route('sales.update', $sale->id), [
+            'customer_id' => $customer->id, 'final_total' => 1000,
+            'items' => [['product_id' => $product, 'quantity' => 1, 'rate' => 1500]],
+        ])->assertUnprocessable()->assertJsonPath('errors.customer_id.0', 'This sale would exceed the customer credit limit by 300.00.');
+        $this->getJson(route('sales.clone', $sale->id))
+            ->assertUnprocessable()->assertJsonValidationErrors('customer_id');
+        $this->assertDatabaseCount('sales', 1);
+        $this->assertSame(1000.0, (float) $sale->fresh()->balance);
+
+        $this->put(route('sales.update', $sale->id), [
+            'customer_id' => $customer->id, 'final_total' => 1000,
+            'items' => [['product_id' => $product, 'quantity' => 1, 'rate' => 1100]],
+        ])->assertSessionHasNoErrors()->assertRedirect(route('sales.index'));
+        $this->assertSame(1100.0, (float) $sale->fresh()->balance);
     }
 
     public function test_invoice_can_be_saved_and_redirected_to_print_view(): void

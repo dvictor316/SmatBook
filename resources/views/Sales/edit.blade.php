@@ -30,6 +30,9 @@
 
         <div class="card edit-card">
             <div class="card-body p-4">
+                @if($errors->any())
+                    <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
+                @endif
                 <form id="edit-sale-form" method="POST" action="{{ route('sales.update', $sale->id) }}">
                     @csrf 
                     @method('PUT')

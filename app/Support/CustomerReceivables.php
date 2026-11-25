@@ -93,11 +93,11 @@ class CustomerReceivables
 
         $customerIds = $customersById->keys();
         $customerSales = (clone $salesQuery)->whereIn('customer_id', $customerIds);
-        if (Schema::hasColumn('sales', 'order_status')) {
-            $customerSales->where(function ($query) {
-                $query->whereNull('order_status')
-                    ->orWhere('order_status', '!=', 'draft');
-            });
+        foreach (['order_status', 'status'] as $column) {
+            if (Schema::hasColumn('sales', $column)) {
+                $customerSales->whereRaw("LOWER(TRIM(COALESCE({$column}, ''))) NOT IN (?, ?, ?, ?, ?, ?, ?)",
+                    ['draft', 'cancelled', 'canceled', 'void', 'voided', 'rejected', 'failed']);
+            }
         }
 
         $openingSalesByCustomer = collect();

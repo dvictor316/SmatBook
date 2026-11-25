@@ -136,6 +136,23 @@ class ReportIntegrityTest extends TestCase
         $this->assertCount(1, $filtered);
         $this->assertEquals($productIds[1], $filtered->first()->product_id);
         $this->assertEquals(300, $filtered->first()->revenue);
+
+        $secondRep = User::factory()->create(['company_id' => $company->id, 'name' => 'Second Sales Rep']);
+        $secondSale = $this->sale($secondRep, $company, 'INV-SECOND-REP-PRODUCT', 75, 'completed');
+        $secondSale->forceFill(['customer_name' => 'Second Buyer'])->save();
+        DB::table('sale_items')->insert([
+            'sale_id' => $secondSale->id, 'product_id' => $productIds[1], 'qty' => 1, 'quantity' => 1,
+            'unit_price' => 75, 'total_price' => 75,
+        ]);
+        $byRep = $this->get(route('reports.sales-by-product', ['group_by' => 'sales_rep', 'product' => 'PRODUCT-1']))
+            ->assertOk()->viewData('rows');
+        $this->assertEquals(300, $byRep->firstWhere('report_person', $user->name)->revenue);
+        $this->assertEquals(75, $byRep->firstWhere('report_person', $secondRep->name)->revenue);
+
+        $byCustomer = $this->get(route('reports.sales-by-product', ['group_by' => 'customer', 'product' => 'PRODUCT-1']))
+            ->assertOk()->viewData('rows');
+        $this->assertEquals(300, $byCustomer->firstWhere('report_person', 'Mararaba Test Buyer')->revenue);
+        $this->assertEquals(75, $byCustomer->firstWhere('report_person', 'Second Buyer')->revenue);
     }
 
     public function test_customer_and_product_sales_reports_show_date_filtered_gross_profit(): void
@@ -274,6 +291,10 @@ class ReportIntegrityTest extends TestCase
         $this->post(route('settings.bank-account.store'), [
             'bank_name' => 'Opening Bank', 'account_number' => '1234025000', 'opening_balance' => '400000.00',
         ])->assertSessionHas('success');
+        $this->get(route('bank-account'))->assertOk()
+            ->assertSee('modal-dialog-scrollable modal-md bank-account-dialog', false)
+            ->assertSee('class="modal-content bank-account-form"', false)
+            ->assertSee('aria-label="Bank details fields"', false);
         $bank = Account::withoutGlobalScopes()->where('company_id', $company->id)->where('name', 'Opening Bank')->sole();
         $opening = DB::table('transactions')->where('reference', 'OB-ACCT-'.$bank->id);
         $this->assertEquals(400000, $opening->sum('debit'));

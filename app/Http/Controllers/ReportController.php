@@ -4685,6 +4685,7 @@ class ReportController extends Controller
             'sales_rep' => 'nullable|string|max:120',
             'customer' => 'nullable|string|max:120',
             'product' => 'nullable|string|max:120',
+            'group_by' => 'nullable|in:product,sales_rep,customer',
         ]);
         $from = $filters['from_date'] ?? now()->startOfMonth()->toDateString();
         $to = $filters['to_date'] ?? now()->toDateString();
@@ -4694,6 +4695,7 @@ class ReportController extends Controller
         $salesRepSearch = trim($filters['sales_rep'] ?? '');
         $customerSearch = trim($filters['customer'] ?? '');
         $productSearch = trim($filters['product'] ?? '');
+        $groupBy = $filters['group_by'] ?? ($salesRepSearch !== '' ? 'sales_rep' : ($customerSearch !== '' ? 'customer' : 'product'));
         $filterByPerson = $salesRepSearch !== '' || $customerSearch !== '';
         $rows = collect();
         if (Schema::hasTable('sale_items') || Schema::hasTable('order_items') || Schema::hasTable('invoice_items')) {
@@ -4730,7 +4732,7 @@ class ReportController extends Controller
                 if ($productIdCol) {
                     $selects[] = DB::raw("{$productIdCol} as product_id");
                 }
-                if (!$hasProductCatalog || $filterByPerson || $productSearch !== '') {
+                if (!$hasProductCatalog || $filterByPerson || $productSearch !== '' || $groupBy !== 'product') {
                     $displayName = $hasProductCatalog ? "COALESCE(products.name, {$productExpr})" : $productExpr;
                     $selects[] = DB::raw($productIdCol ? "MAX({$displayName}) as product" : "{$displayName} as product");
                 }
@@ -4757,6 +4759,8 @@ class ReportController extends Controller
                 } else {
                     $query->groupBy(DB::raw($productExpr));
                 }
+
+                $this->groupProductSalesByPerson($query, $groupBy);
 
                 // Scope via the sales table to prevent cross-tenant or cross-branch data leakage.
                 $this->applySalesScope($query, 'sales');
@@ -4798,7 +4802,7 @@ class ReportController extends Controller
                 }
 
                 $salesRows = $query->get();
-                if ($hasProductCatalog && !$filterByPerson && $productSearch === '') {
+                if ($hasProductCatalog && !$filterByPerson && $productSearch === '' && $groupBy === 'product') {
                     $salesByProductId = $salesRows->keyBy(fn ($row) => (string) $row->product_id);
                     $productsQuery = DB::table('products')->select('id', 'name');
                     $this->applyTenantScope($productsQuery, 'products');
@@ -4845,8 +4849,45 @@ class ReportController extends Controller
             'to',
             'salesRepSearch',
             'customerSearch',
-            'productSearch'
+            'productSearch',
+            'groupBy'
         ));
+    }
+
+    private function groupProductSalesByPerson($query, string $groupBy): void
+    {
+        if ($groupBy === 'sales_rep') {
+            if (Schema::hasColumn('sales', 'user_id') && Schema::hasTable('users')) {
+                $query->leftJoin('users as sales_rep', 'sales.user_id', '=', 'sales_rep.id')
+                    ->groupBy('sales.user_id')
+                    ->selectRaw("MAX(COALESCE(sales_rep.name, 'Unassigned')) as report_person");
+            } else {
+                $query->selectRaw("'Unassigned' as report_person");
+            }
+        }
+
+        if ($groupBy === 'customer') {
+            $saleName = Schema::hasColumn('sales', 'customer_name') ? "NULLIF(TRIM(sales.customer_name), '')" : 'NULL';
+            $names = [$saleName, "'Walk-in'"];
+            if (Schema::hasColumn('sales', 'customer_id')) {
+                $query->groupBy('sales.customer_id')
+                    ->groupByRaw("CASE WHEN COALESCE(sales.customer_id, 0) = 0 THEN LOWER({$saleName}) ELSE NULL END");
+
+                if (Schema::hasColumn('customers', 'customer_name')) {
+                    $query->leftJoin('customers as report_customer', function ($join) {
+                        $join->on('sales.customer_id', '=', 'report_customer.id');
+                        if (Schema::hasColumn('customers', 'company_id') && Schema::hasColumn('sales', 'company_id')) {
+                            $join->on('sales.company_id', '=', 'report_customer.company_id');
+                        }
+                    });
+                    array_unshift($names, "NULLIF(TRIM(report_customer.customer_name), '')");
+                }
+            } elseif ($saleName !== 'NULL') {
+                $query->groupByRaw("LOWER({$saleName})");
+            }
+
+            $query->selectRaw('MAX(COALESCE('.implode(', ', $names).')) as report_person');
+        }
     }
 
     private function productSalesProfitBySaleIds(array $saleIds)

@@ -2892,38 +2892,59 @@ public function create()
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.rate' => 'required|numeric',
+            'items.*.rate' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0|max:100',
             'items.*.price_level' => 'nullable|in:list,retail,wholesale,special',
         ]);
 
         DB::transaction(function () use ($request, $sale) {
+            $companyId = (int) (session('current_tenant_id') ?? $sale->company_id ?? auth()->user()?->company_id ?? 0);
+            $customerId = (int) $request->customer_id;
+            $customers = $companyId > 0 && $customerId === (int) $sale->customer_id
+                ? Customer::withoutGlobalScope('tenant')->where('company_id', $companyId)
+                : $this->scopedCustomers();
+            $customer = $customers->whereKey($customerId)->lockForUpdate()->first();
+            if (!$customer) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['customer_id' => 'Choose a customer in this business and branch.']);
+            }
+            $sale = Sale::query()->whereKey($sale->id)->lockForUpdate()->firstOrFail();
+
+            $lines = collect($request->items)->map(function ($item) {
+                $subtotal = round((float) $item['quantity'] * (float) $item['rate'], 2);
+                $discount = (float) ($item['discount'] ?? 0);
+
+                return [
+                    'product_id' => $item['product_id'],
+                    'qty' => $item['quantity'],
+                    'unit_price' => $item['rate'],
+                    'discount' => $discount,
+                    'subtotal' => $subtotal,
+                    'total_price' => round($subtotal * (1 - $discount / 100), 2),
+                ];
+            });
+            $subtotal = (float) $lines->sum('subtotal');
+            $lineTotal = (float) $lines->sum('total_price');
+            $total = round($lineTotal + (float) ($sale->tax ?? 0) + (float) ($sale->shipping_cost ?? 0), 2);
+            $paid = max(0, (float) ($sale->amount_paid ?? $sale->paid ?? 0));
+            $balance = round(max(0, $total - $paid), 2);
+            $warning = app(CustomerReceivables::class)->creditLimitWarning($customer, $companyId, $balance, (int) $sale->id);
+            if ($warning) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['customer_id' => 'This sale would exceed the customer credit limit by '.number_format($warning['excess'], 2).'.']);
+            }
+
             $sale->update([
-                'customer_id' => $request->customer_id,
-                'reference_no' => trim((string) $request->reference_no) !== ''
-                    ? trim((string) $request->reference_no)
-                    : ('REF-' . now()->format('ymd') . '-' . strtoupper(Str::random(4))),
-                'total' => $request->final_total,
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->customer_name ?? $customer->name,
+                'reference_no' => trim((string) $request->reference_no) ?: ('REF-' . now()->format('ymd') . '-' . strtoupper(Str::random(4))),
+                'subtotal' => $subtotal,
+                'discount' => round($subtotal - $lineTotal, 2),
+                'total' => $total,
+                'balance' => $balance,
+                'payment_status' => $balance <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
             ]);
 
             $sale->items()->delete();
-
-            foreach ($request->items as $item) {
-                $qty = $item['quantity'];
-                $rate = $item['rate'];
-                $discPercent = $item['discount'] ?? 0;
-                
-                $subtotal = $qty * $rate;
-                $totalPrice = $subtotal - ($subtotal * ($discPercent / 100));
-
-                $sale->items()->create([
-                    'product_id'  => $item['product_id'],
-                    'qty'         => $qty,
-                    'unit_price'  => $rate,
-                    'discount'    => $discPercent,
-                    'subtotal'    => $subtotal,
-                    'total_price' => $totalPrice,
-                ]);
-            }
+            $sale->items()->createMany($lines->all());
 
             LedgerService::postSale($sale->fresh());
         });

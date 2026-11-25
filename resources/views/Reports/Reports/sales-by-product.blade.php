@@ -36,6 +36,14 @@
                 <div><label for="salesRepSearch" class="form-label small fw-bold mb-1">Sales rep</label><input id="salesRepSearch" type="search" name="sales_rep" class="form-control form-control-sm" value="{{ $salesRepSearch }}" placeholder="Rep name"></div>
                 <div><label for="salesCustomerSearch" class="form-label small fw-bold mb-1">Customer</label><input id="salesCustomerSearch" type="search" name="customer" class="form-control form-control-sm" value="{{ $customerSearch }}" placeholder="Customer name"></div>
                 <div><label for="salesProductSearch" class="form-label small fw-bold mb-1">Product</label><input id="salesProductSearch" type="search" name="product" class="form-control form-control-sm" value="{{ $productSearch }}" placeholder="Product name or SKU"></div>
+                <div>
+                    <label for="salesGroupBy" class="form-label small fw-bold mb-1">Group by</label>
+                    <select id="salesGroupBy" name="group_by" class="form-select form-select-sm">
+                        <option value="product" @selected($groupBy === 'product')>Product</option>
+                        <option value="sales_rep" @selected($groupBy === 'sales_rep')>Sales rep and product</option>
+                        <option value="customer" @selected($groupBy === 'customer')>Customer and product</option>
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                 <a href="{{ url()->current() }}" class="btn btn-secondary btn-sm">Reset</a>
             </form>
@@ -54,6 +62,9 @@
                 <table class="table table-sm sbp-table mb-0">
                     <thead><tr>
                         <th>#</th>
+                        @if($groupBy !== 'product')
+                            <th>{{ $groupBy === 'sales_rep' ? 'Sales rep' : 'Customer' }}</th>
+                        @endif
                         <th>Product</th>
                         <th class="text-end">Qty Sold</th>
                         <th class="text-end">Revenue</th>
@@ -66,6 +77,9 @@
                         @php $pct = $grandTotal > 0 ? round(($row->revenue / $grandTotal) * 100, 1) : 0; @endphp
                         <tr>
                             <td>{{ $i + 1 }}</td>
+                            @if($groupBy !== 'product')
+                                <td>{{ $row->report_person }}</td>
+                            @endif
                             <td class="fw-bold">{{ $row->product ?? 'Unknown' }}</td>
                             <td class="text-end">{{ \App\Support\CompactNumber::format($row->qty_sold, 4) }}</td>
                             <td class="text-end fw-bold text-success">{{ $fmt($row->revenue) }}</td>
@@ -79,12 +93,12 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="7" class="text-center text-muted py-4">No sales data available for this period.</td></tr>
+                        <tr><td colspan="{{ $groupBy === 'product' ? 7 : 8 }}" class="text-center text-muted py-4">No sales data available for this period.</td></tr>
                         @endforelse
                     </tbody>
                     @if(count($rows))
                     <tfoot><tr class="table-active fw-bold">
-                        <td colspan="2" class="text-end">Total</td>
+                        <td colspan="{{ $groupBy === 'product' ? 2 : 3 }}" class="text-end">Total</td>
                         <td class="text-end">{{ \App\Support\CompactNumber::format(collect($rows)->sum('qty_sold'), 4) }}</td>
                         <td class="text-end text-success">{{ $fmt($grandTotal) }}</td>
                         <td class="text-end">{{ $fmt($grandCost) }}</td>

@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\Customer;
 use App\Models\Sale;
+use App\Support\CustomerReceivables;
 use App\Support\LedgerService;
 use App\Support\SystemEventMailer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SalesInvoiceController extends Controller
 {
@@ -80,11 +83,25 @@ public function index()
         $clone['created_at'] = now();
         $clone['updated_at'] = now();
 
-        $newSaleId = DB::table('sales')->insertGetId($clone);
-        $newSale = Sale::find($newSaleId);
-        if ($newSale) {
-            LedgerService::postSale($newSale);
-        }
+        $newSaleId = DB::transaction(function () use ($original, $clone) {
+            $balance = (float) $original->balance;
+            if ($balance > 0 && $original->customer_id && strtolower((string) $original->order_status) !== 'draft') {
+                $companyId = (int) (session('current_tenant_id') ?? $original->company_id ?? auth()->user()?->company_id);
+                $customer = Customer::withoutGlobalScope('tenant')->where('company_id', $companyId)->lockForUpdate()->findOrFail($original->customer_id);
+                $warning = app(CustomerReceivables::class)->creditLimitWarning($customer, $companyId, $balance);
+                if ($warning) {
+                    throw ValidationException::withMessages(['customer_id' => 'Cloning this invoice would exceed the customer credit limit.']);
+                }
+            }
+
+            $newSaleId = DB::table('sales')->insertGetId($clone);
+            $newSale = Sale::find($newSaleId);
+            if ($newSale) {
+                LedgerService::postSale($newSale);
+            }
+
+            return $newSaleId;
+        });
 
         return redirect()->route('invoices.edit', $newSaleId)
                          ->with('success', 'Invoice cloned successfully. Review and update below.');

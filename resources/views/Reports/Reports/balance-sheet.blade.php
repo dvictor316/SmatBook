@@ -1103,7 +1103,11 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 @endphp
                 <div class="bs-imbalance">
                     <strong>&#9888;&nbsp; Statement Review Required</strong>
-                    The accounting equation is currently out of balance.
+                    @if($stmtGap >= 0.01)
+                        The accounting equation is currently out of balance.
+                    @else
+                        The statement totals agree. The ledger totals require review.
+                    @endif
                     <table class="bs-recon-rows">
                         <tr><td>Total Assets</td><td>{{ $fmt($visTotalAssets) }}</td></tr>
                         <tr><td>Total Liabilities + Equity</td><td>{{ $fmt($visTotalLiabEquity) }}</td></tr>
@@ -1115,7 +1119,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                             <strong>Cause: Unbalanced journal entries in the ledger.</strong><br>
                             Total debits {{ $fmt($ledgerDebits ?? 0) }} ≠ total credits {{ $fmt($ledgerCredits ?? 0) }}
                             (difference {{ $fmt(abs($ledgerDifference ?? 0)) }}).
-                            One or more transactions are missing their debit or credit leg.
+                            Review the debit and credit entries for the listed references.
                             @if(!empty($imbalancedEntries) && $imbalancedEntries->isNotEmpty())
                                 <ul style="margin:6px 0 0;padding-left:16px;">
                                 @foreach($imbalancedEntries as $ie)
