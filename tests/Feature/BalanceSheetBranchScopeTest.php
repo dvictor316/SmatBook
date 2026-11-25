@@ -500,6 +500,38 @@ class BalanceSheetBranchScopeTest extends TestCase
         $this->assertSame(34400.0, $trial['totalCredits']);
     }
 
+    public function test_inventory_ledger_audit_reports_unmatched_stock_ins_without_writing(): void
+    {
+        DB::table('companies')->insert(['id' => 1, 'name' => 'Bilga Global Resources']);
+        DB::table('accounts')->insert([
+            ['id' => 70, 'code' => 'AUTO-AST-INV-1', 'name' => 'Inventory', 'type' => 'Asset', 'company_id' => 1],
+        ]);
+        DB::table('purchases')->insert([
+            ['id' => 11, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-11', 'total_amount' => 350, 'purchase_date' => '2026-11-20'],
+            ['id' => 12, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-12', 'total_amount' => 200, 'purchase_date' => '2026-11-21'],
+            ['id' => 13, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-13', 'total_amount' => 450, 'purchase_date' => '2026-11-26'],
+            ['id' => 14, 'company_id' => 2, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-14', 'total_amount' => 999, 'purchase_date' => '2026-11-21'],
+        ]);
+        $postings = [
+            ['account_id' => 70, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'transaction_date' => '2026-11-21', 'reference' => 'AUTO-STK-12', 'debit' => 200, 'credit' => 0, 'transaction_type' => Transaction::TYPE_PURCHASE],
+            ['account_id' => 70, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'transaction_date' => '2026-11-25', 'reference' => 'SALE-1', 'debit' => 0, 'credit' => 620, 'transaction_type' => Transaction::TYPE_SALE],
+        ];
+        DB::table('transactions')->insert($postings);
+
+        $this->artisan('ledger:audit-inventory', ['company' => 'BILGA GLOBAL RESOURCES', '--as-of' => '2026-11-25'])
+            ->expectsOutputToContain('Bilga Global Resources (company 1) through 2026-11-25')
+            ->expectsTable(['Branch ID', 'Branch', 'Type', 'Debits', 'Credits', 'Net'], [
+                ['hq', 'Headquarters', Transaction::TYPE_PURCHASE, '200.00', '0.00', '200.00'],
+                ['hq', 'Headquarters', Transaction::TYPE_SALE, '0.00', '620.00', '-620.00'],
+            ])
+            ->expectsTable(['Branch ID', 'Branch', 'Records', 'Recorded value'], [['hq', 'Headquarters', 1, '350.00']])
+            ->expectsTable(['Stock-in reference', 'Branch', 'Recorded value'], [['AUTO-STK-11', 'Headquarters', '350.00']])
+            ->assertSuccessful();
+
+        $this->assertDatabaseCount('transactions', 2);
+        $this->assertDatabaseCount('purchases', 4);
+    }
+
     private function statementUser(): User
     {
         $user = User::query()->create([
