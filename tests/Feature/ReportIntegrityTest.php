@@ -307,6 +307,29 @@ class ReportIntegrityTest extends TestCase
             ->assertDontSee('Opening balances awaiting review');
     }
 
+    public function test_discarding_an_incorrect_saved_opening_clears_the_notice_without_changing_posted_balances(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $bank = $this->account($company, 'Access Bank', 'Asset', 'Bank');
+        $bank->forceFill(['code' => 'AST-99750', 'opening_balance' => 1000000, 'current_balance' => 1015000])->save();
+        $equity = $this->account($company, 'Capital', 'Equity', 'Capital');
+        $this->ledgerEntry($company, $bank, 15000, 0);
+        $this->ledgerEntry($company, $equity, 0, 15000);
+        $before = DB::table('transactions')->orderBy('id')->get()->toArray();
+        $arguments = ['--company' => $company->id, '--account' => $bank->id, '--discard' => true, '--reason' => 'Confirmed incorrect test opening'];
+
+        $this->artisan('ledger:audit-openings', $arguments + ['--amount' => '999999'])->assertFailed();
+        $this->assertEquals(1000000, $bank->fresh()->opening_balance);
+        $this->artisan('ledger:audit-openings', $arguments + ['--amount' => '1000000'])->assertSuccessful();
+        $this->assertDatabaseHas('accounts', ['id' => $bank->id, 'opening_balance' => 0, 'current_balance' => 15000]);
+        $this->assertEquals($before, DB::table('transactions')->orderBy('id')->get()->toArray());
+        $this->get(route('balance-sheet'))->assertOk()->assertViewHas('totalAssets', 15000.0)
+            ->assertDontSee('Opening balances awaiting review');
+        $this->get(route('trial-balance'))->assertOk()->assertViewHas('totalDebits', 15000.0)
+            ->assertViewHas('totalCredits', 15000.0)->assertDontSee('Opening balances awaiting review');
+    }
+
     public function test_empty_branch_payment_summary_does_not_fall_back_to_company_wide_data(): void
     {
         $this->withoutExceptionHandling();
