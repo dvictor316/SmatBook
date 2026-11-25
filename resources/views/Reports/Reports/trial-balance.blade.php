@@ -309,6 +309,10 @@
             <div class="alert alert-warning mb-3">The displayed account balances differ by {{ \App\Support\GeoCurrency::format(abs($statementDifference), 'NGN', $currencyCode, $currencyLocale) }}. Review opening balances and account assignments.</div>
         @endif
 
+        @include('Reports.Reports.unposted-openings', [
+            'openings' => $unpostedOpeningAccounts ?? collect(),
+            'formatOpening' => fn ($amount) => \App\Support\GeoCurrency::format($amount, 'NGN', $currencyCode, $currencyLocale),
+        ])
         <div class="table-card">
             <div class="table-scroll">
             <table class="table align-middle" id="trialBalanceTable">
@@ -347,7 +351,7 @@
 
         @php $isBalanced = abs($totalDebits - $totalCredits) < 0.01 && abs($ledgerDifference ?? 0) < 0.01; @endphp
         <div class="status-strip {{ $isBalanced ? 'balanced' : 'unbalanced' }}">
-            {{ $isBalanced ? '✓ Trial Balance is Balanced' : '⚠ Discrepancy Detected in Trial Balance' }}
+            {{ $isBalanced ? '✓ Posted Trial Balance is Balanced' : '⚠ Discrepancy Detected in Trial Balance' }}
         </div>
         </div>
     </div>

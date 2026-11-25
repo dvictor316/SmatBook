@@ -267,7 +267,7 @@ class ReportIntegrityTest extends TestCase
         $this->assertSame(2, DB::table('transactions')->where('reference', $reference)->count());
     }
 
-    public function test_bank_settings_posts_an_opening_and_legacy_repair_closes_only_the_selected_company_gap(): void
+    public function test_bank_settings_posts_an_opening_and_only_the_verified_legacy_opening_enters_both_statements(): void
     {
         [$user, $company] = $this->businessUser();
         $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
@@ -281,13 +281,17 @@ class ReportIntegrityTest extends TestCase
         $diagnostic = app(\App\Services\BankBalanceManagementService::class)->buildDiagnostic($bank);
         $this->assertEquals(400000, $diagnostic['derived_ledger_balance']);
 
-        $legacy = $this->account($company, 'Legacy Main Bank', 'Asset', 'Bank');
-        $legacy->forceFill(['opening_balance' => 1000000, 'branch_id' => 'hq', 'branch_name' => 'Headquarters'])->save();
+        $legacy = $this->account($company, 'Access Bank', 'Asset', 'Bank');
+        $legacy->forceFill(['code' => 'AST-99750', 'opening_balance' => 1000000, 'branch_id' => 'hq', 'branch_name' => 'Headquarters'])->save();
         $other = Company::withoutGlobalScopes()->create(['name' => 'Other Opening Business', 'plan' => 'Enterprise']);
         $otherAccount = $this->account($other, 'Other Legacy Bank', 'Asset', 'Bank');
         $otherAccount->forceFill(['opening_balance' => 2000000])->save();
         $this->get(route('balance-sheet'))->assertOk()
-            ->assertViewHas('statementDifference', 1000000.0)->assertSee('Legacy Main Bank');
+            ->assertViewHas('statementDifference', 0.0)->assertViewHas('totalAssets', 400000.0)
+            ->assertSee('Opening balances awaiting review')->assertSee('AST-99750');
+        $this->get(route('trial-balance'))->assertOk()
+            ->assertViewHas('totalDebits', 400000.0)->assertViewHas('totalCredits', 400000.0)
+            ->assertSee('Opening balances awaiting review')->assertSee('AST-99750');
 
         $command = ['--company' => $company->id, '--account' => $legacy->id, '--date' => now()->toDateString()];
         $this->artisan('ledger:audit-openings', ['--all-companies' => true])->assertSuccessful();
@@ -296,7 +300,11 @@ class ReportIntegrityTest extends TestCase
         $this->artisan('ledger:audit-openings', $command + ['--amount' => '1000000', '--apply' => true])->assertSuccessful();
         $this->artisan('ledger:audit-openings', $command + ['--amount' => '1000000', '--apply' => true])->assertFailed();
         $this->assertDatabaseMissing('transactions', ['reference' => 'OB-ACCT-'.$otherAccount->id]);
-        $this->get(route('balance-sheet'))->assertOk()->assertViewHas('statementDifference', 0.0);
+        $this->get(route('balance-sheet'))->assertOk()->assertViewHas('statementDifference', 0.0)
+            ->assertViewHas('totalAssets', 1400000.0)->assertDontSee('Opening balances awaiting review');
+        $this->get(route('trial-balance'))->assertOk()
+            ->assertViewHas('totalDebits', 1400000.0)->assertViewHas('totalCredits', 1400000.0)
+            ->assertDontSee('Opening balances awaiting review');
     }
 
     public function test_empty_branch_payment_summary_does_not_fall_back_to_company_wide_data(): void

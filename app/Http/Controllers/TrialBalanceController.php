@@ -101,8 +101,8 @@ class TrialBalanceController extends Controller
             ->limit(10)
             ->get();
 
-        $openings = $this->unpostedAccountOpenings($request, $end, $activeBranch);
-        $accountIds = $txnTotals->keys()->merge($openings->keys())->unique()->all();
+        $unpostedOpeningAccounts = $this->unpostedAccountOpenings($request, $end, $activeBranch);
+        $accountIds = $txnTotals->keys()->all();
         // Use withoutGlobalScopes() to bypass TenantScoped's strict branch filter.
         // System-created accounts (AR, Revenue, Petty Cash) may have branch_id = ''
         // and would otherwise be excluded. We include them as global accounts.
@@ -116,18 +116,18 @@ class TrialBalanceController extends Controller
             });
         $this->applyAccountScope($accountsQuery, $request);
 
-        $accounts = $accountsQuery->get()->map(function ($account) use ($txnTotals, $openings) {
+        $accounts = $accountsQuery->get()->map(function ($account) use ($txnTotals) {
             $totals = $txnTotals->get($account->id);
             $dr = (float) ($totals->total_debit ?? 0);
             $cr = (float) ($totals->total_credit ?? 0);
             $isDebitNormal = $this->isDebitNormalAccount($account);
 
-            $net = ($isDebitNormal ? $dr - $cr : $cr - $dr) + (float) $openings->get($account->id, 0);
+            $net = $isDebitNormal ? $dr - $cr : $cr - $dr;
 
             $netSide = $this->calculateSideBalances($net, $isDebitNormal);
             $account->debit_balance = $netSide['debit'];
             $account->credit_balance = $netSide['credit'];
-            $account->has_activity = $dr != 0 || $cr != 0 || $openings->has($account->id);
+            $account->has_activity = $dr != 0 || $cr != 0;
             return $account;
         })
         ->filter(fn ($account) => $account->has_activity)
@@ -148,6 +148,7 @@ class TrialBalanceController extends Controller
             'ledgerDifference' => $ledgerDifference,
             'statementDifference' => round($totalDebits - $totalCredits, 2),
             'imbalancedEntries' => $imbalancedEntries,
+            'unpostedOpeningAccounts' => $unpostedOpeningAccounts,
             'activeBranch' => $activeBranch,
             'branchScope'  => $activeBranch['scope'] ?? 'branch',
         ]);
@@ -158,7 +159,12 @@ class TrialBalanceController extends Controller
         $report = $this->index($request)->getData();
 
         return Excel::download(
-            new TrialBalanceExport($report['accounts'], $report['totalDebits'], $report['totalCredits']),
+            new TrialBalanceExport(
+                $report['accounts'],
+                $report['totalDebits'],
+                $report['totalCredits'],
+                $report['unpostedOpeningAccounts'] ?? collect(),
+            ),
             'trial_balance_' . ($report['endDate'] ?? now()->toDateString()) . '.xlsx'
         );
     }

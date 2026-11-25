@@ -285,7 +285,7 @@ class BalanceSheetBranchScopeTest extends TestCase
         $this->assertSame([10, 11], $query->orderBy('id')->pluck('id')->all());
     }
 
-    public function test_balance_sheet_includes_unposted_bank_opening_balance(): void
+    public function test_balance_sheet_lists_unposted_bank_opening_separately_from_assets(): void
     {
         $user = User::query()->create([
             'name' => 'Bank Opening User',
@@ -326,8 +326,9 @@ class BalanceSheetBranchScopeTest extends TestCase
 
         $bankLine = $currentAssets->firstWhere('id', 501);
 
-        $this->assertNotNull($bankLine);
-        $this->assertSame(125000.0, round((float) $bankLine->balance, 2));
+        $this->assertNull($bankLine);
+        $this->assertSame(0.0, $view->getData()['totalAssets']);
+        $this->assertSame(125000.0, $view->getData()['unpostedOpeningAccounts']->sole()['amount']);
     }
 
     public function test_profit_loss_does_not_expense_inventory_before_it_is_sold(): void
@@ -491,11 +492,22 @@ class BalanceSheetBranchScopeTest extends TestCase
         $balance = app(BalanceSheetController::class)->index($request)->getData();
         $trial = app(TrialBalanceController::class)->index($request)->getData();
 
-        $this->assertSame(75.0, $balance['totalAssets']);
-        $this->assertSame(75.0, $balance['totalEquity']);
+        $this->assertSame(25.0, $balance['totalAssets']);
+        $this->assertSame(25.0, $balance['totalEquity']);
         $this->assertTrue($balance['isBalanced']);
-        $this->assertSame(75.0, $trial['totalDebits']);
-        $this->assertSame(75.0, $trial['totalCredits']);
+        $this->assertSame(25.0, $trial['totalDebits']);
+        $this->assertSame(25.0, $trial['totalCredits']);
+        $this->assertSame([60, 62], $trial['unpostedOpeningAccounts']->pluck('id')->all());
+
+        Excel::fake();
+        app(BalanceSheetController::class)->export($request);
+        Excel::assertDownloaded('balance_sheet_2026-05-10.xlsx', fn ($export) => collect($export->array())
+            ->contains(['Total Assets', '', 25.0])
+            && collect($export->array())->contains(['CASH-A · Entered cash opening (account #60)', 'Unposted opening for review', 50.0]));
+        app(TrialBalanceController::class)->export($request);
+        Excel::assertDownloaded('trial_balance_2026-05-10.xlsx', fn ($export) => $export->collection()
+            ->contains(['', 'Totals', '', 25.0, 25.0])
+            && $export->collection()->contains(['CASH-A', 'Entered cash opening (account #60) · Saved amount 50', 'Unposted opening for review', null, null]));
     }
 
     public function test_posted_sales_returns_remain_visible_in_both_statements(): void

@@ -718,12 +718,8 @@ class BalanceSheetController extends Controller
             ->limit(10)
             ->get();
 
-        $openings = $this->unpostedAccountOpenings($request, $reportDate, $activeBranch);
-        $accountIds = collect($txnTotals->keys())
-            ->merge($openings->keys())
-            ->unique()
-            ->values()
-            ->all();
+        $unpostedOpeningAccounts = $this->unpostedAccountOpenings($request, $reportDate, $activeBranch);
+        $accountIds = $txnTotals->keys()->all();
         // Use withoutGlobalScopes() to bypass TenantScoped's branch filter.
         // TenantScoped excludes accounts with empty/null branch_id, which misses
         // system-generated accounts (AR, Revenue, Cash) created without a branch.
@@ -745,20 +741,10 @@ class BalanceSheetController extends Controller
         $this->applyAccountScope($accountsQuery, $request);
 
         $accounts = $accountsQuery->get();
-        $unpostedOpeningAccounts = $accounts->filter(fn ($account) => $openings->has($account->id))
-            ->sortByDesc(fn ($account) => abs((float) $openings->get($account->id)))
-            ->map(fn ($account) => [
-                'id' => $account->id,
-                'name' => $account->name,
-                'code' => $account->code,
-                'amount' => (float) $openings->get($account->id),
-            ])->values();
-
-        $accounts->transform(function ($account) use ($txnTotals, $openings) {
+        $accounts->transform(function ($account) use ($txnTotals) {
             $totals = $txnTotals->get($account->id);
             $account->total_debit  = (float) ($totals->total_debit  ?? 0);
             $account->total_credit = (float) ($totals->total_credit ?? 0);
-            $account->unposted_opening_balance = (float) $openings->get($account->id, 0);
             return $account;
         });
 
@@ -774,7 +760,7 @@ class BalanceSheetController extends Controller
             $isCreditNormal = in_array($type, ['liability', 'equity', 'revenue'], true);
 
             $ledgerBalance = $isCreditNormal ? $cr - $dr : $dr - $cr;
-            $account->balance = $ledgerBalance + (float) ($account->unposted_opening_balance ?? 0);
+            $account->balance = $ledgerBalance;
 
             return $account;
         })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
@@ -1217,12 +1203,7 @@ class BalanceSheetController extends Controller
             });
         $this->applyTransactionScope($txnQuery, $request);
         $txnTotals = $txnQuery->groupBy('account_id')->get()->keyBy('account_id');
-        $openings = $this->unpostedAccountOpenings($request, $date, $activeBranch);
-        $accountIds = collect($txnTotals->keys())
-            ->merge($openings->keys())
-            ->unique()
-            ->values()
-            ->all();
+        $accountIds = $txnTotals->keys()->all();
         $accountsQuery = Account::withoutGlobalScopes()
             ->where(function ($q) use ($accountIds) {
                 if (!empty($accountIds)) {
@@ -1231,21 +1212,20 @@ class BalanceSheetController extends Controller
                     $q->whereRaw('1 = 0');
                 }
             });
-        // Account IDs already come from branch-scoped transactions/opening balances.
+        // Account IDs already come from branch-scoped transactions.
         // A second branch filter on account master rows can hide shared/global asset
         // accounts and create a false balance-sheet gap.
         $this->applyAccountScope($accountsQuery, $request);
         $accounts = $accountsQuery->get();
 
-        $accounts->transform(function ($account) use ($txnTotals, $openings) {
+        $accounts->transform(function ($account) use ($txnTotals) {
             $totals  = $txnTotals->get($account->id);
             $dr      = (float) ($totals->total_debit  ?? 0);
             $cr      = (float) ($totals->total_credit ?? 0);
             $type    = $this->normalizeAccountType($account->type ?? null);
             $isCreditNormal = in_array($type, ['liability', 'equity', 'revenue'], true);
             $ledgerBalance = $isCreditNormal ? ($cr - $dr) : ($dr - $cr);
-            $openingBalance = (float) $openings->get($account->id, 0);
-            $account->balance = $ledgerBalance + $openingBalance;
+            $account->balance = $ledgerBalance;
             return $account;
         })->filter(fn ($account) => abs((float) ($account->balance ?? 0)) > 0.005)->values();
 

@@ -269,8 +269,7 @@ trait ScopesFinancialStatements
             return collect();
         }
 
-        // The account's own opening journal supersedes its stored opening value.
-        // A journal dated after this statement must not be pulled into an earlier date.
+        // An opening journal dated after the cutoff is handled by the posted date filter.
         $posted = Transaction::withoutGlobalScopes()
             ->whereNull('transactions.deleted_at')
             ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
@@ -296,6 +295,13 @@ trait ScopesFinancialStatements
             });
         }
 
-        return $query->pluck('opening_balance', 'id');
+        return $query->orderByRaw('ABS(opening_balance) DESC')->orderBy('id')
+            ->get(['id', 'name', 'code', 'opening_balance'])
+            ->map(fn (Account $account) => [
+                'id' => $account->id,
+                'name' => $account->name,
+                'code' => $account->code,
+                'amount' => (float) $account->opening_balance,
+            ]);
     }
 }

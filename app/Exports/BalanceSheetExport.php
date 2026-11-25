@@ -34,6 +34,9 @@ class BalanceSheetExport implements FromArray, WithHeadings
         $rows[] = ['Total Liabilities', '', $liabilities];
         $rows[] = ['Total Liabilities & Equity', '', round($liabilities + $equity, 2)];
         $rows[] = ['Statement Difference', '', round($assets - $liabilities - $equity, 2)];
+        foreach ($this->report['unpostedOpeningAccounts'] ?? [] as $opening) {
+            $rows[] = [$opening['code'].' · '.$opening['name'].' (account #'.$opening['id'].')', 'Unposted opening for review', $opening['amount']];
+        }
 
         return $rows;
     }

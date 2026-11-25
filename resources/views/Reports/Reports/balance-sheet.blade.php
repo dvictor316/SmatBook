@@ -1087,13 +1087,14 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                 </tbody>
             </table>
 
+            @include('Reports.Reports.unposted-openings', ['openings' => $unpostedOpeningAccounts ?? collect(), 'formatOpening' => $fmt])
             {{-- Accounting equation validation --}}
             @if($isBalanced)
                 <div class="bs-balanced">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path d="M5 13l4 4L19 7"/>
                     </svg>
-                    Statement in balance &mdash; Assets = Liabilities + Equity
+                    Posted Balance Sheet in balance &mdash; Assets = Liabilities + Equity
                 </div>
             @else
                 @php
@@ -1133,14 +1134,6 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                     @else
                         <div class="alert alert-warning mt-3 mb-0">
                             <strong>Posted debits and credits agree. Review the balances below.</strong>
-                            @if(!empty($unpostedOpeningAccounts) && $unpostedOpeningAccounts->isNotEmpty())
-                                <p class="mb-1 mt-2">Opening balances saved without a matching opening journal</p>
-                                <ul class="mb-2">
-                                    @foreach($unpostedOpeningAccounts as $opening)
-                                        <li>{{ $opening['code'] }} · {{ $opening['name'] }} (account #{{ $opening['id'] }}) · {{ $fmt($opening['amount']) }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
                             @if(!empty($unplacedAccounts) && $unplacedAccounts->isNotEmpty())
                                 <p class="mb-1 mt-2">Accounts that need an accounting type</p>
                                 <ul class="mb-2">
@@ -1149,7 +1142,7 @@ $changeCell = function (float $current, ?float $compare) use ($hasCmp): string {
                                     @endforeach
                                 </ul>
                             @endif
-                            @if(empty($unpostedOpeningAccounts) || $unpostedOpeningAccounts->isEmpty())
+                            @if(empty($unplacedAccounts) || $unplacedAccounts->isEmpty())
                                 <p class="mb-0 mt-2">Check the account assignments for the journals included in this report.</p>
                             @endif
                         </div>
