@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Purchase;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class AuditInventoryLedger extends Command
@@ -65,10 +66,14 @@ class AuditInventoryLedger extends Command
             $this->money($row->debits - $row->credits),
         ]));
 
+        $purchaseDate = Schema::hasColumn('purchases', 'purchase_date')
+            ? DB::raw('COALESCE(purchases.purchase_date, purchases.created_at)')
+            : 'purchases.created_at';
         $unmatched = DB::table('purchases')
-            ->where('company_id', $company->id)->whereNull('deleted_at')
+            ->where('company_id', $company->id)
+            ->when(Schema::hasColumn('purchases', 'deleted_at'), fn ($query) => $query->whereNull('purchases.deleted_at'))
             ->where('purchase_no', 'like', 'AUTO-STK-%')->where('total_amount', '>', 0)
-            ->whereDate(DB::raw('COALESCE(purchase_date, created_at)'), '<=', $cutoff)
+            ->whereDate($purchaseDate, '<=', $cutoff)
             ->whereNotExists((clone $postings)->selectRaw('1')->where('debit', '>', 0)
                 ->where(function ($source) {
                     $source->where(function ($purchase) {

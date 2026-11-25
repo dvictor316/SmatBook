@@ -512,6 +512,10 @@ class BalanceSheetBranchScopeTest extends TestCase
             ['id' => 13, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-13', 'total_amount' => 450, 'purchase_date' => '2026-11-26'],
             ['id' => 14, 'company_id' => 2, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-14', 'total_amount' => 999, 'purchase_date' => '2026-11-21'],
         ]);
+        DB::table('purchases')->insert([
+            'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-DELETED',
+            'total_amount' => 900, 'purchase_date' => '2026-11-20', 'deleted_at' => '2026-11-22',
+        ]);
         $postings = [
             ['account_id' => 70, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'transaction_date' => '2026-11-21', 'reference' => 'AUTO-STK-12', 'debit' => 200, 'credit' => 0, 'transaction_type' => Transaction::TYPE_PURCHASE],
             ['account_id' => 70, 'company_id' => 1, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'transaction_date' => '2026-11-25', 'reference' => 'SALE-1', 'debit' => 0, 'credit' => 620, 'transaction_type' => Transaction::TYPE_SALE],
@@ -529,7 +533,26 @@ class BalanceSheetBranchScopeTest extends TestCase
             ->assertSuccessful();
 
         $this->assertDatabaseCount('transactions', 2);
-        $this->assertDatabaseCount('purchases', 4);
+        $this->assertDatabaseCount('purchases', 5);
+    }
+
+    public function test_inventory_ledger_audit_supports_purchases_without_soft_deletes_or_purchase_dates(): void
+    {
+        Schema::table('purchases', function (Blueprint $table) {
+            $table->dropColumn(['deleted_at', 'purchase_date']);
+        });
+        DB::table('companies')->insert(['id' => 140, 'name' => 'Bilga Global Resources']);
+        DB::table('purchases')->insert([
+            ['company_id' => 140, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-20',
+                'total_amount' => 350, 'created_at' => '2026-11-25 16:00:00'],
+            ['company_id' => 140, 'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'purchase_no' => 'AUTO-STK-21',
+                'total_amount' => 450, 'created_at' => '2026-11-26 09:00:00'],
+        ]);
+
+        $this->artisan('ledger:audit-inventory', ['company' => 140, '--as-of' => '2026-11-25'])
+            ->expectsTable(['Branch ID', 'Branch', 'Records', 'Recorded value'], [['hq', 'Headquarters', 1, '350.00']])
+            ->expectsTable(['Stock-in reference', 'Branch', 'Recorded value'], [['AUTO-STK-20', 'Headquarters', '350.00']])
+            ->assertSuccessful();
     }
 
     private function statementUser(): User
