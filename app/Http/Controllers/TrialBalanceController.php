@@ -107,7 +107,6 @@ class TrialBalanceController extends Controller
         // System-created accounts (AR, Revenue, Petty Cash) may have branch_id = ''
         // and would otherwise be excluded. We include them as global accounts.
         $accountsQuery = Account::withoutGlobalScopes()
-            ->whereNull('deleted_at')
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);

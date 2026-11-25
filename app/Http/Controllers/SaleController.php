@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Collection;
 use App\Support\BranchInventoryService;
+use App\Support\CustomerReceivables;
 use App\Support\GeoCurrency;
 use App\Support\InventoryQuantity;
 use App\Support\LedgerService;
@@ -1992,8 +1993,12 @@ public function store(Request $request)
             : (($balance <= 0) ? 'paid' : (($actualPaymentKept > 0) ? 'partial' : 'unpaid'));
 
         $selectedCustomer = $request->customer_id
-            ? $this->scopedCustomers()->whereKey((int) $request->customer_id)->first()
+            ? $this->scopedCustomers()->whereKey((int) $request->customer_id)
+                ->when($isCreditSale, fn ($query) => $query->lockForUpdate())->first()
             : null;
+        if ($isCreditSale && !$selectedCustomer) {
+            throw new \RuntimeException('Select an available customer before recording a credit sale.');
+        }
         $resolvedCustomerName = $selectedCustomer?->customer_name
             ?? $selectedCustomer?->name
             ?? 'Customer';
@@ -2312,6 +2317,17 @@ $sale = Sale::create([
         $finalChange = $amountPaid > $calculatedTotal ? $amountPaid - $calculatedTotal : 0;
         $finalPaid = max(0, $amountPaid - $finalChange);
         $finalBalance = max(0, $calculatedTotal - $finalPaid);
+        if ($isCreditSale && $warning = app(CustomerReceivables::class)->creditLimitWarning($selectedCustomer, $companyId, $finalBalance, (int) $sale->id)) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'This sale would exceed the customer credit limit of '
+                    . number_format($warning['credit_limit'], 2) . ' by ' . number_format($warning['excess'], 2) . '.',
+                'credit_limit_warning' => $warning,
+            ], 422);
+        }
+
         $finalPaymentStatus = ($isChargeToRoom || $isCreditSale) ? 'unpaid' : ($finalBalance <= 0 ? 'paid' : ($finalPaid > 0 ? 'partial' : 'unpaid'));
         if ($paymentMethod === 'split') {
             $unappliedTender = max(0, round(
@@ -3056,9 +3072,11 @@ public function create()
             'items'       => 'required|array|min:1',
         ]);
 
-        $sale = Sale::with('items.product')->findOrFail((int) $request->sale_id);
-
-        DB::transaction(function () use ($request, $sale) {
+        DB::transaction(function () use ($request) {
+            $saleQuery = Sale::with('items.product');
+            $this->applyTenantScope($saleQuery, 'sales');
+            $this->applyBranchScope($saleQuery, 'sales');
+            $sale = $saleQuery->lockForUpdate()->findOrFail((int) $request->sale_id);
             $companyId  = (int) ($sale->company_id ?? session('current_tenant_id') ?? auth()->user()?->company_id ?? 0);
             $activeBranch = $this->getActiveBranchContext();
             $branchCtx  = [
@@ -3066,6 +3084,7 @@ public function create()
                 'name' => $sale->branch_name ? (string) $sale->branch_name : ($activeBranch['name'] ?? null),
             ];
             $totalAmount = 0;
+            $stockCost = 0.0;
             $returnLines = [];
             $creditNoteColumns = array_flip(Schema::getColumnListing('credit_notes'));
 
@@ -3157,11 +3176,14 @@ public function create()
                 $creditNoteItemColumns = array_flip(Schema::getColumnListing('credit_note_items'));
                 DB::table('credit_note_items')->insert(array_intersect_key($creditNoteItem, $creditNoteItemColumns));
 
+                $sourceLines = $sale->items->where('product_id', (int) $productId)->sortBy('id');
+                $returnedCost = LedgerService::returnedStockCost($sourceLines, $qty);
                 $this->reduceSaleItemsForReturn($sale, (int) $productId, $qty);
 
                 // Return stock
                 $product = Product::lockForUpdate()->find((int) $productId);
                 if ($product) {
+                    $stockCost += $returnedCost;
                     $stockUnits = InventoryQuantity::resolveSaleStockUnits(
                         $product,
                         $qty,
@@ -3187,14 +3209,15 @@ public function create()
             if (isset($creditNoteColumns['total_amount'])) {
                 DB::table('credit_notes')->where('id', $creditNoteId)->update(['total_amount' => $totalAmount]);
             }
-            $this->recalculateSaleAfterReturn($sale);
-
-            // Post accounting entry
+            // Post against the original payment state before recalculating the sale.
             LedgerService::postSalesReturn(
                 (int) $creditNoteId,
                 $totalAmount,
-                'CN-' . $creditNoteId
+                'CN-' . $creditNoteId,
+                $request->return_date
             );
+            LedgerService::postReturnedStockCost((int) $creditNoteId, $sale->id, $companyId, $stockCost, $request->return_date, $branchCtx);
+            $this->recalculateSaleAfterReturn($sale);
         });
 
         return redirect()->route('pos.sales')->with('success', 'POS return processed successfully.');

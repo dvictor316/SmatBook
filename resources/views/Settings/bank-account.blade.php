@@ -3,6 +3,20 @@
 
 @section('content')
     <style>
+        .bank-account-form {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
+        }
+
+        .bank-account-form > .modal-body {
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
         .bank-page .card {
             border-radius: 18px;
             border: 1px solid #dbe7ff;
@@ -241,7 +255,7 @@
         <div class="modal fade" id="edit_bank_{{ $account->id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form action="{{ route('settings.bank-account.update', $account->id) }}" method="POST">
+                    <form class="bank-account-form" action="{{ route('settings.bank-account.update', $account->id) }}" method="POST">
                         @csrf
                         @method('PUT')
                         <div class="modal-header">

@@ -6470,7 +6470,7 @@
       <div class="modal custom-modal fade" id="bank_details" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">
-                <form action="{{ route('settings.bank-account.store') }}" method="POST">
+                <form class="bank-account-form" action="{{ route('settings.bank-account.store') }}" method="POST">
                     @csrf
                 <div class="modal-header border-0 pb-0">
                     <div class="form-header modal-header-title text-start mb-0">

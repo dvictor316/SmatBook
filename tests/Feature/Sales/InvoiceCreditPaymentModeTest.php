@@ -105,6 +105,25 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $this->assertDatabaseCount('sales', 1);
     }
 
+    public function test_pos_checks_other_branch_debt_and_rolls_back_a_sale_over_the_credit_limit(): void
+    {
+        [$company, $user, $customer] = $this->workspace();
+        $customer->forceFill(['branch_id' => 'hq', 'branch_name' => 'Headquarters', 'credit_limit' => 1500])->save();
+        $existing = $this->sale($company, $user, $customer, 'credit');
+        $existing->forceFill(['branch_id' => 'other', 'branch_name' => 'Other Branch'])->save();
+        $product = $this->product($company, $user);
+        DB::table('products')->where('id', $product)->update(['branch_id' => 'hq', 'branch_name' => 'Headquarters']);
+
+        $response = $this->postJson(route('sales.store'), [
+            'customer_id' => $customer->id,
+            'payment_method' => 'Credit', 'total' => 1000, 'paid' => 0,
+            'items' => [['id' => $product, 'qty' => 1, 'price' => 1000, 'unitType' => 'unit', 'stockUnits' => 1]],
+        ]);
+        $response->assertUnprocessable()->assertJsonPath('credit_limit_warning.projected_outstanding', 2000);
+        $this->assertDatabaseCount('sales', 1);
+        $this->assertDatabaseHas('products', ['id' => $product, 'stock' => 10]);
+    }
+
     public function test_invoice_can_be_saved_and_redirected_to_print_view(): void
     {
         [$company, $user, $customer] = $this->workspace();

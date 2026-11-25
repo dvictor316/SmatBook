@@ -249,7 +249,6 @@ class BalanceSheetController extends Controller
         $query = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
-            ->whereNull('accounts.deleted_at')
             ->whereDate('transactions.transaction_date', '>=', $fromDate->toDateString())
             ->whereDate('transactions.transaction_date', '<=', $toDate->toDateString());
 
@@ -717,10 +716,8 @@ class BalanceSheetController extends Controller
 
         // 1. Get all accounts with sums up to the report date (branch-safe)
         $txnTotalsQuery = Transaction::withoutGlobalScopes()
-            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->selectRaw('transactions.account_id, SUM(transactions.debit) as total_debit, SUM(transactions.credit) as total_credit')
             ->whereNull('transactions.deleted_at')
-            ->whereNull('accounts.deleted_at')
             ->whereDate('transactions.transaction_date', '<=', $reportDate->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
@@ -733,10 +730,8 @@ class BalanceSheetController extends Controller
             ->keyBy('account_id');
 
         $ledgerTotalsQuery = Transaction::withoutGlobalScopes()
-            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->selectRaw('SUM(transactions.debit) as total_debit, SUM(transactions.credit) as total_credit')
             ->whereNull('transactions.deleted_at')
-            ->whereNull('accounts.deleted_at')
             ->whereDate('transactions.transaction_date', '<=', $reportDate->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
@@ -749,10 +744,8 @@ class BalanceSheetController extends Controller
         $ledgerDifference = $ledgerDebits - $ledgerCredits;
 
         $imbalancedEntriesQuery = Transaction::withoutGlobalScopes()
-            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-            ->selectRaw('MIN(transactions.id) as transaction_id, transactions.related_type, transactions.related_id, transactions.transaction_type, MIN(transactions.reference) as reference, MIN(transactions.description) as description, SUM(transactions.debit) as total_debit, SUM(transactions.credit) as total_credit')
+            ->selectRaw('MIN(transactions.id) as transaction_id, transactions.related_type, transactions.related_id, transactions.transaction_type, transactions.reference, MIN(transactions.description) as description, SUM(transactions.debit) as total_debit, SUM(transactions.credit) as total_credit')
             ->whereNull('transactions.deleted_at')
-            ->whereNull('accounts.deleted_at')
             ->whereDate('transactions.transaction_date', '<=', $reportDate->toDateString())
             ->when(($activeBranch['scope'] ?? 'branch') !== 'all', function ($query) use ($activeBranch) {
                 $this->applyLegacyOpeningBalanceBranchScope($query, $activeBranch, 'transactions');
@@ -760,7 +753,7 @@ class BalanceSheetController extends Controller
         $this->applyTransactionScope($imbalancedEntriesQuery, $request);
 
         $imbalancedEntries = $imbalancedEntriesQuery
-            ->groupBy('transactions.related_type', 'transactions.related_id', 'transactions.transaction_type')
+            ->groupBy('transactions.related_type', 'transactions.related_id', 'transactions.transaction_type', 'transactions.reference')
             ->havingRaw('ABS(SUM(transactions.debit) - SUM(transactions.credit)) > 0.01')
             ->orderByRaw('ABS(SUM(transactions.debit) - SUM(transactions.credit)) DESC')
             ->limit(10)
@@ -777,7 +770,6 @@ class BalanceSheetController extends Controller
         // system-generated accounts (AR, Revenue, Cash) created without a branch.
         // We apply our own branch filter below that also includes those global accounts.
         $accountsQuery = Account::withoutGlobalScopes()
-            ->whereNull('deleted_at')
             ->where(function ($query) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $query->whereIn('id', $accountIds);
@@ -1027,6 +1019,7 @@ class BalanceSheetController extends Controller
             'totalCurrentLiabilities',
             'totalLongTermLiabilities',
             'isBalanced',
+            'statementDifference',
             'reconciliationReserveDiagnostic',
             'reconciliationReserveThreshold',
             'reconciliationReserveNeedsReview',
@@ -1087,7 +1080,6 @@ class BalanceSheetController extends Controller
         $legsQuery = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
-            ->whereNull('accounts.deleted_at')
             ->where('transactions.transaction_type', Transaction::TYPE_OPENING_BALANCE)
             ->whereDate('transactions.transaction_date', '<=', $reportDate->toDateString())
             ->select([
@@ -1264,7 +1256,6 @@ class BalanceSheetController extends Controller
             ->values()
             ->all();
         $accountsQuery = Account::withoutGlobalScopes()
-            ->whereNull('deleted_at')
             ->where(function ($q) use ($accountIds) {
                 if (!empty($accountIds)) {
                     $q->whereIn('id', $accountIds);
@@ -1376,7 +1367,6 @@ class BalanceSheetController extends Controller
         $query = Transaction::withoutGlobalScopes()
             ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
             ->whereNull('transactions.deleted_at')
-            ->whereNull('accounts.deleted_at')
             ->whereDate('transactions.transaction_date', '<=', $reportDate->toDateString())
             ->where(function ($sub) {
                 $sub->whereRaw('LOWER(accounts.name) like ?', ['%reconciliation%'])

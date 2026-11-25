@@ -9,6 +9,40 @@ use Illuminate\Support\Facades\Schema;
 
 class CustomerReceivables
 {
+    public function creditLimitWarning(Customer $customer, int $companyId, float $newCredit, ?int $excludeSaleId = null): ?array
+    {
+        $limit = round((float) $customer->credit_limit, 2);
+        if ($limit <= 0 || $newCredit <= 0) {
+            return null;
+        }
+
+        $sales = Sale::withoutGlobalScope('company_id')
+            ->when($companyId > 0 && Schema::hasColumn('sales', 'company_id'),
+                fn ($query) => $query->where(function ($owner) use ($companyId) {
+                    $owner->where('sales.company_id', $companyId);
+                    if (Schema::hasColumn('sales', 'user_id')) {
+                        $owner->orWhere(fn ($legacy) => $legacy->whereNull('sales.company_id')
+                            ->whereIn('sales.user_id', \App\Models\User::query()->select('id')->where('company_id', $companyId)));
+                    }
+                }),
+                fn ($query) => $query->where('sales.user_id', auth()->id()));
+        $outstanding = $this->outstandingBalance((int) $customer->id, $customer, $sales, $excludeSaleId, true);
+        $projected = round($outstanding + $newCredit, 2);
+        if ($projected <= $limit) {
+            return null;
+        }
+
+        return [
+            'customer' => $customer->customer_name ?? $customer->name ?? 'Selected customer',
+            'credit_limit' => $limit,
+            'current_outstanding' => $outstanding,
+            'new_credit' => $newCredit,
+            'projected_outstanding' => $projected,
+            'excess' => round($projected - $limit, 2),
+            'blocked' => true,
+        ];
+    }
+
     public function outstandingBalance(
         int $customerId,
         ?Customer $customer,

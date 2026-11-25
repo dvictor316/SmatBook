@@ -431,6 +431,7 @@ class BalanceSheetBranchScopeTest extends TestCase
         $this->assertSame(0.0, $balance['netIncome']);
         $this->assertSame(0.0, $balance['totalEquity']);
         $this->assertFalse($balance['isBalanced']);
+        $this->assertSame(34400.0, $balance['statementDifference']);
         $this->assertSame(34400.0, $balance['reconciliationReserveDiagnostic']);
         $this->assertCount(1, $trial['accounts']);
         $this->assertSame(34400.0, $trial['totalDebits']);
@@ -444,6 +445,28 @@ class BalanceSheetBranchScopeTest extends TestCase
         app(TrialBalanceController::class)->export($request);
         Excel::assertDownloaded('trial_balance_2026-05-10.xlsx', fn ($export) => $export->collection()->all()
             === [['VAT-INPUT', 'VAT Receivable', 'Asset', 34400.0, 0.0], ['', 'Totals', '', 34400.0, 0.0]]);
+    }
+
+    public function test_archived_bank_clearing_account_keeps_its_posted_debit_in_both_statements(): void
+    {
+        $user = $this->statementUser();
+        DB::table('accounts')->insert([
+            ['id' => 61, 'code' => 'BANK', 'name' => 'Moniepoint Bank', 'type' => 'Asset', 'company_id' => 1, 'deleted_at' => null],
+            ['id' => 62, 'code' => 'EQT-BBC', 'name' => 'Bank Balance Clearing', 'type' => 'Equity', 'company_id' => 1, 'deleted_at' => '2026-05-10'],
+        ]);
+        DB::table('transactions')->insert([
+            ['account_id' => 61, 'company_id' => 1, 'transaction_date' => '2026-05-09', 'reference' => 'BANKZERO-61', 'debit' => 0, 'credit' => 2000000, 'transaction_type' => Transaction::TYPE_JOURNAL],
+            ['account_id' => 62, 'company_id' => 1, 'transaction_date' => '2026-05-09', 'reference' => 'BANKZERO-61', 'debit' => 2000000, 'credit' => 0, 'transaction_type' => Transaction::TYPE_JOURNAL],
+        ]);
+
+        $request = $this->statementRequest($user);
+        $balance = app(BalanceSheetController::class)->index($request)->getData();
+        $trial = app(TrialBalanceController::class)->index($request)->getData();
+        $this->assertSame(0.0, $balance['statementDifference']);
+        $this->assertSame(0.0, $balance['ledgerDifference']);
+        $this->assertSame(-2000000.0, $balance['totalEquity']);
+        $this->assertSame(2000000.0, $trial['totalDebits']);
+        $this->assertSame(2000000.0, $trial['totalCredits']);
     }
 
     public function test_statements_show_entered_openings_once_and_exclude_future_openings(): void

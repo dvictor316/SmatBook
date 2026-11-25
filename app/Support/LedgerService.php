@@ -1317,7 +1317,7 @@ class LedgerService
                 ->where('id', $relatedId)
                 ->when(Schema::hasColumn('credit_notes', 'deleted_at'), fn ($query) => $query->whereNull('deleted_at'))
                 ->first();
-            $sale = $source ? Sale::withoutGlobalScope('tenant')->find($source->sale_id) : null;
+            $sale = $source ? Sale::withoutGlobalScope('company_id')->find($source->sale_id) : null;
             if (!$sale) {
                 return;
             }
@@ -1378,6 +1378,68 @@ class LedgerService
             branchName: $branch['name'] ?? null,
             companyId: $companyId
         );
+    }
+
+    public static function postReturnedStockCost(int $creditNoteId, int $saleId, int $companyId, float $cost, string $date, array $branch): void
+    {
+        if (!self::isReady() || $companyId <= 0 || $cost <= 0) {
+            return;
+        }
+
+        $ledger = Transaction::withoutGlobalScopes()->whereNull('transactions.deleted_at')
+            ->where('transactions.company_id', $companyId);
+        $reference = 'CN-' . $creditNoteId . '-COGS';
+        if ((clone $ledger)->where('reference', $reference)->where('related_type', 'credit_note')->exists()) {
+            return;
+        }
+
+        $postedCost = (clone $ledger)
+            ->where('related_type', Sale::class)
+            ->where('related_id', $saleId)
+            ->where('transaction_type', Transaction::TYPE_SALE)
+            ->where('description', 'like', 'Cost of goods sold posted:%');
+        $inventoryAccount = (clone $postedCost)->where('credit', '>', 0)->value('account_id');
+        $expenseAccount = (clone $postedCost)->where('debit', '>', 0)->value('account_id');
+        if (!$inventoryAccount || !$expenseAccount) {
+            return;
+        }
+
+        $originalCost = (float) (clone $postedCost)->where('account_id', $inventoryAccount)->sum('credit');
+        $previouslyReturned = (float) (clone $ledger)->where('account_id', $inventoryAccount)
+            ->where('related_type', 'credit_note')->where('reference', 'like', 'CN-%-COGS')
+            ->whereIn('related_id', DB::table('credit_notes')->select('id')->where('sale_id', $saleId))
+            ->sum('debit');
+
+        self::postDoubleEntry(
+            debitAccountId: (int) $inventoryAccount,
+            creditAccountId: (int) $expenseAccount,
+            amount: round(min($cost, max(0, $originalCost - $previouslyReturned)), 2),
+            date: self::resolveDate($date),
+            reference: $reference,
+            description: 'Cost restored for returned stock: CN-' . $creditNoteId,
+            transactionType: Transaction::TYPE_JOURNAL,
+            relatedId: $creditNoteId,
+            relatedType: 'credit_note',
+            userId: Auth::id(),
+            branchId: $branch['id'] ?? null,
+            branchName: $branch['name'] ?? null,
+            companyId: $companyId
+        );
+    }
+
+    public static function returnedStockCost(iterable $saleLines, float $quantity): float
+    {
+        $cost = 0.0;
+        foreach ($saleLines as $line) {
+            $applied = min($quantity, (float) ($line->qty ?? $line->quantity ?? 0));
+            $cost += $applied * max(0, (float) ($line->unit_cost ?? 0));
+            $quantity -= $applied;
+            if ($quantity <= 0) {
+                break;
+            }
+        }
+
+        return round($cost, 2);
     }
 
     public static function postHotelFolioCharge(

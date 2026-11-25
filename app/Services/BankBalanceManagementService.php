@@ -277,6 +277,74 @@ class BankBalanceManagementService
         ];
     }
 
+    public function recoverMissingOffset(Collection $lines, int $companyId, array $audit, bool $apply): string
+    {
+        $bankId = (int) ($audit['account_id'] ?? 0);
+        $offsetId = (int) ($audit['offset_account_id'] ?? 0);
+        $active = $lines->reject(fn (Transaction $line) => $line->trashed());
+        $bank = $active->firstWhere('account_id', $bankId);
+        $offsets = Account::withoutGlobalScopes()->where('company_id', $companyId)
+            ->where('type', Account::TYPE_EQUITY)->where('name', 'Bank Balance Clearing');
+        $archivedOffset = $lines->first(fn (Transaction $line) => $line->trashed()
+            && ($offsetId ? (int) $line->account_id === $offsetId : (clone $offsets)->whereKey($line->account_id)->exists()));
+        if ($active->count() !== 1 || !$bank || $bankId <= 0 || $bankId === $offsetId
+            || $lines->count() !== ($archivedOffset ? 2 : 1)
+            || ($audit['offset_account_name'] ?? '') !== 'Bank Balance Clearing'
+            || $bank->transaction_type !== Transaction::TYPE_JOURNAL
+            || !str_starts_with((string) $bank->reference, "BANKZERO-{$bankId}-")
+            || !str_starts_with((string) $bank->description, 'Bank balance zeroing journal for ')
+            || !Account::withoutGlobalScopes()->where('company_id', $companyId)->where('type', Account::TYPE_ASSET)->whereKey($bankId)->exists()) {
+            throw ValidationException::withMessages(['reference' => 'The journal does not match a single missing or archived audited clearing leg.']);
+        }
+
+        $oldBalance = round((float) ($audit['old_balance'] ?? 0), 2);
+        $debit = round((float) $bank->credit, 2);
+        $credit = round((float) $bank->debit, 2);
+        $branchId = trim((string) $bank->branch_id);
+        $branchName = trim((string) $bank->branch_name);
+        $auditedBranchId = trim((string) ($audit['branch_id'] ?? ''));
+        $auditedBranchName = trim((string) ($audit['branch_name'] ?? ''));
+        if (($branchId === '' && $branchName === '') || $oldBalance === 0.0
+            || ($auditedBranchId !== '' && $branchId !== $auditedBranchId)
+            || ($auditedBranchId === '' && $auditedBranchName !== '' && $branchName !== $auditedBranchName)
+            || $debit !== max(0.0, $oldBalance) || $credit !== max(0.0, -$oldBalance)
+            || ($archivedOffset && (round((float) $archivedOffset->debit, 2) !== $debit
+                || round((float) $archivedOffset->credit, 2) !== $credit))) {
+            throw ValidationException::withMessages(['reference' => 'The journal amount or branch does not agree with the audit record.']);
+        }
+
+        $message = sprintf('Verified %s in %s. Clearing debit %s, credit %s.',
+            $bank->reference, $branchName ?: $branchId, number_format($debit, 2), number_format($credit, 2));
+        if (!$apply) {
+            return $message . ' Preview only.';
+        }
+
+        if ($archivedOffset) {
+            $archivedOffset->branch_id = $bank->branch_id;
+            $archivedOffset->branch_name = $bank->branch_name;
+            $archivedOffset->restore();
+        } else {
+            $offset = ($offsetId ? $offsets->find($offsetId) : null)
+                ?? $this->ensureOffsetAccount($companyId, (int) $bank->user_id, $branchId, $branchName);
+            Transaction::create([
+                'account_id' => $offset->id,
+                'transaction_date' => $bank->transaction_date,
+                'reference' => $bank->reference,
+                'description' => $bank->description,
+                'debit' => $debit,
+                'credit' => $credit,
+                'balance' => 0,
+                'transaction_type' => Transaction::TYPE_JOURNAL,
+                'user_id' => $bank->user_id,
+                'company_id' => $companyId,
+                'branch_id' => $bank->branch_id,
+                'branch_name' => $bank->branch_name,
+            ]);
+        }
+
+        return $message . ' Clearing leg restored.';
+    }
+
     public function isRelevantAccount(Account $account): bool
     {
         if (strcasecmp((string) ($account->type ?? ''), Account::TYPE_ASSET) !== 0) {
@@ -425,8 +493,11 @@ class BankBalanceManagementService
             $query->where('company_id', $companyId);
         }
 
-        $account = $query->first();
+        $account = $query->orderByRaw('CASE WHEN deleted_at IS NULL THEN 0 ELSE 1 END')->first();
         if ($account) {
+            if ($account->trashed()) {
+                $account->restore();
+            }
             return $account;
         }
 

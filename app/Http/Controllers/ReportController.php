@@ -3752,7 +3752,7 @@ class ReportController extends Controller
 
             $invoiceQuery = DB::table('sales')->where('id', $request->invoice_id);
             $this->applySalesScope($invoiceQuery, 'sales');
-            $invoice = $invoiceQuery->first();
+            $invoice = $invoiceQuery->lockForUpdate()->first();
             if (! $invoice) {
                 throw new \RuntimeException('The selected sale could not be found for this tenant or branch.');
             }
@@ -3760,6 +3760,7 @@ class ReportController extends Controller
             $saleQuantityColumn = Schema::hasColumn('sale_items', 'qty') ? 'qty' : 'quantity';
             $sourceItems = DB::table('sale_items')
                 ->where('sale_id', $invoice->id)
+                ->orderBy('id')
                 ->get()
                 ->groupBy(fn ($item) => (string) $item->product_id);
 
@@ -3795,6 +3796,7 @@ class ReportController extends Controller
             $creditNoteId = DB::table('credit_notes')->insertGetId($cnInsert);
 
             $totalAmount = 0;
+            $stockCost = 0.0;
 
             // 2. Process each returned item
             foreach ($request->items as $productId => $data) {
@@ -3838,6 +3840,7 @@ class ReportController extends Controller
                     // 3. Update Inventory: returned goods come back into sellable stock for the active branch.
                     $product = Product::query()->lockForUpdate()->find($productId);
                     if ($product) {
+                        $stockCost += LedgerService::returnedStockCost($sourceLines, $quantity);
                         $stockUnits = InventoryQuantity::resolveSaleStockUnits(
                             $product,
                             $quantity,
@@ -3877,6 +3880,11 @@ class ReportController extends Controller
                     'credit_note'
                 );
             }
+
+            LedgerService::postReturnedStockCost((int) $creditNoteId, (int) $invoice->id, $companyId, $stockCost, $request->credit_date, [
+                'id' => $creditBranchId,
+                'name' => $creditBranchName,
+            ]);
 
             DB::commit();
 
@@ -4817,12 +4825,19 @@ class ReportController extends Controller
         $filters = $request->validate([
             'from_date' => 'nullable|date',
             'to_date' => 'nullable|date|after_or_equal:from_date',
+            'sales_rep' => 'nullable|string|max:120',
+            'customer' => 'nullable|string|max:120',
+            'product' => 'nullable|string|max:120',
         ]);
         $from = $filters['from_date'] ?? now()->startOfMonth()->toDateString();
         $to = $filters['to_date'] ?? now()->toDateString();
         $dateCol = Schema::hasColumn('sales', 'order_date') ? 'order_date'
             : (Schema::hasColumn('sales', 'date') ? 'date' : 'created_at');
 
+        $salesRepSearch = trim($filters['sales_rep'] ?? '');
+        $customerSearch = trim($filters['customer'] ?? '');
+        $productSearch = trim($filters['product'] ?? '');
+        $filterByPerson = $salesRepSearch !== '' || $customerSearch !== '';
         $rows = collect();
         if (Schema::hasTable('sale_items') || Schema::hasTable('order_items') || Schema::hasTable('invoice_items')) {
             $itemsTable = Schema::hasTable('sale_items') ? 'sale_items' : (Schema::hasTable('order_items') ? 'order_items' : 'invoice_items');
@@ -4858,10 +4873,9 @@ class ReportController extends Controller
                 if ($productIdCol) {
                     $selects[] = DB::raw("{$productIdCol} as product_id");
                 }
-                if (!$hasProductCatalog) {
-                    $selects[] = DB::raw($productIdCol
-                        ? "MAX({$productExpr}) as product"
-                        : "{$productExpr} as product");
+                if (!$hasProductCatalog || $filterByPerson || $productSearch !== '') {
+                    $displayName = $hasProductCatalog ? "COALESCE(products.name, {$productExpr})" : $productExpr;
+                    $selects[] = DB::raw($productIdCol ? "MAX({$displayName}) as product" : "{$displayName} as product");
                 }
                 $selects = array_merge($selects, [
                     DB::raw("SUM(COALESCE({$qtyCol}, 0)) as qty_sold"),
@@ -4891,8 +4905,43 @@ class ReportController extends Controller
                 $this->applySalesScope($query, 'sales');
                 $this->applyReportableDocumentScope($query, 'sales');
 
+                if ($salesRepSearch !== '') {
+                    if (Schema::hasColumn('sales', 'user_id') && Schema::hasTable('users')) {
+                        $query->whereIn('sales.user_id', DB::table('users')->select('id')
+                            ->whereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($salesRepSearch).'%']));
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                }
+                if ($customerSearch !== '') {
+                    $match = '%'.mb_strtolower($customerSearch).'%';
+                    $query->where(function ($customer) use ($match) {
+                        $customer->whereRaw('1 = 0');
+                        if (Schema::hasColumn('sales', 'customer_name')) {
+                            $customer->orWhereRaw('LOWER(sales.customer_name) LIKE ?', [$match]);
+                        }
+                        if (Schema::hasColumn('sales', 'customer_id') && Schema::hasColumn('customers', 'customer_name')) {
+                            $customers = DB::table('customers')->select('id')->whereRaw('LOWER(customer_name) LIKE ?', [$match]);
+                            $this->applyTenantScope($customers, 'customers');
+                            $customer->orWhereIn('sales.customer_id', $customers);
+                        }
+                    });
+                }
+                if ($productSearch !== '') {
+                    $match = '%'.mb_strtolower($productSearch).'%';
+                    $query->where(function ($product) use ($match, $productExpr, $hasProductCatalog) {
+                        $product->whereRaw("LOWER({$productExpr}) LIKE ?", [$match]);
+                        if ($hasProductCatalog) {
+                            $product->orWhereRaw('LOWER(products.name) LIKE ?', [$match]);
+                            if (Schema::hasColumn('products', 'sku')) {
+                                $product->orWhereRaw('LOWER(products.sku) LIKE ?', [$match]);
+                            }
+                        }
+                    });
+                }
+
                 $salesRows = $query->get();
-                if ($hasProductCatalog) {
+                if ($hasProductCatalog && !$filterByPerson && $productSearch === '') {
                     $salesByProductId = $salesRows->keyBy(fn ($row) => (string) $row->product_id);
                     $productsQuery = DB::table('products')->select('id', 'name');
                     $this->applyTenantScope($productsQuery, 'products');
@@ -4936,7 +4985,10 @@ class ReportController extends Controller
             'estimatedCostLines',
             'missingCostLines',
             'from',
-            'to'
+            'to',
+            'salesRepSearch',
+            'customerSearch',
+            'productSearch'
         ));
     }
 

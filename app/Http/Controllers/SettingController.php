@@ -1661,8 +1661,8 @@ class SettingController extends Controller
             ->when($companyId > 0, fn($q) => $q->where('company_id', $companyId))
             ->findOrFail($id);
 
-        // Block deletion if account has any ledger transactions
-        $txnCount = $account->transactions()->count();
+        // Search every branch before deciding whether this account can be removed.
+        $txnCount = Transaction::withoutGlobalScopes()->where('account_id', $account->id)->count();
         if ($txnCount > 0) {
             $account->is_active = false;
             $account->save();

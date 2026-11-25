@@ -57,28 +57,14 @@ class InvoiceController extends Controller
         $customerQuery = Customer::query()->whereKey($customer->id);
         $this->applyTenantScope($customerQuery, 'customers');
         $customer = $customerQuery->lockForUpdate()->firstOrFail();
-        $creditLimit = (float) ($customer->credit_limit ?? 0);
+        $warning = app(\App\Support\CustomerReceivables::class)->creditLimitWarning(
+            $customer,
+            (int) (session('current_tenant_id') ?? $request->user()?->company_id ?? 0),
+            $newCreditAmount,
+            $excludeSaleId
+        );
 
-        if ($creditLimit <= 0 || $newCreditAmount <= 0) {
-            return null;
-        }
-
-        $currentOutstanding = $this->customerOutstandingBalance((int) $customer->id, $excludeSaleId);
-        $projectedOutstanding = round($currentOutstanding + $newCreditAmount, 2);
-
-        if ($projectedOutstanding <= $creditLimit) {
-            return null;
-        }
-
-        return back()->withInput()->with('credit_limit_warning', [
-            'customer' => $customer->customer_name ?? $customer->name ?? 'Selected customer',
-            'credit_limit' => $creditLimit,
-            'current_outstanding' => $currentOutstanding,
-            'new_credit' => $newCreditAmount,
-            'projected_outstanding' => $projectedOutstanding,
-            'excess' => round($projectedOutstanding - $creditLimit, 2),
-            'blocked' => true,
-        ]);
+        return $warning ? back()->withInput()->with('credit_limit_warning', $warning) : null;
     }
 
     private function notifyCreditLimitExceeded(Customer $customer, array $creditWarning): void
@@ -1086,18 +1072,29 @@ class InvoiceController extends Controller
             $balance = max(0, $total - $amountPaid);
             $computedStatus = $balance <= 0.0001 ? 'paid' : ($amountPaid > 0.0001 ? 'partial' : 'unpaid');
 
-            $sale->update([
-                'customer_name'  => $request->customer_name,
-                'total'          => $total,
-                'tax'            => $request->tax ?? 0,
-                'payment_status' => $computedStatus,
-                'payment_method' => $this->invoicePaymentMethod($amountPaid, $sale),
-                'paid'           => $amountPaid,
-                'amount_paid'    => $amountPaid,
-                'balance'        => $balance,
-            ]);
+            $warningResponse = DB::transaction(function () use ($request, $sale, $total, $amountPaid, $balance, $computedStatus) {
+                if ($sale->customer && ($warning = $this->creditLimitWarningResponse($request, $sale->customer, $balance, (int) $sale->id))) {
+                    return $warning;
+                }
 
-            $this->journalService->postInvoiceCreated($sale->fresh('customer'));
+                $sale->update([
+                    'customer_name'  => $request->customer_name,
+                    'total'          => $total,
+                    'tax'            => $request->tax ?? 0,
+                    'payment_status' => $computedStatus,
+                    'payment_method' => $this->invoicePaymentMethod($amountPaid, $sale),
+                    'paid'           => $amountPaid,
+                    'amount_paid'    => $amountPaid,
+                    'balance'        => $balance,
+                ]);
+
+                $this->journalService->postInvoiceCreated($sale->fresh('customer'));
+
+                return null;
+            });
+            if ($warningResponse) {
+                return $warningResponse;
+            }
 
             return redirect()->route('invoices.index')->with('success', 'Invoice updated successfully');
         }

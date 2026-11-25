@@ -20,7 +20,7 @@
         <div class="content-page-header">
             <div>
                 <h5>Sales by Product</h5>
-                <p class="text-muted mb-0">Quantity, revenue, cost, and gross profit per product for the period.</p>
+                <p class="text-muted mb-0">Compare quantities, revenue, cost, and gross profit by product, sales rep, or customer.</p>
             </div>
             <div class="list-btn"><ul class="filter-list">
                 <li><a class="btn btn-secondary w-auto" href="javascript:void(0);" onclick="window.print()"><i class="feather-printer me-1"></i> Print</a></li>
@@ -33,6 +33,9 @@
             <form action="{{ url()->current() }}" method="GET" class="d-flex flex-wrap align-items-end gap-2">
                 <div><label class="form-label small fw-bold mb-1">From</label><input type="date" name="from_date" class="form-control form-control-sm" value="{{ $from }}"></div>
                 <div><label class="form-label small fw-bold mb-1">To</label><input type="date" name="to_date" class="form-control form-control-sm" value="{{ $to }}"></div>
+                <div><label for="salesRepSearch" class="form-label small fw-bold mb-1">Sales rep</label><input id="salesRepSearch" type="search" name="sales_rep" class="form-control form-control-sm" value="{{ $salesRepSearch }}" placeholder="Rep name"></div>
+                <div><label for="salesCustomerSearch" class="form-label small fw-bold mb-1">Customer</label><input id="salesCustomerSearch" type="search" name="customer" class="form-control form-control-sm" value="{{ $customerSearch }}" placeholder="Customer name"></div>
+                <div><label for="salesProductSearch" class="form-label small fw-bold mb-1">Product</label><input id="salesProductSearch" type="search" name="product" class="form-control form-control-sm" value="{{ $productSearch }}" placeholder="Product name or SKU"></div>
                 <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                 <a href="{{ url()->current() }}" class="btn btn-secondary btn-sm">Reset</a>
             </form>
@@ -64,7 +67,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td class="fw-bold">{{ $row->product ?? 'Unknown' }}</td>
-                            <td class="text-end">{{ number_format($row->qty_sold, 0) }}</td>
+                            <td class="text-end">{{ \App\Support\CompactNumber::format($row->qty_sold, 4) }}</td>
                             <td class="text-end fw-bold text-success">{{ $fmt($row->revenue) }}</td>
                             <td class="text-end">{{ $fmt($row->cost) }}</td>
                             <td class="text-end fw-bold {{ $row->gross_profit >= 0 ? 'text-success' : 'text-danger' }}">{{ $fmt($row->gross_profit) }}</td>
@@ -82,7 +85,7 @@
                     @if(count($rows))
                     <tfoot><tr class="table-active fw-bold">
                         <td colspan="2" class="text-end">Total</td>
-                        <td class="text-end">{{ number_format(collect($rows)->sum('qty_sold'), 0) }}</td>
+                        <td class="text-end">{{ \App\Support\CompactNumber::format(collect($rows)->sum('qty_sold'), 4) }}</td>
                         <td class="text-end text-success">{{ $fmt($grandTotal) }}</td>
                         <td class="text-end">{{ $fmt($grandCost) }}</td>
                         <td class="text-end text-success">{{ $fmt($grandProfit) }}</td>

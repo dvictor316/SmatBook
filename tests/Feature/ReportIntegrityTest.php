@@ -126,6 +126,16 @@ class ReportIntegrityTest extends TestCase
                 && (float) $rows->firstWhere('product_id', $productIds[2])->qty_sold === 0.0
                 && (float) $rows->firstWhere('product_id', $productIds[3])->revenue === 0.0,
             json_encode($rows->toArray(), JSON_PRETTY_PRINT));
+
+        $sale->forceFill(['customer_name' => 'Mararaba Test Buyer'])->save();
+        $filtered = $this->get(route('reports.sales-by-product', [
+            'sales_rep' => $user->name,
+            'customer' => 'test buyer',
+            'product' => 'PRODUCT-1',
+        ]))->assertOk()->viewData('rows');
+        $this->assertCount(1, $filtered);
+        $this->assertEquals($productIds[1], $filtered->first()->product_id);
+        $this->assertEquals(300, $filtered->first()->revenue);
     }
 
     public function test_customer_and_product_sales_reports_show_date_filtered_gross_profit(): void
@@ -197,6 +207,64 @@ class ReportIntegrityTest extends TestCase
         $this->assertSame(320.0, (float) $productRow->cost);
         $this->assertSame(180.0, (float) $productRow->gross_profit);
         $this->assertSame(1, $productRow->estimated_cost_lines);
+    }
+
+    public function test_sales_return_restores_posted_inventory_cost_and_keeps_its_journal_after_archiving_the_product(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $productId = DB::table('products')->insertGetId([
+            'company_id' => $company->id, 'user_id' => $user->id, 'branch_id' => 'hq',
+            'branch_name' => 'Headquarters', 'name' => 'Returned product', 'sku' => 'RETURN-COST',
+            'price' => 500, 'purchase_price' => 250, 'stock' => 1, 'stock_quantity' => 1,
+        ]);
+        $sale = $this->sale($user, $company, 'INV-RETURN-COGS', 500, 'completed');
+        DB::table('sale_items')->insert([
+            'sale_id' => $sale->id, 'product_id' => $productId, 'qty' => 1, 'quantity' => 1,
+            'unit_price' => 500, 'total_price' => 500, 'unit_cost' => 250,
+        ]);
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        LedgerService::postSale($sale);
+
+        $this->post(route('reports.credit-notes-store'), [
+            'invoice_id' => $sale->id, 'credit_date' => now()->toDateString(), 'items' => [$productId => ['qty' => 1]],
+        ])->assertSessionHas('success');
+
+        $creditNote = DB::table('credit_notes')->where('sale_id', $sale->id)->first();
+        $journal = DB::table('transactions')->where('reference', 'CN-'.$creditNote->id.'-COGS');
+        $this->assertEquals(250, $journal->sum('debit'));
+        $this->assertEquals(250, $journal->sum('credit'));
+
+        Product::withoutGlobalScopes()->findOrFail($productId)->delete();
+        $this->assertSame(2, $journal->count());
+    }
+
+    public function test_bank_zero_recovery_previews_and_restores_only_the_audited_offset(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $bank = $this->account($company, 'Moniepoint MFB', 'Asset', 'Bank');
+        $offset = $this->account($company, 'Bank Balance Clearing', 'Equity', 'Reconciliation Reserve');
+        $reference = "BANKZERO-{$bank->id}-20261019115859";
+        $args = ['company' => $company->id, 'reference' => $reference];
+        DB::table('transactions')->insert([
+            'company_id' => $company->id, 'account_id' => $bank->id, 'transaction_date' => '2026-10-19',
+            'transaction_type' => Transaction::TYPE_JOURNAL, 'reference' => $reference,
+            'branch_id' => 'hq', 'branch_name' => 'Headquarters', 'debit' => 0, 'credit' => 2000000,
+            'description' => 'Bank balance zeroing journal for Moniepoint MFB. Reason: Test',
+            'user_id' => $user->id, 'created_at' => now(),
+        ]);
+        $this->artisan('ledger:repair-bank-zero', $args + ['--apply' => true])->assertFailed();
+        \App\Models\ActivityLog::record('BankBalanceManagement', 'bank_balance_zero_journal', 'Bank balance management action executed for Moniepoint MFB. Reason: Test', [
+            'user_id' => $user->id, 'company_id' => $company->id, 'branch_id' => 'hq', 'branch_name' => 'Headquarters',
+            'properties' => ['reference' => $reference, 'account_id' => $bank->id, 'offset_account_id' => $offset->id,
+                'offset_account_name' => $offset->name, 'old_balance' => 2000000],
+        ]);
+        $this->artisan('ledger:repair-bank-zero', $args)->expectsOutputToContain('Preview only.')->assertSuccessful();
+        $this->assertSame(1, DB::table('transactions')->where('reference', $reference)->count());
+        $this->artisan('ledger:repair-bank-zero', $args + ['--apply' => true])->assertSuccessful();
+        $this->assertDatabaseHas('transactions', ['reference' => $reference, 'account_id' => $offset->id, 'debit' => 2000000, 'credit' => 0]);
+        $this->artisan('ledger:repair-bank-zero', $args + ['--apply' => true])
+            ->expectsOutput('Both posted journal legs are present and balanced.')->assertSuccessful();
+        $this->assertSame(2, DB::table('transactions')->where('reference', $reference)->count());
     }
 
     public function test_empty_branch_payment_summary_does_not_fall_back_to_company_wide_data(): void
