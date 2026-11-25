@@ -11,6 +11,8 @@ class FinancialDataReset
 {
     private const TRANSACTIONAL_TABLES = [
         'transactions',
+        'credit_note_items',
+        'credit_notes',
         'sale_items',
         'invoices',
         'payments',
@@ -66,6 +68,8 @@ class FinancialDataReset
 
     // Older child tables inherit ownership from their parent document.
     private const PARENTS = [
+        'credit_note_items' => ['credit_note_id', 'credit_notes'],
+        'credit_notes' => ['sale_id', 'sales'],
         'sale_items' => ['sale_id', 'sales'],
         'payments' => ['sale_id', 'sales'],
         'receipts' => ['customer_id', 'customers'],

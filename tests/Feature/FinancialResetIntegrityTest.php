@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\User;
 use App\Support\FinancialDataReset;
+use App\Support\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -99,6 +100,44 @@ class FinancialResetIntegrityTest extends TestCase
         $this->assertDatabaseMissing('sales', ['id' => $sale->id]);
         $this->assertDatabaseHas('customers', ['id' => $otherCustomer->id, 'balance' => 3000000]);
         $this->assertDatabaseHas('sales', ['id' => $otherSale->id]);
+    }
+
+    public function test_reset_removes_sales_returns_and_source_less_returns_cannot_recreate_deficits(): void
+    {
+        [$company, , , $sale] = $this->business('Trial Reset');
+        [$otherCompany, , , $otherSale] = $this->business('Preserved Returns');
+        $sale->forceFill(['branch_id' => 'hq', 'branch_name' => 'Headquarters', 'balance' => 0])->save();
+        $note = fn ($number, $saleId, $companyId) => DB::table('credit_notes')->insertGetId([
+            'credit_note_no' => $number, 'sale_id' => $saleId, 'company_id' => $companyId,
+            'credit_date' => '2026-11-25', 'total_amount' => 34400,
+            'branch_id' => 'hq', 'branch_name' => 'Headquarters',
+        ]);
+        $returned = $note('VALID-RETURN', $sale->id, null);
+        $orphaned = $note('ORPHANED-RETURN', 99999, $company->id);
+        $other = $note('OTHER-RETURN', $otherSale->id, $otherCompany->id);
+        DB::table('credit_note_items')->insert([
+            ['credit_note_id' => $returned, 'product_id' => 1],
+            ['credit_note_id' => $orphaned, 'product_id' => 1],
+            ['credit_note_id' => $other, 'product_id' => 1],
+        ]);
+
+        LedgerService::postSalesReturn($returned, 34400, 'VALID-RETURN');
+        LedgerService::postSalesReturn($orphaned, 34400, 'ORPHANED-RETURN');
+        $this->assertSame(2, DB::table('transactions')->where('company_id', $company->id)->where('reference', 'VALID-RETURN')->count());
+        $this->assertDatabaseMissing('transactions', ['reference' => 'ORPHANED-RETURN']);
+
+        $reset = app(FinancialDataReset::class);
+        $this->assertSame(2, $reset->preview($company->id)['credit_note_items']);
+        $this->assertSame(2, $reset->preview($company->id)['credit_notes']);
+        $reset->execute($company->id);
+        LedgerService::postSalesReturn($returned, 34400, 'VALID-RETURN');
+        $this->assertDatabaseMissing('transactions', ['company_id' => $company->id]);
+        $this->assertDatabaseMissing('credit_notes', ['id' => $returned]);
+        $this->assertDatabaseMissing('credit_notes', ['id' => $orphaned]);
+        $this->assertDatabaseMissing('credit_note_items', ['credit_note_id' => $returned]);
+        $this->assertDatabaseMissing('credit_note_items', ['credit_note_id' => $orphaned]);
+        $this->assertDatabaseHas('credit_notes', ['id' => $other]);
+        $this->assertDatabaseHas('credit_note_items', ['credit_note_id' => $other]);
     }
 
     public function test_reset_failure_rolls_back_deleted_records_and_balances(): void

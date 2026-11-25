@@ -1306,24 +1306,56 @@ class LedgerService
             return;
         }
 
-        Transaction::query()
+        $sale = null;
+        $companyId = null;
+        if ($relatedType === 'credit_note') {
+            if (!Schema::hasTable('credit_notes') || !Schema::hasTable('sales')) {
+                return;
+            }
+
+            $source = DB::table('credit_notes')
+                ->where('id', $relatedId)
+                ->when(Schema::hasColumn('credit_notes', 'deleted_at'), fn ($query) => $query->whereNull('deleted_at'))
+                ->first();
+            $sale = $source ? Sale::withoutGlobalScope('tenant')->find($source->sale_id) : null;
+            if (!$sale) {
+                return;
+            }
+
+            $noteCompanyId = (int) ($source->company_id ?? 0);
+            $saleCompanyId = (int) ($sale->company_id ?? 0);
+            if ($noteCompanyId > 0 && $saleCompanyId > 0 && $noteCompanyId !== $saleCompanyId) {
+                return;
+            }
+            $companyId = $noteCompanyId ?: $saleCompanyId ?: (int) DB::table('users')
+                ->where('id', $source->user_id ?? $sale->user_id)
+                ->value('company_id');
+            if ($companyId <= 0) {
+                return;
+            }
+            self::$currentCompanyId = $companyId;
+            $date ??= $source->credit_date ?? null;
+            $userId ??= $source->user_id ?? $sale->user_id;
+            $branch = !empty($source->branch_id) || !empty($source->branch_name)
+                ? ['id' => $source->branch_id ?? null, 'name' => $source->branch_name ?? null]
+                : ['id' => $sale->branch_id, 'name' => $sale->branch_name ?? $sale->branch_label];
+        } else {
+            $branch = self::resolveRelatedBranchContext($relatedId, $relatedType);
+        }
+
+        $existing = $companyId && Schema::hasColumn('transactions', 'company_id')
+            ? Transaction::withoutGlobalScope('tenant')->where('company_id', $companyId)
+            : Transaction::query();
+        $existing
             ->where('related_id', $relatedId)
             ->where('related_type', $relatedType)
             ->where('transaction_type', Transaction::TYPE_ADJUSTMENT)
             ->delete();
 
-        $branch = self::resolveRelatedBranchContext($relatedId, $relatedType);
-
         $salesRevenueAccount = self::resolveAccount('Sales Revenue', 'Revenue', ['sales', 'income'], 'AUTO-REV-SALES');
         $creditAccount = self::resolveAccount('Accounts Receivable', 'Asset', ['receivable', 'debtor'], 'AUTO-AST-AR');
 
-        if ($relatedType === 'credit_note' && Schema::hasTable('credit_notes') && Schema::hasTable('sales')) {
-            $sale = DB::table('credit_notes')
-                ->join('sales', 'credit_notes.sale_id', '=', 'sales.id')
-                ->where('credit_notes.id', $relatedId)
-                ->select('sales.payment_status', 'sales.balance')
-                ->first();
-
+        if ($sale) {
             $paidStatus = strtolower((string) ($sale->payment_status ?? ''));
             $saleBalance = round((float) ($sale->balance ?? 0), 2);
             if ($paidStatus === 'paid' || $saleBalance <= 0) {
@@ -1343,7 +1375,8 @@ class LedgerService
             relatedType: $relatedType,
             userId: $userId,
             branchId: $branch['id'] ?? null,
-            branchName: $branch['name'] ?? null
+            branchName: $branch['name'] ?? null,
+            companyId: $companyId
         );
     }
 
