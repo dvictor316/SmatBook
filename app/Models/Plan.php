@@ -194,7 +194,7 @@ class Plan extends Model
                 'Price lists, returns, requisitions, GRN, and branch workflows',
                 'PWA online store with custom-domain order capture',
                 'Expiry alerts, reorder controls, and richer stock management',
-                'Cash Flow, Trial Balance, forecasting, and scheduled reporting',
+                'Balance Sheet, Trial Balance, Cash Flow, forecasting, and scheduled reporting',
                 'Operational controls for growing multi-user teams',
             ],
             default => [

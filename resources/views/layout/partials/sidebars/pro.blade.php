@@ -136,7 +136,7 @@
                     </ul>
                 </li>
 
-                <li class="submenu {{ Request::is('reports*', 'trial-balance', 'balance-sheet', 'cash-flow') ? 'active subdrop' : '' }}">
+                <li class="submenu {{ Request::is('reports*', 'trial-balance', 'balance-sheet*', 'cash-flow') ? 'active subdrop' : '' }}">
                     <a href="#"><i class="fe fe-bar-chart"></i><span>Reports</span><span class="menu-arrow"></span></a>
                     <ul>
                         @include('layout.partials.sidebars.reports-menu', ['reportAccess' => 'pro', 'nested' => true])
@@ -159,7 +159,6 @@
                     <ul>
                         <li><a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Fixed Assets <span class="badge bg-warning">Enterprise</span></a></li>
                         <li><a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Budgets <span class="badge bg-warning">Enterprise</span></a></li>
-                        <li><a href="{{ Route::has('membership-plans') ? route('membership-plans', ['plan' => 'enterprise']) : url('/membership-plans?plan=enterprise') }}">Balance Sheet <span class="badge bg-warning">Enterprise</span></a></li>
                     </ul>
                 </li>
 

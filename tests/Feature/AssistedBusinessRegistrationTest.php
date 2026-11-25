@@ -411,10 +411,16 @@ class AssistedBusinessRegistrationTest extends TestCase
         ]);
 
         $this->get(route('reports.hub', ['tab' => 'management']))->assertOk()
-            ->assertViewHas('reportAccess', 'pro')->assertSee('Trial Balance')->assertSee('Cash Flow');
+            ->assertViewHas('reportAccess', 'pro')->assertSee('Trial Balance')->assertSee('Cash Flow')
+            ->assertSee('Balance Sheet');
         $this->get(route('trial-balance'))->assertOk();
         $this->get(route('reports.cash-flow'))->assertOk();
-        $this->get(route('balance-sheet'))->assertRedirect(route('user.dashboard'));
+        foreach (['balance-sheet', 'balance-sheet-summary', 'balance-sheet-comparison'] as $report) {
+            $this->get(route($report))->assertOk();
+        }
+        foreach (['balance-sheet.export', 'trial-balance.export', 'reports.cash-flow.export'] as $report) {
+            $this->get(route($report))->assertDownload();
+        }
 
         $trial = Subscription::findOrFail($subscription->id);
         $trial->update(['end_date' => now()->subDay()]);
@@ -422,6 +428,7 @@ class AssistedBusinessRegistrationTest extends TestCase
         $this->get(route('user.dashboard'))
             ->assertRedirect(route('subscription.expired'));
         $this->get(route('trial-balance'))->assertRedirect(route('subscription.expired'));
+        $this->get(route('balance-sheet'))->assertRedirect(route('subscription.expired'));
         $this->get(route('subscription.expired'))
             ->assertRedirect(route('subscription.upgrade.redirect', [
                 'plan' => $trial->renewalPlanKey(),

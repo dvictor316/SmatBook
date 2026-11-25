@@ -1380,10 +1380,10 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
     // Financial Reports
     Route::get('/cash-flow', [CashFlowController::class, 'cashFlow'])->middleware('plan.access:basic,pro,enterprise')->name('reports.cash-flow');
     Route::get('/cash-flow/export', [CashFlowController::class, 'exportCashFlow'])->middleware('plan.access:basic,pro,enterprise')->name('reports.cash-flow.export');
-    Route::get('/balance-sheet', [BalanceSheetController::class, 'index'])->middleware('plan.access:enterprise')->name('balance-sheet');
-    Route::get('/balance-sheet/export', [BalanceSheetController::class, 'export'])->middleware('plan.access:enterprise')->name('balance-sheet.export');
-    Route::get('/balance-sheet-summary', [BalanceSheetController::class, 'summary'])->middleware('plan.access:enterprise')->name('balance-sheet-summary');
-    Route::get('/balance-sheet-comparison', [BalanceSheetController::class, 'comparison'])->middleware('plan.access:enterprise')->name('balance-sheet-comparison');
+    Route::get('/balance-sheet', [BalanceSheetController::class, 'index'])->middleware('plan.access:pro,enterprise')->name('balance-sheet');
+    Route::get('/balance-sheet/export', [BalanceSheetController::class, 'export'])->middleware('plan.access:pro,enterprise')->name('balance-sheet.export');
+    Route::get('/balance-sheet-summary', [BalanceSheetController::class, 'summary'])->middleware('plan.access:pro,enterprise')->name('balance-sheet-summary');
+    Route::get('/balance-sheet-comparison', [BalanceSheetController::class, 'comparison'])->middleware('plan.access:pro,enterprise')->name('balance-sheet-comparison');
     Route::get('/trial-balance', [TrialBalanceController::class, 'index'])->middleware('plan.access:pro,enterprise')->name('trial-balance');
     Route::get('/trial-balance/export', [TrialBalanceController::class, 'export'])->middleware('plan.access:pro,enterprise')->name('trial-balance.export');
     Route::get('/reports/chart-of-accounts', [ReportController::class, 'chartOfAccountsReport'])->middleware('plan.access:pro,enterprise')->name('reports.chart-of-accounts');

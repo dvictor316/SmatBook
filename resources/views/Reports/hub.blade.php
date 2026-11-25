@@ -11,7 +11,6 @@
     $canUseCustomReports = in_array('custom', $allowedTabs, true);
     $canUseProfitLossReports = $canUseProReports;
     $canUseMidTierFinancialReports = $canUseProReports;
-    $canUseCoreStatements = $canUseEnterpriseReports;
     $canUseCashFlow = $reportAccess === 'basic' || $canUseMidTierFinancialReports;
     $visibleSections = collect($tabSections)->flatten()->unique()->values()->all();
     $isStarterReportAccess = $reportAccess === 'starter';
@@ -244,11 +243,10 @@
                         <a href="{{ route('reports.profit-loss') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                     </div>
 
-                    @if($canUseCoreStatements)
+                    @if($canUseProReports)
                         <div class="rl-row" data-section="overview" data-tab="overview" data-id="balance-sheet" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity net worth">
                             <button class="rl-star" data-id="balance-sheet" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
-                            <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
                             <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
                     @endif
@@ -558,25 +556,22 @@
                         </div>
                     @endif
 
-                    @if($canUseCoreStatements)
+                    @if($canUseProReports)
                         <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-financial" data-url="{{ route('balance-sheet') }}" data-keywords="balance sheet assets liabilities equity">
                             <button class="rl-star" data-id="bs-financial" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('balance-sheet') }}" class="rl-name">Balance Sheet</a>
-                            <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
                             <a href="{{ route('balance-sheet') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
 
                         <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-summary" data-url="{{ route('balance-sheet-summary') }}" data-keywords="balance sheet summary kpi totals net worth snapshot">
                             <button class="rl-star" data-id="bs-summary" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('balance-sheet-summary') }}" class="rl-name">Balance Sheet Summary</a>
-                            <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
                             <a href="{{ route('balance-sheet-summary') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
 
                         <div class="rl-row" data-section="financial" data-tab="financial" data-id="bs-comparison" data-url="{{ route('balance-sheet-comparison') }}" data-keywords="balance sheet comparison two dates period change variance">
                             <button class="rl-star" data-id="bs-comparison" title="Favourite"><i class="far fa-star"></i></button>
                             <a href="{{ route('balance-sheet-comparison') }}" class="rl-name">Balance Sheet Comparison</a>
-                            <span class="rl-badge rl-badge-ent"><i class="fas fa-lock" style="font-size:7px;"></i> Ent</span>
                             <a href="{{ route('balance-sheet-comparison') }}" class="rl-run"><i class="fas fa-play"></i> Run</a>
                         </div>
 

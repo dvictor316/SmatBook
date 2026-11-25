@@ -63,7 +63,9 @@ class TrialPlanAccessTest extends TestCase
             ->assertSee('Cash Flow')->assertDontSee('Trial Balance')->assertDontSee('Balance Sheet');
         $this->get(route('reports.cash-flow'))->assertOk();
         $this->get(route('trial-balance'))->assertRedirect(route('user.dashboard'));
-        $this->get(route('balance-sheet'))->assertRedirect(route('user.dashboard'));
+        foreach (['balance-sheet', 'balance-sheet-summary', 'balance-sheet-comparison', 'balance-sheet.export'] as $report) {
+            $this->get(route($report))->assertRedirect(route('user.dashboard'));
+        }
     }
 
     public function test_guided_demo_can_switch_from_a_limited_preview_to_enterprise_reports(): void
