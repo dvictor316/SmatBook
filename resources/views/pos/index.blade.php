@@ -5735,6 +5735,12 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     <span>Clear Cart</span>
                 </button>
                 @if($posCanSell)
+                @if(auth()->user()?->canManageRoles())
+                    <a class="pos-rail-btn mt-2" href="{{ route('pos.credit-approvals.index') }}" target="_blank" rel="noopener">
+                        <i class="fas fa-clipboard-check" aria-hidden="true"></i>
+                        <span>Credit Approvals</span>
+                    </a>
+                @endif
                 @if($posCanSuspendSales)
                     <button type="button" class="pos-rail-btn mt-2" id="rail-suspend-sale-btn">
                         <i class="fas fa-pause-circle"></i>
@@ -6351,6 +6357,9 @@ body.pos-terminal-workspace #payment-sales-suspense-btn:focus-visible > .badge {
                     @endif
 
                     <div id="pos-checkout-customer"><h2>Customer information</h2><div id="pos-checkout-customer-slot"></div></div>
+                    @if(auth()->user()?->canManageRoles())
+                        <a class="small d-inline-block mb-2" href="{{ route('pos.credit-approvals.index') }}" target="_blank" rel="noopener">Credit Approvals</a>
+                    @endif
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="small fw-bold text-uppercase" style="color: var(--primary-600); letter-spacing: 0.08em;">Amount</div>
@@ -6626,6 +6635,7 @@ $(document).ready(function() {
     }
 
     let cart = [];
+    let creditAttemptId = null;
     const invoiceDiscount = window.POS_INVOICE_DISCOUNT || (window.POS_INVOICE_DISCOUNT = { type: 'percent', value: 0 });
     let lastSelectedProductId = null;
     let isSyncingProductSearch = false;
@@ -7885,6 +7895,7 @@ $(document).ready(function() {
     }
 
     function resetPosWorkspace() {
+        creditAttemptId = null;
         cart = [];
         lastSelectedProductId = null;
 
@@ -7923,6 +7934,8 @@ $(document).ready(function() {
     }
 
     function submitPosSale(total, paid) {
+        const credit = $('#payment-method').val() === 'Credit';
+        if (credit) creditAttemptId ??= window.crypto.randomUUID();
         $('#process-btn').prop('disabled', true).addClass('processing');
         $('#btn-text').hide();
         $('#btn-loading').show();
@@ -7934,6 +7947,7 @@ $(document).ready(function() {
                 _token: "{{ csrf_token() }}",
                 customer_id: $('#customer-select').val(),
                 payment_method: $('#payment-method').val(),
+                client_sale_id: credit ? creditAttemptId : null,
                 deposit_account_id: isStarterPos ? null : ($('#deposit-account').val() || null),
                 items: cart.map((item) => ({
                     ...item,
@@ -7977,6 +7991,7 @@ $(document).ready(function() {
                 });
             },
             error: function(xhr) {
+                if (xhr.responseJSON?.credit_approval_status === 'rejected') creditAttemptId = null;
                 restoreProcessButton();
                 showAlert({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Failed', confirmButtonColor: '#ef4444' });
             }
@@ -8004,7 +8019,7 @@ $(document).ready(function() {
         let method = $('#payment-method').val();
         let paid = method === 'Split' ? (cashPaid + transferPaid + cardPaid) : cashPaid;
 
-        if(paid <= 0) {
+        if(paid <= 0 && method !== 'Credit') {
             showAlert({ icon: 'warning', title: 'Enter Payment', text: 'Enter the amount received before processing this sale.', confirmButtonColor: '#f59e0b' });
             return;
         }
@@ -8186,6 +8201,7 @@ window.POS_ENABLE_FALLBACK = function () {
     const itemTotal = document.getElementById('item-total');
     const fmt = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
     const cart = [];
+    let creditAttemptId = null;
     const invoiceDiscount = window.POS_INVOICE_DISCOUNT || (window.POS_INVOICE_DISCOUNT = { type: 'percent', value: 0 });
     let currentProductId = '';
     let activePaymentTab = 'Cash';
@@ -9933,6 +9949,7 @@ window.POS_ENABLE_FALLBACK = function () {
     }
 
     function resetVanillaPosWorkspace() {
+        creditAttemptId = null;
         cart.length = 0;
         invoiceDiscount.type = 'percent';
         invoiceDiscount.value = 0;
@@ -10950,10 +10967,12 @@ window.POS_ENABLE_FALLBACK = function () {
 
         try {
             const preparedSaleItems = prepareCartForSale();
+            if (isCreditSale) creditAttemptId ??= window.crypto.randomUUID();
             const payload = {
                     customer_id: customerSelect?.value || null,
                     customer_name: customerSelect?.selectedOptions?.[0]?.textContent?.trim() || 'Walk-in Customer',
                     payment_method: paymentMethod?.value || 'Cash',
+                    client_sale_id: isCreditSale ? creditAttemptId : null,
                     source: posSourceContext?.source || null,
                     source_id: posSourceContext?.source_id || null,
                     source_reference: posSourceContext?.reference || null,
@@ -10983,10 +11002,10 @@ window.POS_ENABLE_FALLBACK = function () {
                 };
 
             if ((!navigator.onLine || window.POS_OFFLINE_CONFIG?.forceLocal) && (walletApplied > 0 || posSourceContext?.source || isCreditSale || paymentMethod?.value === 'ChargeToRoom')) {
-                throw new Error('Wallet, room-charge, and converted-document sales require an internet connection.');
+                throw new Error('Credit, wallet, room-charge, and converted-document sales require an internet connection.');
             }
 
-            const submission = currentSuspendedSaleId === null && window.SmartProBookOffline
+            const submission = !isCreditSale && currentSuspendedSaleId === null && window.SmartProBookOffline
                 ? await window.SmartProBookOffline.submit(payload)
                 : { queued: false, result: await (async () => {
                     const saleRequestUrl = new URL(saleStoreUrl, window.location.href);
@@ -11003,6 +11022,7 @@ window.POS_ENABLE_FALLBACK = function () {
                         body: JSON.stringify(payload),
                     });
                     const result = await response.json().catch(() => ({}));
+                    if (result.credit_approval_status === 'rejected') creditAttemptId = null;
                     if (!response.ok) throw new Error(result.message || 'Failed to process sale.');
                     return result;
                 })() };

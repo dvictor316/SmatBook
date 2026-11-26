@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Product;
+use App\Support\LedgerService;
 use App\Support\SchemaColumnCache;
 use Illuminate\Support\Facades\DB;
 
@@ -38,11 +39,24 @@ class ProductObserver
             $payload['branch_name'] = $product->branch_name ?? session('active_branch_name');
         }
 
-        $historyId = DB::table('inventory_history')->insertGetId($payload);
+        DB::transaction(function () use ($product, $payload) {
+            $historyId = DB::table('inventory_history')->insertGetId($payload);
+            $quantity = (float) $payload['quantity'];
+            if ($quantity <= 0) {
+                return;
+            }
 
-        if ((float) ($product->stock ?? 0) > 0) {
-            $this->mirrorStockInToPurchase($product, (float) $product->stock, (int) $historyId);
-        }
+            LedgerService::postProductOpeningStock(
+                $product,
+                $quantity,
+                $payload['branch_id'] ?? null,
+                $payload['branch_name'] ?? null,
+                $payload['company_id'] ?? null,
+                $payload['user_id'] ?? null,
+                $product->created_at?->toDateString()
+            );
+            $this->mirrorStockInToPurchase($product, $quantity, (int) $historyId);
+        });
     }
 
     // Automatically logs when STOCK changes on an existing product

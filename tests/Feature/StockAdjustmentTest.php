@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Company;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,52 @@ use Tests\TestCase;
 class StockAdjustmentTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_new_and_verified_legacy_opening_stock_post_once_to_the_original_branch(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $company = Company::withoutGlobalScope('tenant')->create([
+            'user_id' => $user->id, 'owner_id' => $user->id, 'name' => 'Opening Inventory Company',
+        ]);
+        $user->update(['company_id' => $company->id]);
+        $category = DB::table('categories')->insertGetId(['name' => 'Opening Cost Category']);
+        $attributes = [
+            'user_id' => $user->id, 'company_id' => $company->id, 'category_id' => $category,
+            'name' => 'Opening Inventory', 'price' => 20, 'purchase_price' => 10,
+            'stock' => 30, 'stock_quantity' => 30, 'status' => 'active',
+        ];
+        $newProduct = Product::create($attributes + ['sku' => 'OPENING-NEW', 'branch_id' => 'hq', 'branch_name' => 'Headquarters']);
+        $this->assertDatabaseHas('transactions', [
+            'reference' => 'PROD-OB-'.$newProduct->id, 'company_id' => $company->id, 'branch_id' => 'hq', 'debit' => 300,
+            'transaction_type' => Transaction::TYPE_OPENING_BALANCE,
+        ]);
+
+        $legacy = Product::create($attributes + ['sku' => 'OPENING-LEGACY']);
+        $openingDate = now()->subDays(2);
+        DB::table('inventory_history')->where('product_id', $legacy->id)->update([
+            'branch_id' => 'other', 'branch_name' => 'Other Branch', 'created_at' => $openingDate,
+        ]);
+        $command = ['company' => $company->id, '--product' => $legacy->id];
+        $this->artisan('ledger:post-inventory-openings', $command)
+            ->expectsOutputToContain('Would post')->assertSuccessful();
+        $this->assertDatabaseMissing('transactions', ['reference' => 'PROD-OB-'.$legacy->id]);
+        $this->artisan('ledger:post-inventory-openings', $command + ['--apply' => true])->assertSuccessful();
+        $this->artisan('ledger:post-inventory-openings', $command + ['--apply' => true])
+            ->expectsOutputToContain('Already recorded')->assertSuccessful();
+        $legacyJournal = DB::table('transactions')->where('reference', 'PROD-OB-'.$legacy->id)
+            ->where('branch_id', 'other')->whereDate('transaction_date', $openingDate->toDateString());
+        $this->assertSame(2, $legacyJournal->count());
+        $this->assertEquals(300, $legacyJournal->sum('debit'));
+        $this->assertEquals(300, $legacyJournal->sum('credit'));
+        $this->assertDatabaseHas('products', ['id' => $legacy->id, 'stock' => 30]);
+
+        $this->actingAs($user)->withoutMiddleware()->withSession([
+            'current_tenant_id' => $company->id, 'active_branch_id' => 'hq',
+            'active_branch_name' => 'Headquarters', 'active_branch_scope' => 'branch',
+        ])->get(route('balance-sheet'))->assertOk()
+            ->assertViewHas('totalAssets', 300.0)
+            ->assertViewHas('totalEquity', 300.0);
+    }
 
     public function test_product_history_does_not_double_count_synthetic_purchase_mirrors(): void
     {

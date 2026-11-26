@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Purchase;
+use App\Models\Product;
+use App\Models\Transaction;
 use Illuminate\Console\Command;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +84,15 @@ class AuditInventoryLedger extends Command
                             ->whereColumn('related_id', 'purchases.id');
                     })->orWhereColumn('reference', 'purchases.purchase_no');
                 }));
+        if (Schema::hasColumns('inventory_history', ['company_id', 'product_id', 'reference'])) {
+            $unmatched->whereNotExists((clone $postings)->selectRaw('1')->where('debit', '>', 0)
+                ->where('related_type', Product::class)->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
+                ->whereExists(fn ($history) => $history->selectRaw('1')->from('inventory_history')
+                    ->whereColumn('inventory_history.company_id', 'transactions.company_id')
+                    ->whereColumn('inventory_history.product_id', 'transactions.related_id')
+                    ->whereRaw("LOWER(TRIM(inventory_history.reference)) = 'initial stock'")
+                    ->whereRaw('CAST(inventory_history.id AS CHAR) = SUBSTR(purchases.purchase_no, 10)')));
+        }
         $this->info('Stock-in records without a matching Inventory debit by purchase ID or reference');
         $candidates = (clone $unmatched)->select('branch_id', 'branch_name')
             ->selectRaw('COUNT(*) AS records, SUM(total_amount) AS recorded_value')

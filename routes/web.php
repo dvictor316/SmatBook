@@ -1115,6 +1115,8 @@ Route::middleware(['auth', 'subscription.active', 'branch.required'])->group(fun
         Route::get('/{id}', 'showSale')->name('show');
     });
     Route::get('/pos', [SaleController::class, 'showPos'])->name('sales.showPos');
+    Route::get('/pos/credit-approvals', [\App\Http\Controllers\PosCreditApprovalController::class, 'index'])->name('pos.credit-approvals.index');
+    Route::post('/pos/credit-approvals/{id}', [\App\Http\Controllers\PosCreditApprovalController::class, 'review'])->whereNumber('id')->name('pos.credit-approvals.review');
     Route::post('/pos/price-edit-setting', [SaleController::class, 'updatePosPriceEditSetting'])->name('pos.price-edit-setting');
     Route::get('/pos/suspense', [SaleController::class, 'listPosSuspendedSales'])->name('pos.suspense.index');
     Route::post('/pos/suspense', [SaleController::class, 'storePosSuspendedSale'])->name('pos.suspense.store');

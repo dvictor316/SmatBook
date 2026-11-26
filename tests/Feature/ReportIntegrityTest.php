@@ -384,6 +384,31 @@ class ReportIntegrityTest extends TestCase
             ->assertViewHas('summary', fn (array $summary) => $summary['total_transactions'] === 0);
     }
 
+    public function test_payment_reports_use_recorded_branch_or_fall_back_to_the_sale_when_unassigned(): void
+    {
+        [$user, $company] = $this->businessUser();
+        $sale = $this->sale($user, $company, 'INV-BRANCH-SOURCE', 350, 'completed', 'hq', 'Headquarters');
+        $this->sale($user, $company, 'INV-OTHER-RECORDED-BRANCH', 700, 'completed', 'other', 'Headquarters');
+        foreach ([
+            ['branch_id' => 'other', 'branch_name' => 'Headquarters', 'amount' => 250],
+            ['branch_id' => null, 'branch_name' => null, 'amount' => 100],
+        ] as $payment) {
+            DB::table('payments')->insert($payment + [
+                'sale_id' => $sale->id, 'company_id' => $company->id, 'user_id' => $user->id,
+                'method' => 'Cash', 'status' => 'Completed', 'created_by' => $user->id, 'created_at' => now(),
+            ]);
+        }
+
+        $this->withoutReportAccessMiddleware()->actingAs($user)->withSession($this->branchSession($company));
+        $this->get(route('reports.payment-summary'))->assertOk()->assertViewHas('totalRevenue', 100.0);
+        $this->get(route('reports.profit-loss'))->assertOk()
+            ->assertViewHas('totals', fn ($totals) => $totals->total_income === 350.0);
+        $this->withSession(['active_branch_id' => 'other', 'active_branch_name' => 'Other Branch'])
+            ->get(route('reports.payment-summary'))->assertOk()->assertViewHas('totalRevenue', 250.0);
+        $this->get(route('reports.payment-summary', ['branch_scope' => 'all']))
+            ->assertOk()->assertViewHas('totalRevenue', 350.0);
+    }
+
     public function test_dashboard_inventory_assets_match_stock_valuation_report_at_cost(): void
     {
         $this->withoutExceptionHandling();
@@ -853,9 +878,12 @@ class ReportIntegrityTest extends TestCase
             'reports.financial-ratios',
         ];
 
-        foreach ($routes as $routeName) {
-            $response = $this->withSession($this->branchSession($company))->get(route($routeName));
-            $this->assertSame(200, $response->getStatusCode(), "{$routeName} did not render.");
+        foreach (['branch', 'all'] as $scope) {
+            foreach ($routes as $routeName) {
+                $response = $this->withSession(array_replace($this->branchSession($company), ['active_branch_scope' => $scope]))
+                    ->get(route($routeName));
+                $this->assertSame(200, $response->getStatusCode(), "{$routeName} did not render for {$scope} scope.");
+            }
         }
     }
 

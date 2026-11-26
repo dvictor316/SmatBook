@@ -124,14 +124,41 @@ class InvoiceCreditPaymentModeTest extends TestCase
         $product = $this->product($company, $user);
         DB::table('products')->where('id', $product)->update(['branch_id' => 'hq', 'branch_name' => 'Headquarters']);
 
-        $response = $this->postJson(route('sales.store'), [
+        $payload = [
             'customer_id' => $customer->id,
             'payment_method' => 'Credit', 'total' => 1000, 'paid' => 0,
+            'client_sale_id' => 'credit-approval-attempt',
             'items' => [['id' => $product, 'qty' => 1, 'price' => 1000, 'unitType' => 'unit', 'stockUnits' => 1]],
-        ]);
-        $response->assertUnprocessable()->assertJsonPath('credit_limit_warning.projected_outstanding', 2000);
+        ];
+        $response = $this->postJson(route('sales.store'), $payload)
+            ->assertUnprocessable()->assertJsonPath('credit_limit_warning.projected_outstanding', 2000)
+            ->assertJsonPath('credit_approval_status', 'pending');
+        $this->assertStringContainsString('Contact the Admin for approval.', $response->json('message'));
+        $id = $response->json('credit_approval_id');
         $this->assertDatabaseCount('sales', 1);
         $this->assertDatabaseHas('products', ['id' => $product, 'stock' => 10]);
+        $this->postJson(route('sales.store'), $payload)->assertUnprocessable()->assertJsonPath('credit_approval_id', $id);
+        $this->assertDatabaseCount('pos_credit_approvals', 1);
+        $review = route('pos.credit-approvals.review', $id);
+        $this->post($review, ['decision' => 'approved'])->assertForbidden();
+
+        $admin = User::factory()->create(['company_id' => $company->id, 'role' => 'admin']);
+        $company->update(['owner_id' => $admin->id]);
+        $this->actingAs($admin)->get(route('pos.credit-approvals.index'))->assertOk()
+            ->assertSee('Credit Customer')->assertSee('Invoice Product');
+        $this->post($review, ['decision' => 'approved'])->assertSessionHas('success');
+
+        $this->actingAs($user);
+        $changed = $payload;
+        $changed['items'][0]['qty'] = 2;
+        $this->postJson(route('sales.store'), $changed)->assertUnprocessable()->assertJsonPath('credit_approval_status', 'pending');
+        $approved = $this->postJson(route('sales.store'), $payload)->assertOk()->assertJsonPath('success', true);
+        $this->assertDatabaseHas('pos_credit_approvals', [
+            'id' => $id, 'status' => 'used', 'sale_id' => $approved->json('sale_id'), 'reviewed_by' => $admin->id,
+        ]);
+        $this->postJson(route('sales.store'), $payload)->assertOk()->assertJsonPath('already_synced', true);
+        $this->assertDatabaseCount('sales', 2);
+        $this->assertDatabaseHas('products', ['id' => $product, 'stock' => 9]);
     }
 
     public function test_editing_and_cloning_an_unpaid_sale_cannot_bypass_the_customer_credit_limit(): void

@@ -2227,6 +2227,7 @@ $sale = Sale::create([
             $saleItem = SaleItem::create($itemPayload);
             $saleLineAdjustments[] = [
                 'model' => $saleItem,
+                'product_name' => $product->name,
                 'subtotal' => $itemSubtotal,
                 'item_discount' => $itemDiscAmount,
                 'item_discount_type' => $discountType === 'fixed' ? 'fixed' : 'percent',
@@ -2318,14 +2319,10 @@ $sale = Sale::create([
         $finalPaid = max(0, $amountPaid - $finalChange);
         $finalBalance = max(0, $calculatedTotal - $finalPaid);
         if ($isCreditSale && $warning = app(CustomerReceivables::class)->creditLimitWarning($selectedCustomer, $companyId, $finalBalance, (int) $sale->id)) {
-            DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => 'This sale would exceed the customer credit limit of '
-                    . number_format($warning['credit_limit'], 2) . ' by ' . number_format($warning['excess'], 2) . '.',
-                'credit_limit_warning' => $warning,
-            ], 422);
+            $blocked = $this->authorizePosCreditSale($sale, $clientSaleId, $saleLineAdjustments, $warning);
+            if ($blocked !== null) {
+                return $blocked;
+            }
         }
 
         $finalPaymentStatus = ($isChargeToRoom || $isCreditSale) ? 'unpaid' : ($finalBalance <= 0 ? 'paid' : ($finalPaid > 0 ? 'partial' : 'unpaid'));
@@ -3006,6 +3003,73 @@ public function create()
         }
 
         return $ranking;
+    }
+
+    private function authorizePosCreditSale(Sale $sale, string $attempt, array $lines, array $warning): ?\Illuminate\Http\JsonResponse
+    {
+        $approvalQuery = null;
+        if ($attempt !== '' && (int) $sale->company_id > 0) {
+            $items = array_map(static function (array $line) {
+                $item = $line['model'];
+
+                return [
+                    'product_id' => (int) $item->product_id,
+                    'name' => $line['product_name'],
+                    'quantity' => (float) $item->qty,
+                    'unit' => $item->unit_type ?? 'unit',
+                    'stock_units' => (float) $item->stock_units,
+                    'price' => round((float) $item->unit_price, 2),
+                    'tax_rate' => (float) $line['tax_percent'],
+                    'total' => round((float) $item->total_price, 2),
+                ];
+            }, $lines);
+            $fingerprint = hash('sha256', json_encode([
+                $attempt, (int) $sale->customer_id, $sale->branch_id ?: $sale->branch_name,
+                $sale->source_type, $sale->source_id, $items, $warning,
+            ], JSON_THROW_ON_ERROR));
+            $key = ['company_id' => $sale->company_id, 'requested_by' => auth()->id(), 'fingerprint' => $fingerprint];
+            $approvalQuery = DB::table('pos_credit_approvals')->where($key);
+            $approval = (clone $approvalQuery)->lockForUpdate()->first();
+            if ($approval?->status === 'approved') {
+                $approvalQuery->update(['status' => 'used', 'sale_id' => $sale->id, 'updated_at' => now()]);
+
+                return null;
+            }
+        }
+
+        DB::rollBack();
+
+        $message = 'This sale would exceed the customer credit limit of '
+            . number_format($warning['credit_limit'], 2) . ' by ' . number_format($warning['excess'], 2)
+            . '. Contact the Admin for approval.';
+        if ($approvalQuery !== null) {
+            // The attempted sale was rolled back. Persist only the review request.
+            DB::table('pos_credit_approvals')->insertOrIgnore($key + [
+                'customer_id' => $sale->customer_id,
+                'branch_id' => $sale->branch_id,
+                'branch_name' => $sale->branch_name,
+                'details' => json_encode(['customer' => $warning['customer'], 'items' => $items], JSON_THROW_ON_ERROR),
+                'credit_amount' => $warning['new_credit'],
+                'projected_outstanding' => $warning['projected_outstanding'],
+                'credit_limit' => $warning['credit_limit'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $approval = $approvalQuery->first();
+            if ($approval) {
+                $message .= $approval->status === 'rejected'
+                    ? ' Request #'.$approval->id.' was rejected.'
+                    : ' Request #'.$approval->id.'. After approval, retry checkout with the same cart.';
+            }
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'credit_limit_warning' => $warning,
+            'credit_approval_id' => $approval->id ?? null,
+            'credit_approval_status' => $approval->status ?? null,
+        ], 422);
     }
 
     private function getActiveBranchContext(): array

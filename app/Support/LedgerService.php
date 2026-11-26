@@ -241,7 +241,7 @@ class LedgerService
 
     public static function postPurchase(Purchase $purchase): void
     {
-        if (!self::isReady()) {
+        if (!self::isReady() || str_starts_with((string) $purchase->purchase_no, 'AUTO-STK-')) {
             return;
         }
 
@@ -602,82 +602,44 @@ class LedgerService
         ?int $companyId = null,
         ?int $userId = null,
         ?string $date = null
-    ): void {
-        if (!self::isReady()) {
-            return;
+    ): bool {
+        $companyId = (int) ($companyId ?? $product->company_id ?? session('current_tenant_id') ?? Auth::user()?->company_id);
+        $amount = round($qty * (float) $product->purchase_price, 2);
+        if (!self::isReady() || $companyId <= 0 || $qty <= 0 || $amount <= 0
+            || (blank($branchId) && blank($branchName))) {
+            return false;
         }
 
-        $purchasePrice = (float) ($product->purchase_price ?? 0);
-        if ($qty <= 0 || $purchasePrice <= 0) {
-            return;
-        }
+        return DB::transaction(function () use ($product, $amount, $companyId, $branchId, $branchName, $userId, $date) {
+            $locked = Product::withoutGlobalScopes()->where('company_id', $companyId)->whereKey($product->id)
+                ->lockForUpdate()->first(['id']);
+            if (!$locked || Transaction::withoutGlobalScopes()->where('company_id', $companyId)
+                ->where('related_type', Product::class)->where('related_id', $product->id)
+                ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)->exists()) {
+                return false;
+            }
 
-        $amount = round($qty * $purchasePrice, 2);
-        if ($amount <= 0) {
-            return;
-        }
+            self::$currentCompanyId = $companyId;
+            $inventory = self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
+            $equity = self::resolveAccount('Opening Balance Equity', Account::TYPE_EQUITY, ['opening balance equity'], 'SYS-OPENING-EQUITY');
+            self::postDoubleEntry(
+                debitAccountId: $inventory->id,
+                creditAccountId: $equity->id,
+                amount: $amount,
+                date: self::resolveDate($date),
+                reference: 'PROD-OB-'.$product->id,
+                description: 'Opening stock: '.$product->name,
+                transactionType: Transaction::TYPE_OPENING_BALANCE,
+                relatedId: $product->id,
+                relatedType: Product::class,
+                userId: $userId ?? Auth::id(),
+                branchId: $branchId,
+                branchName: $branchName,
+                companyId: $companyId
+            );
 
-        // Idempotent guard — never double-post opening stock for the same product
-        $alreadyPosted = Transaction::withoutGlobalScopes()
-            ->where('related_id', $product->id)
-            ->where('related_type', Product::class)
-            ->where('transaction_type', Transaction::TYPE_OPENING_BALANCE)
-            ->exists();
-        if ($alreadyPosted) {
-            return;
-        }
-
-        self::$currentCompanyId = (int) (
-            $companyId
-            ?? $product->company_id
-            ?? Auth::user()?->company_id
-            ?? session('current_tenant_id')
-            ?? 0
-        ) ?: null;
-
-        $inventoryAccount = self::resolveAccount('Inventory', 'Asset', ['inventory', 'stock'], 'AUTO-AST-INV');
-        $equityAccount    = self::resolveAccount('Opening Balance Equity', Account::TYPE_EQUITY, ['opening balance equity', 'opening balance'], 'SYS-OPENING-EQUITY');
-
-        $reference  = 'PROD-OB-' . $product->id;
-        $date       = $date ?? now()->toDateString();
-        $branchId   = trim((string) ($branchId ?? ''));
-        $branchName = trim((string) ($branchName ?? ''));
-        $userId     = $userId ?? Auth::id();
-
-        $columns = Schema::getColumnListing('transactions');
-        $base = [
-            'transaction_date' => $date,
-            'reference'        => $reference,
-            'description'      => 'Opening stock: ' . $product->name,
-            'transaction_type' => Transaction::TYPE_OPENING_BALANCE,
-            'related_id'       => $product->id,
-            'related_type'     => Product::class,
-            'user_id'          => $userId,
-            'balance'          => 0,
-        ];
-        if (in_array('company_id', $columns, true)) {
-            $base['company_id'] = $product->company_id ?? $companyId ?? null;
-        }
-        if (in_array('branch_id', $columns, true) && $branchId !== '') {
-            $base['branch_id'] = $branchId;
-        }
-        if (in_array('branch_name', $columns, true) && $branchName !== '') {
-            $base['branch_name'] = $branchName;
-        }
-
-        // DR Inventory (asset increases)
-        Transaction::create(self::filterTransactionPayload(array_merge($base, [
-            'account_id' => $inventoryAccount->id,
-            'debit'      => $amount,
-            'credit'     => 0,
-        ])));
-
-        // CR Opening Balance Equity (equity increases)
-        Transaction::create(self::filterTransactionPayload(array_merge($base, [
-            'account_id' => $equityAccount->id,
-            'debit'      => 0,
-            'credit'     => $amount,
-        ])));
+            return true;
+        });
     }
 
     public static function backfillSupplierPaymentLedgerEntries(

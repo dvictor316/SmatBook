@@ -17,6 +17,7 @@ class FinancialDataReset
         'invoices',
         'payments',
         'receipts',
+        'pos_credit_approvals',
         'sales',
         'collection_follow_ups',
         'estimates',

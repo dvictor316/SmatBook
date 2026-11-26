@@ -846,71 +846,78 @@ class ReportController extends Controller
 
     private function applySaleBranchFilter($query, string $salesTable = 'sales')
     {
-        if (($this->getActiveBranchContext()['scope'] ?? '') === 'all') {
+        $branch = $this->getActiveBranchContext();
+        $id = trim((string) ($branch['id'] ?? ''));
+        $name = trim((string) ($branch['name'] ?? ''));
+        if ($branch['scope'] === 'all' || ($id === '' && $name === '')) {
             return $query;
         }
 
-        $branchId = trim((string) ($this->getActiveBranchContext()['id'] ?? ''));
-        $branchName = trim((string) ($this->getActiveBranchContext()['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
+        $hasId = Schema::hasColumn('sales', 'branch_id');
+        $hasName = Schema::hasColumn('sales', 'branch_name');
+        $hasExactMatch = ($hasId && $id !== '') || ($hasName && $name !== '');
+        $hasLegacyName = $name !== '' && Schema::hasColumn('sales', 'payment_details');
+        if (!$hasExactMatch && !$hasLegacyName) {
             return $query;
         }
 
-        return $query->where(function ($sub) use ($salesTable, $branchId, $branchName) {
-            if ($branchId !== '' && Schema::hasColumn('sales', 'branch_id')) {
-                $sub->where("{$salesTable}.branch_id", $branchId);
+        return $query->where(function ($branchMatch) use ($salesTable, $id, $name, $hasId, $hasName, $hasExactMatch, $hasLegacyName) {
+            if ($hasExactMatch) {
+                $this->applyExactBranchScope($branchMatch, $hasId ? $id : '', $hasName ? $name : '',
+                    "{$salesTable}.branch_id", "{$salesTable}.branch_name");
             }
-            if ($branchName !== '' && Schema::hasColumn('sales', 'branch_name')) {
-                $sub->orWhere("{$salesTable}.branch_name", $branchName);
-            }
-
-            if ($branchName !== '' && Schema::hasColumn('sales', 'payment_details')) {
-                $driver = DB::connection()->getDriverName();
-                if (in_array($driver, ['mysql', 'mariadb'], true)) {
-                    $sub->orWhereRaw(
-                        "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name')) = ?",
-                        [$branchName]
-                    )->orWhereRaw(
-                        "JSON_UNQUOTE(JSON_EXTRACT(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name')) = ?",
-                        [$branchName]
-                    );
-                } elseif ($driver === 'pgsql') {
-                    $sub->orWhereRaw("COALESCE({$salesTable}.payment_details::jsonb ->> 'branch_name', '') = ?", [$branchName])
-                        ->orWhereRaw("COALESCE({$salesTable}.payment_details::jsonb #>> '{branch,name}', '') = ?", [$branchName]);
-                } elseif ($driver === 'sqlite') {
-                    $sub->orWhereRaw("json_extract(COALESCE({$salesTable}.payment_details, '{}'), '$.branch_name') = ?", [$branchName])
-                        ->orWhereRaw("json_extract(COALESCE({$salesTable}.payment_details, '{}'), '$.branch.name') = ?", [$branchName]);
-                }
+            if ($hasLegacyName) {
+                $branchMatch->orWhere(function ($legacy) use ($salesTable, $name, $hasId, $hasName) {
+                    $this->applyUnassignedBranchScope($legacy, $salesTable, $hasId, $hasName);
+                    $legacy->where(fn ($details) => $details->where("{$salesTable}.payment_details->branch_name", $name)
+                        ->orWhere("{$salesTable}.payment_details->branch->name", $name));
+                });
             }
         });
     }
 
     private function applyPaymentBranchFilter($query, string $paymentsTable = 'payments')
     {
-        $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-
-        if ($branchId === '' && $branchName === '') {
+        $branch = $this->getActiveBranchContext();
+        $id = trim((string) ($branch['id'] ?? ''));
+        $name = trim((string) ($branch['name'] ?? ''));
+        if ($branch['scope'] === 'all' || ($id === '' && $name === '')) {
             return $query;
         }
 
-        return $query->where(function ($sub) use ($paymentsTable, $branchId, $branchName) {
-            if ($branchId !== '' && Schema::hasColumn('payments', 'branch_id')) {
-                $sub->where("{$paymentsTable}.branch_id", $branchId);
-            }
-            if ($branchName !== '' && Schema::hasColumn('payments', 'branch_name')) {
-                $sub->orWhere("{$paymentsTable}.branch_name", $branchName);
-            }
+        $hasId = Schema::hasColumn('payments', 'branch_id');
+        $hasName = Schema::hasColumn('payments', 'branch_name');
+        $hasExactMatch = ($hasId && $id !== '') || ($hasName && $name !== '');
+        $canMatchSale = Schema::hasTable('sales') && Schema::hasColumn('payments', 'sale_id');
+        if (!$hasExactMatch && !$canMatchSale) {
+            return $query;
+        }
 
-            if (Schema::hasTable('sales')) {
-                $matchingSales = $this->scopedTable('sales')->select('sales.id');
-                $this->applySalesScope($matchingSales, 'sales');
+        return $query->where(function ($branchMatch) use ($paymentsTable, $id, $name, $hasId, $hasName, $hasExactMatch, $canMatchSale) {
+            if ($hasExactMatch) {
+                $this->applyExactBranchScope($branchMatch, $hasId ? $id : '', $hasName ? $name : '',
+                    "{$paymentsTable}.branch_id", "{$paymentsTable}.branch_name");
+            }
+            if ($canMatchSale) {
+                $sales = DB::table('sales')->select('sales.id');
+                $this->applySalesScope($sales);
 
-                $sub->orWhereIn("{$paymentsTable}.sale_id", $matchingSales);
+                $branchMatch->orWhere(function ($legacy) use ($paymentsTable, $hasId, $hasName, $sales) {
+                    $this->applyUnassignedBranchScope($legacy, $paymentsTable, $hasId, $hasName);
+                    $legacy->whereIn("{$paymentsTable}.sale_id", $sales);
+                });
             }
         });
+    }
+
+    private function applyUnassignedBranchScope($query, string $table, bool $hasId, bool $hasName): void
+    {
+        if ($hasId) {
+            $query->whereRaw("COALESCE({$table}.branch_id, '') = ''");
+        }
+        if ($hasName) {
+            $query->whereRaw("COALESCE({$table}.branch_name, '') = ''");
+        }
     }
 
     private function applyInventoryHistoryBranchFilter($query, string $historyTable = 'inventory_history')
@@ -967,9 +974,12 @@ class ReportController extends Controller
     {
         $query = DB::table($table);
         $this->applyTenantScope($query, $table);
-        $this->applyGenericBranchFilter($query, $table);
 
-        return $query;
+        return match ($table) {
+            'sales' => $this->applySaleBranchFilter($query),
+            'payments' => $this->applyPaymentBranchFilter($query),
+            default => $this->applyGenericBranchFilter($query, $table),
+        };
     }
 
     private function purchaseItemTotalSubquery()
@@ -1416,7 +1426,6 @@ class ReportController extends Controller
                 DB::raw("'Misc' as label"),
             ])->whereNull('sale_id');
             $this->applyReportDateRange($other, 'created_at', $start, $end);
-            $this->applyPaymentBranchFilter($other, 'payments');
             $this->applyReportableDocumentScope($other, 'payments');
 
             $exp = $this->scopedTable('expenses')->select([
@@ -1614,7 +1623,7 @@ class ReportController extends Controller
             return view('Reports.Reports.payment-report', compact('payments', 'totalAmount', 'activeBranch', 'methodOptions', 'statusOptions'));
         }
 
-        $query = Payment::with($this->paymentReportRelations());
+        $query = Payment::withoutGlobalScope('tenant')->with($this->paymentReportRelations());
         $activeBranch = $this->getActiveBranchContext();
 
         if ($request->filled('from_date')) {
@@ -1634,13 +1643,13 @@ class ReportController extends Controller
         $this->scopePaymentsForActor($query);
         $this->applyPaymentBranchFilter($query, 'payments');
 
-        $methodOptions = Payment::query()
+        $methodOptions = (clone $query)
             ->select('method')
             ->whereNotNull('method')
             ->distinct()
             ->orderBy('method')
             ->pluck('method');
-        $statusOptions = Payment::query()
+        $statusOptions = (clone $query)
             ->select('status')
             ->whereNotNull('status')
             ->distinct()
@@ -1696,7 +1705,7 @@ class ReportController extends Controller
         }
 
         $paymentColumns = $this->paymentReportColumns();
-        $baseQuery = Payment::with($this->paymentReportRelations());
+        $baseQuery = Payment::withoutGlobalScope('tenant')->with($this->paymentReportRelations());
         $this->scopePaymentsForActor($baseQuery);
 
         $query = clone $baseQuery;
@@ -2892,31 +2901,12 @@ class ReportController extends Controller
         $branchName = trim((string) ($activeBranch['name'] ?? ''));
         if (($activeBranch['scope'] ?? 'branch') !== 'all' && ($branchId !== '' || $branchName !== '')) {
             $query->where(function ($branch) use ($branchId, $branchName) {
-                $hasDirectMatch = false;
-                if ($branchId !== '' && Schema::hasColumn('inventory_history', 'branch_id')) {
-                    $branch->where('inventory_history.branch_id', $branchId);
-                    $hasDirectMatch = true;
-                }
-                if ($branchName !== '' && Schema::hasColumn('inventory_history', 'branch_name')) {
-                    $branch->{$hasDirectMatch ? 'orWhere' : 'where'}('inventory_history.branch_name', $branchName);
-                    $hasDirectMatch = true;
-                }
-
-                if ($branchId !== '' && Schema::hasColumn('products', 'branch_id')) {
-                    $branch->orWhere(function ($fallback) use ($branchId) {
-                        $fallback->whereNull('inventory_history.branch_id')
-                            ->whereNull('inventory_history.branch_name')
-                            ->where('products.branch_id', $branchId);
-                    });
-                    $hasDirectMatch = true;
-                }
-                if ($branchName !== '' && Schema::hasColumn('products', 'branch_name')) {
-                    $branch->orWhere(function ($fallback) use ($branchName) {
-                        $fallback->whereNull('inventory_history.branch_id')
-                            ->whereNull('inventory_history.branch_name')
-                            ->where('products.branch_name', $branchName);
-                    });
-                }
+                $this->applyExactBranchScope($branch, $branchId, $branchName,
+                    'inventory_history.branch_id', 'inventory_history.branch_name');
+                $branch->orWhere(function ($legacy) use ($branchId, $branchName) {
+                    $this->applyUnassignedBranchScope($legacy, 'inventory_history', true, true);
+                    $this->applyExactBranchScope($legacy, $branchId, $branchName, 'products.branch_id', 'products.branch_name');
+                });
             });
         }
 
@@ -3861,9 +3851,6 @@ class ReportController extends Controller
     public function profit_loss_list(Request $request)
     {
         $activeBranch = $this->getActiveBranchContext();
-        $branchId = trim((string) ($activeBranch['id'] ?? ''));
-        $branchName = trim((string) ($activeBranch['name'] ?? ''));
-        $isAllBranches = ($activeBranch['scope'] ?? 'branch') === 'all';
         $companyId = (int) (session('current_tenant_id') ?? optional(Auth::user())->company_id ?? 0);
         $salesHasDeletedAt = Schema::hasColumn('sales', 'deleted_at');
         $salesHasOrderStatus = Schema::hasColumn('sales', 'order_status');
@@ -3918,23 +3905,14 @@ class ReportController extends Controller
         $startDate = $presets[$activePreset]['from'];
         $endDate = $presets[$activePreset]['to'];
 
-        // ── Inline branch filter helper ───────────────────────────────────────
-        $applyBranch = function ($q, string $table) use ($isAllBranches, $branchId, $branchName) {
-            if ($isAllBranches || ($branchId === '' && $branchName === '')) {
+        $applyBranch = function ($query, string $table): void {
+            if ($table === 'sales') {
+                $this->applySaleBranchFilter($query);
+
                 return;
             }
-            $q->where(function ($sub) use ($table, $branchId, $branchName) {
-                if ($branchId !== '' && Schema::hasColumn($table, 'branch_id')) {
-                    $sub->where("{$table}.branch_id", $branchId);
-                }
-                if ($branchName !== '' && Schema::hasColumn($table, 'branch_name')) {
-                    $sub->orWhere("{$table}.branch_name", $branchName);
-                }
-                // Include records created before the branch feature (branch_id not yet assigned)
-                if (Schema::hasColumn($table, 'branch_id')) {
-                    $sub->orWhereNull("{$table}.branch_id");
-                }
-            });
+
+            $this->applyGenericBranchFilter($query, $table, includeUnassigned: false);
         };
 
         // ── Revenue: query sales table directly ───────────────────────────────
@@ -4419,7 +4397,6 @@ class ReportController extends Controller
             $latestTaxDate = $this->scopedTable('sales')
                 ->where('sales.tax', '>', 0)
                 ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
-                ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'))
                 ->tap(fn ($q) => $this->applyReportableDocumentScope($q, 'sales'))
                 ->max(str_replace('sales.', '', $salesDateExpression));
 
@@ -4444,8 +4421,7 @@ class ReportController extends Controller
                 'sales.tax as TaxAmount',
             ])
             ->where('sales.tax', '>', 0)
-            ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'))
-            ->tap(fn ($q) => $this->applySaleBranchFilter($q, 'sales'));
+            ->tap(fn ($q) => $this->applyTenantScope($q, 'sales'));
         $this->applyReportableDocumentScope($query, 'sales');
 
         $this->applyReportDateRange($query, $salesDateExpression, $start_date, $end_date);
